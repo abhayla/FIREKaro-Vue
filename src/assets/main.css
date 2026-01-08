@@ -1,0 +1,95 @@
+/* FIREKaro Vue - Main Stylesheet */
+
+/* Base styles */
+html {
+  overflow-y: auto;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode scrollbar */
+.v-theme--dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.v-theme--dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Utility classes */
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+
+/* Animation for loading states */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Card hover effects */
+.v-card {
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.v-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Chart container styles */
+.chart-container {
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+}
+
+/* INR currency formatting helper */
+.currency-inr::before {
+  content: '₹';
+}
+
+/* Financial status colors */
+.status-positive {
+  color: #4caf50;
+}
+
+.status-negative {
+  color: #ff5252;
+}
+
+.status-neutral {
+  color: #fb8c00;
+}
