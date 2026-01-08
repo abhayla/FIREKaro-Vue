@@ -64,6 +64,55 @@ export function getFireProgressColor(percentage: number): string {
   return chartColors.fireProgress[0]
 }
 
+// Shared plugin configuration (not exported as typed ChartOptions to avoid spreading issues)
+const sharedPlugins = {
+  legend: {
+    position: 'bottom' as const,
+    labels: {
+      font: {
+        family: "'Inter', sans-serif",
+        size: 12,
+        weight: 500,
+      },
+      padding: 16,
+      usePointStyle: true,
+      pointStyle: 'circle' as const,
+    },
+  },
+  tooltip: {
+    backgroundColor: 'rgba(33, 33, 33, 0.95)',
+    titleColor: '#ffffff',
+    bodyColor: '#e0e0e0',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    cornerRadius: 8,
+    padding: 12,
+    titleFont: {
+      family: "'Inter', sans-serif",
+      size: 13,
+      weight: 600,
+    },
+    bodyFont: {
+      family: "'JetBrains Mono', monospace",
+      size: 12,
+    },
+    displayColors: true,
+    boxPadding: 4,
+  },
+}
+
+// Default chart options - use for reference, avoid spreading into typed options
+export const defaultChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: sharedPlugins,
+}
+
+// Line chart specific options
+export const lineChartOptions: ChartOptions<'line'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: sharedPlugins,
 // Default chart options
 export const defaultChartOptions: Partial<ChartOptions> = {
   responsive: true,
@@ -113,6 +162,9 @@ export const lineChartOptions = {
       grid: {
         color: 'rgba(0, 0, 0, 0.08)',
       },
+      border: {
+        display: false,
+      },
       ticks: {
         font: {
           family: "'Inter', sans-serif",
@@ -123,6 +175,9 @@ export const lineChartOptions = {
     y: {
       grid: {
         color: 'rgba(0, 0, 0, 0.08)',
+      },
+      border: {
+        display: false,
       },
       ticks: {
         font: {
@@ -142,6 +197,13 @@ export const lineChartOptions = {
       hoverRadius: 5,
     },
   },
+}
+
+// Bar chart specific options
+export const barChartOptions: ChartOptions<'bar'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: sharedPlugins,
 } as const
 
 // Bar chart specific options
@@ -150,6 +212,9 @@ export const barChartOptions = {
   scales: {
     x: {
       grid: {
+        display: false,
+      },
+      border: {
         display: false,
       },
       ticks: {
@@ -163,6 +228,9 @@ export const barChartOptions = {
       grid: {
         color: 'rgba(0, 0, 0, 0.08)',
       },
+      border: {
+        display: false,
+      },
       ticks: {
         font: {
           family: "'JetBrains Mono', monospace",
@@ -171,6 +239,10 @@ export const barChartOptions = {
       },
     },
   },
+}
+
+// Doughnut/Pie chart specific options
+export const doughnutChartOptions: ChartOptions<'doughnut'> = {
 } as const
 
 // Doughnut/Pie chart specific options
@@ -180,6 +252,7 @@ export const doughnutChartOptions = {
   cutout: '60%',
   plugins: {
     legend: {
+      position: 'right',
       position: 'right' as const,
       labels: {
         font: {
@@ -189,6 +262,10 @@ export const doughnutChartOptions = {
         },
         padding: 12,
         usePointStyle: true,
+        pointStyle: 'circle',
+      },
+    },
+    tooltip: sharedPlugins.tooltip,
         pointStyle: 'circle' as const,
       },
     },
