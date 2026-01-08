@@ -13,6 +13,7 @@ import {
   formatINR,
   formatINRCompact,
   getLoanTypeLabel,
+  calculatePrepaymentImpact,
   type Loan
 } from '@/composables/useLiabilities'
 
@@ -38,6 +39,12 @@ const deletingId = ref<string | null>(null)
 const showAmortization = ref(false)
 const selectedLoanForSchedule = ref<Loan | null>(null)
 const typeFilter = ref<string | null>(null)
+
+// Prepayment dialog state
+const showPrepayDialog = ref(false)
+const selectedLoanForPrepay = ref<Loan | null>(null)
+const prepaymentAmount = ref(0)
+const prepaymentOption = ref<'emi' | 'tenure'>('tenure')
 
 // Mock data for demo
 const mockLoans: Loan[] = [
@@ -162,8 +169,74 @@ const handleViewSchedule = (loan: Loan) => {
 }
 
 const handlePrepay = (loan: Loan) => {
-  // TODO: Implement prepayment dialog
-  console.log('Prepay loan:', loan.id)
+  selectedLoanForPrepay.value = loan
+  prepaymentAmount.value = 0
+  prepaymentOption.value = 'tenure'
+  showPrepayDialog.value = true
+}
+
+// Calculate remaining tenure in months
+const getRemainingTenure = (loan: Loan): number => {
+  const endDate = new Date(loan.endDate)
+  const now = new Date()
+  const monthsDiff = (endDate.getFullYear() - now.getFullYear()) * 12 + (endDate.getMonth() - now.getMonth())
+  return Math.max(0, monthsDiff)
+}
+
+// Prepayment impact calculation
+const prepaymentImpact = computed(() => {
+  if (!selectedLoanForPrepay.value || prepaymentAmount.value <= 0) {
+    return null
+  }
+
+  const loan = selectedLoanForPrepay.value
+  const remainingTenure = getRemainingTenure(loan)
+
+  if (remainingTenure <= 0) return null
+
+  return calculatePrepaymentImpact(
+    loan.outstandingPrincipal,
+    loan.interestRate,
+    remainingTenure,
+    prepaymentAmount.value,
+    prepaymentOption.value === 'emi'
+  )
+})
+
+const confirmPrepay = async () => {
+  if (!selectedLoanForPrepay.value || prepaymentAmount.value <= 0) return
+
+  const loan = selectedLoanForPrepay.value
+  const impact = prepaymentImpact.value
+
+  if (!impact) return
+
+  try {
+    const updatedLoan: Loan = {
+      ...loan,
+      outstandingPrincipal: loan.outstandingPrincipal - prepaymentAmount.value,
+      prepaymentsMade: (loan.prepaymentsMade || 0) + prepaymentAmount.value
+    }
+
+    // If reducing EMI, update the EMI amount
+    if (prepaymentOption.value === 'emi' && impact.newEmi) {
+      updatedLoan.emiAmount = impact.newEmi
+    }
+
+    // If reducing tenure, update the end date
+    if (prepaymentOption.value === 'tenure' && impact.monthsSaved > 0) {
+      const currentEndDate = new Date(loan.endDate)
+      currentEndDate.setMonth(currentEndDate.getMonth() - impact.monthsSaved)
+      updatedLoan.endDate = currentEndDate.toISOString().split('T')[0]
+    }
+
+    await updateLoan.mutateAsync(updatedLoan)
+    showPrepayDialog.value = false
+    selectedLoanForPrepay.value = null
+    prepaymentAmount.value = 0
+  } catch (err) {
+    console.error('Failed to process prepayment:', err)
+  }
 }
 </script>
 
@@ -374,6 +447,104 @@ const handlePrepay = (loan: Loan) => {
         <v-card-text>
           <AmortizationTable :loan="selectedLoanForSchedule" />
         </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Prepayment Dialog -->
+    <v-dialog v-model="showPrepayDialog" max-width="550" persistent>
+      <v-card v-if="selectedLoanForPrepay">
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-cash-fast" color="success" class="mr-2" />
+          Make Prepayment
+        </v-card-title>
+
+        <v-card-text>
+          <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+            <strong>{{ selectedLoanForPrepay.lenderName }}</strong><br />
+            Outstanding: {{ formatINR(selectedLoanForPrepay.outstandingPrincipal) }} |
+            EMI: {{ formatINR(selectedLoanForPrepay.emiAmount) }} |
+            Rate: {{ selectedLoanForPrepay.interestRate }}%
+          </v-alert>
+
+          <v-text-field
+            v-model.number="prepaymentAmount"
+            label="Prepayment Amount"
+            type="number"
+            prefix="₹"
+            variant="outlined"
+            density="comfortable"
+            :max="selectedLoanForPrepay.outstandingPrincipal"
+            :rules="[
+              (v: number) => v > 0 || 'Amount must be greater than 0',
+              (v: number) => v <= selectedLoanForPrepay!.outstandingPrincipal || 'Cannot exceed outstanding balance'
+            ]"
+            class="mb-4"
+          />
+
+          <v-radio-group v-model="prepaymentOption" inline class="mb-4">
+            <v-radio value="tenure" label="Reduce Tenure (same EMI)" />
+            <v-radio value="emi" label="Reduce EMI (same tenure)" />
+          </v-radio-group>
+
+          <!-- Impact Preview -->
+          <v-card v-if="prepaymentImpact" variant="outlined" class="mt-4">
+            <v-card-title class="text-subtitle-2 pb-0">
+              <v-icon icon="mdi-chart-line" class="mr-2" />
+              Prepayment Impact
+            </v-card-title>
+            <v-card-text>
+              <v-row dense>
+                <v-col cols="6">
+                  <div class="text-caption text-medium-emphasis">Interest Saved</div>
+                  <div class="text-h6 text-success font-weight-bold">
+                    {{ formatINR(prepaymentImpact.interestSaved) }}
+                  </div>
+                </v-col>
+                <v-col cols="6">
+                  <div class="text-caption text-medium-emphasis">
+                    {{ prepaymentOption === 'tenure' ? 'Months Saved' : 'New EMI' }}
+                  </div>
+                  <div class="text-h6 font-weight-bold">
+                    <template v-if="prepaymentOption === 'tenure'">
+                      {{ prepaymentImpact.monthsSaved }} months
+                    </template>
+                    <template v-else>
+                      {{ formatINR(prepaymentImpact.newEmi) }}
+                    </template>
+                  </div>
+                </v-col>
+              </v-row>
+
+              <v-divider class="my-3" />
+
+              <div class="text-body-2">
+                <div class="d-flex justify-space-between">
+                  <span class="text-medium-emphasis">New Outstanding:</span>
+                  <span class="font-weight-medium">
+                    {{ formatINR(selectedLoanForPrepay.outstandingPrincipal - prepaymentAmount) }}
+                  </span>
+                </div>
+                <div v-if="prepaymentOption === 'tenure'" class="d-flex justify-space-between">
+                  <span class="text-medium-emphasis">New Tenure:</span>
+                  <span class="font-weight-medium">{{ prepaymentImpact.newTenure }} months</span>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn variant="text" @click="showPrepayDialog = false">Cancel</v-btn>
+          <v-btn
+            color="success"
+            variant="flat"
+            :disabled="!prepaymentAmount || prepaymentAmount <= 0 || prepaymentAmount > selectedLoanForPrepay.outstandingPrincipal"
+            @click="confirmPrepay"
+          >
+            Confirm Prepayment
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
   </div>

@@ -6,6 +6,7 @@ import PropertyCard from '@/components/investments/PropertyCard.vue'
 import {
   useProperties,
   useCreateInvestment,
+  useUpdateInvestment,
   useDeleteInvestment,
   formatINR,
   formatINRCompact,
@@ -27,6 +28,7 @@ const tabs = [
 // Data fetching
 const { data: properties, isLoading, error } = useProperties()
 const createInvestment = useCreateInvestment()
+const updateInvestment = useUpdateInvestment()
 const deleteInvestment = useDeleteInvestment()
 
 // UI state
@@ -114,9 +116,29 @@ const rentalYield = computed(() =>
     : 0
 )
 
+// Property type mapping
+type PropertyType = 'residential' | 'commercial' | 'land' | 'other'
+
 // Actions
 const handleEdit = (property: Property) => {
   editingProperty.value = property
+  // Populate the form with property data
+  const propertyType = (['residential', 'commercial', 'land', 'other'].includes(property.type)
+    ? property.type
+    : 'residential') as PropertyType
+
+  newProperty.value = {
+    name: property.name,
+    type: propertyType,
+    address: property.address ?? '',
+    purchaseDate: property.purchaseDate ?? '',
+    purchasePrice: property.purchasePrice,
+    currentValue: property.currentValue,
+    registrationCost: property.registrationCost ?? 0,
+    stampDuty: property.stampDuty ?? 0,
+    loanOutstanding: property.loanOutstanding ?? 0,
+    rentalIncome: property.rentalIncome ?? 0
+  }
   showAddDialog.value = true
 }
 
@@ -134,9 +156,20 @@ const confirmDelete = async () => {
 }
 
 // Add property form
-const newProperty = ref({
+const newProperty = ref<{
+  name: string
+  type: PropertyType
+  address: string
+  purchaseDate: string
+  purchasePrice: number
+  currentValue: number
+  registrationCost: number
+  stampDuty: number
+  loanOutstanding: number
+  rentalIncome: number
+}>({
   name: '',
-  type: 'residential' as const,
+  type: 'residential',
   address: '',
   purchaseDate: '',
   purchasePrice: 0,
@@ -147,9 +180,61 @@ const newProperty = ref({
   rentalIncome: 0
 })
 
+const resetPropertyForm = () => {
+  newProperty.value = {
+    name: '',
+    type: 'residential' as const,
+    address: '',
+    purchaseDate: '',
+    purchasePrice: 0,
+    currentValue: 0,
+    registrationCost: 0,
+    stampDuty: 0,
+    loanOutstanding: 0,
+    rentalIncome: 0
+  }
+}
+
 const handleAddProperty = async () => {
-  // In real app, call API
-  showAddDialog.value = false
+  const totalCost = newProperty.value.purchasePrice +
+                    newProperty.value.registrationCost +
+                    newProperty.value.stampDuty
+
+  const propertyData = {
+    name: newProperty.value.name,
+    type: 'real_estate' as const,
+    category: 'real_estate' as const,
+    investedAmount: totalCost,
+    currentValue: newProperty.value.currentValue,
+    purchaseDate: newProperty.value.purchaseDate,
+    purchasePrice: newProperty.value.purchasePrice,
+    notes: JSON.stringify({
+      subtype: newProperty.value.type,
+      address: newProperty.value.address,
+      registrationCost: newProperty.value.registrationCost,
+      stampDuty: newProperty.value.stampDuty,
+      loanOutstanding: newProperty.value.loanOutstanding,
+      rentalIncome: newProperty.value.rentalIncome
+    })
+  }
+
+  try {
+    if (editingProperty.value) {
+      await updateInvestment.mutateAsync({
+        id: editingProperty.value.id,
+        data: propertyData
+      })
+    } else {
+      await createInvestment.mutateAsync(propertyData)
+    }
+
+    // Reset form and close dialog
+    resetPropertyForm()
+    editingProperty.value = null
+    showAddDialog.value = false
+  } catch (err) {
+    console.error('Failed to save property:', err)
+  }
 }
 </script>
 

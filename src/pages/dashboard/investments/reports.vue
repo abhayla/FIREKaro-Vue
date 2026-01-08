@@ -169,6 +169,58 @@ const taxReport = {
     limit: 50000
   }
 }
+
+// Export functionality
+const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
+  if (format === 'pdf') {
+    window.print()
+    return
+  }
+
+  // Generate CSV data based on report type
+  let headers: string[] = []
+  let rows: (string | number)[][] = []
+
+  if (reportType.value === 'portfolio') {
+    headers = ['Month', 'Portfolio Value']
+    rows = portfolioHistory.map(p => [p.date, p.value])
+  } else if (reportType.value === 'performance') {
+    headers = ['Category', 'Returns %', 'Benchmark %']
+    rows = categoryPerformance.map(c => [c.category, c.returns, c.benchmark])
+  } else if (reportType.value === 'allocation') {
+    headers = ['Asset Class', 'Current %', 'Target %', 'Difference %']
+    const target = { equity: 50, debt: 30, gold: 5, realEstate: 10, cash: 5 }
+    rows = Object.entries(allocation.value).map(([key, value]) => [
+      key.charAt(0).toUpperCase() + key.slice(1),
+      value,
+      target[key as keyof typeof target] ?? 0,
+      value - (target[key as keyof typeof target] ?? 0)
+    ])
+  } else if (reportType.value === 'tax') {
+    headers = ['Tax Category', 'Amount', 'Tax Rate']
+    rows = [
+      ['Short Term Capital Gains', taxReport.shortTermGains, '15%'],
+      ['Long Term Capital Gains', taxReport.longTermGains, '10% above 1L'],
+      ['Dividend Income', taxReport.dividendIncome, 'Slab Rate'],
+      ['Section 80C (EPF)', taxReport.section80C.epf, 'Deduction'],
+      ['Section 80C (PPF)', taxReport.section80C.ppf, 'Deduction'],
+      ['Section 80CCD(1B) NPS', taxReport.section80CCD1B.nps, 'Deduction']
+    ]
+  }
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.join(','))
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: format === 'csv' ? 'text/csv' : 'application/vnd.ms-excel' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `investment-${reportType.value}-report-${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xls'}`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -202,9 +254,33 @@ const taxReport = {
           <v-btn value="all" size="small">All</v-btn>
         </v-btn-toggle>
 
-        <v-btn variant="outlined" prepend-icon="mdi-download">
-          Export PDF
-        </v-btn>
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn variant="outlined" prepend-icon="mdi-download" v-bind="props">
+              Export
+            </v-btn>
+          </template>
+          <v-list density="compact">
+            <v-list-item @click="handleExport('pdf')">
+              <template #prepend>
+                <v-icon icon="mdi-file-pdf-box" color="error" />
+              </template>
+              <v-list-item-title>Export as PDF</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="handleExport('excel')">
+              <template #prepend>
+                <v-icon icon="mdi-file-excel" color="success" />
+              </template>
+              <v-list-item-title>Export as Excel</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="handleExport('csv')">
+              <template #prepend>
+                <v-icon icon="mdi-file-delimited" color="primary" />
+              </template>
+              <v-list-item-title>Export as CSV</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-card-text>
     </v-card>
 

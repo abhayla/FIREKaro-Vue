@@ -35,6 +35,10 @@ const createInvestment = useCreateInvestment()
 // Add investment dialog
 const showAddDialog = ref(false)
 
+// Feature dialogs
+const showCASDialog = ref(false)
+const showBrokerDialog = ref(false)
+
 const handleSaveInvestment = async (data: Partial<Investment>) => {
   await createInvestment.mutateAsync(data as any)
   showAddDialog.value = false
@@ -221,10 +225,10 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
           <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showAddDialog = true">
             Add Investment
           </v-btn>
-          <v-btn variant="outlined" prepend-icon="mdi-file-import">
+          <v-btn variant="outlined" prepend-icon="mdi-file-import" @click="showCASDialog = true">
             Import CAS
           </v-btn>
-          <v-btn variant="outlined" prepend-icon="mdi-sync">
+          <v-btn variant="outlined" prepend-icon="mdi-sync" @click="showBrokerDialog = true">
             Sync Broker
           </v-btn>
           <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :to="'/dashboard/investments/reports'">
@@ -388,6 +392,96 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
       v-model="showAddDialog"
       @save="handleSaveInvestment"
     />
+
+    <!-- Import CAS Dialog -->
+    <v-dialog v-model="showCASDialog" max-width="500">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-file-import" color="primary" class="mr-2" />
+          Import CAS Statement
+        </v-card-title>
+        <v-card-text>
+          <v-alert type="info" variant="tonal" class="mb-4">
+            <strong>Consolidated Account Statement (CAS)</strong> is a single document containing
+            details of all your mutual fund investments across all AMCs.
+          </v-alert>
+
+          <div class="text-body-2 mb-4">
+            <p class="mb-2"><strong>How to get your CAS:</strong></p>
+            <ol class="pl-4">
+              <li>Visit <strong>CAMS</strong> (CAMSOnline.com) or <strong>KFintech</strong> (KFintech.com)</li>
+              <li>Request a detailed CAS with transaction history</li>
+              <li>Download the password-protected PDF</li>
+            </ol>
+          </div>
+
+          <v-alert type="warning" variant="tonal" density="compact">
+            <v-icon icon="mdi-clock-outline" class="mr-1" />
+            <strong>Coming Soon!</strong> CAS import feature is under development.
+            We'll notify you when it's ready.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showCASDialog = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Sync Broker Dialog -->
+    <v-dialog v-model="showBrokerDialog" max-width="500">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-sync" color="success" class="mr-2" />
+          Sync Broker Account
+        </v-card-title>
+        <v-card-text>
+          <v-alert type="info" variant="tonal" class="mb-4">
+            Connect your broker account to automatically import your stock and ETF holdings.
+          </v-alert>
+
+          <div class="text-body-2 mb-4">
+            <p class="mb-2"><strong>Supported Brokers (Coming Soon):</strong></p>
+            <v-row dense>
+              <v-col cols="6">
+                <v-chip variant="outlined" class="ma-1">
+                  <v-icon icon="mdi-check-circle" color="grey" class="mr-1" size="small" />
+                  Zerodha
+                </v-chip>
+              </v-col>
+              <v-col cols="6">
+                <v-chip variant="outlined" class="ma-1">
+                  <v-icon icon="mdi-check-circle" color="grey" class="mr-1" size="small" />
+                  Groww
+                </v-chip>
+              </v-col>
+              <v-col cols="6">
+                <v-chip variant="outlined" class="ma-1">
+                  <v-icon icon="mdi-check-circle" color="grey" class="mr-1" size="small" />
+                  Upstox
+                </v-chip>
+              </v-col>
+              <v-col cols="6">
+                <v-chip variant="outlined" class="ma-1">
+                  <v-icon icon="mdi-check-circle" color="grey" class="mr-1" size="small" />
+                  Angel One
+                </v-chip>
+              </v-col>
+            </v-row>
+          </div>
+
+          <v-alert type="warning" variant="tonal" density="compact">
+            <v-icon icon="mdi-clock-outline" class="mr-1" />
+            <strong>Coming Soon!</strong> Broker sync feature is under development.
+            We'll notify you when it's ready.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showBrokerDialog = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 

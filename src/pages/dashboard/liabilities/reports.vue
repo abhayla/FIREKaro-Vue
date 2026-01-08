@@ -209,8 +209,66 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value)
 
 // Export handlers
 const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
-  console.log('Exporting as', format)
-  // TODO: Implement export functionality
+  if (format === 'pdf') {
+    window.print()
+    return
+  }
+
+  // Generate CSV data based on report type
+  let headers: string[] = []
+  let rows: (string | number)[][] = []
+
+  if (reportType.value === 'summary') {
+    headers = ['Loan', 'Type', 'Original Amount', 'Outstanding', 'Interest Rate', 'EMI', 'Principal Paid', 'Interest Paid']
+    rows = loansList.value.map(l => [
+      l.lenderName,
+      getLoanTypeLabel(l.loanType),
+      l.principalAmount,
+      l.outstandingPrincipal,
+      l.interestRate,
+      l.emiAmount,
+      l.totalPrincipalPaid,
+      l.totalInterestPaid
+    ])
+  } else if (reportType.value === 'payments') {
+    headers = ['Date', 'Description', 'Amount', 'Status']
+    // Mock payment history data
+    rows = [
+      ['Jan 5, 2026', 'HDFC Bank Home Loan EMI', 43391, 'Paid'],
+      ['Jan 10, 2026', 'Axis Bank Personal Loan EMI', 10248, 'Paid'],
+      ['Jan 15, 2026', 'ICICI Bank Car Loan EMI', 16765, 'Pending']
+    ]
+  } else if (reportType.value === 'interest') {
+    headers = ['Loan', 'Interest Rate %', 'Total Interest Paid', 'Monthly Interest (Est.)']
+    rows = loansList.value.map(l => [
+      l.lenderName,
+      l.interestRate,
+      l.totalInterestPaid,
+      Math.round(l.emiAmount * 0.6)
+    ])
+  } else if (reportType.value === 'tax') {
+    headers = ['Deduction Section', 'Amount Claimed', 'Limit']
+    rows = [
+      ['Section 80C (Home Loan Principal)', taxBenefits.value.section80C, 150000],
+      ['Section 24(b) (Home Loan Interest)', taxBenefits.value.section24, 200000],
+      ['Section 80E (Education Loan Interest)', taxBenefits.value.section80E, 'No Limit']
+    ]
+  }
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell =>
+      typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
+    ).join(','))
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: format === 'csv' ? 'text/csv' : 'application/vnd.ms-excel' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `debt-${reportType.value}-report-${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xls'}`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
