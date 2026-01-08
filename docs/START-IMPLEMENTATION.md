@@ -1,57 +1,57 @@
-# Stream 2: Start Implementation Prompt
+# Stream 3: Start Implementation Prompt
 
-> Copy and paste this prompt into the Claude Code session for FIREKaro-Vue-S2
+> Copy and paste this prompt into the Claude Code session for FIREKaro-Vue-S3
 
 ---
 
 ## Implementation Prompt
 
 ```
-I'm implementing Stream 2 of FIREKaro Vue 3 SPA migration.
+I'm implementing Stream 3 of FIREKaro Vue 3 SPA migration.
 
 ## Context
-- Directory: FIREKaro-Vue-S2
-- Branch: feature/vue-expenses-protection
-- Sections: Expenses (3d) + Protection (2d)
+- Directory: FIREKaro-Vue-S3
+- Branch: feature/vue-investments-liabilities
+- Sections: Investments (3.5d) + Liabilities (2.5d)
 
 ## Before Starting
 Read these files for context:
 1. CLAUDE.md - Project overview and API endpoints
 2. docs/STYLING-GUIDE.md - Theme colors, fonts, chart configuration
-3. docs/Expenses-Section-Plan.md - Detailed expenses requirements
+3. docs/Investments-Section-Plan.md - Detailed investments requirements
 
 ## Styling Requirements (MUST FOLLOW)
 - Use Inter font for text, JetBrains Mono for numbers (already configured in main.css)
 - Use `formatINR()` helper for all currency display
 - Use `text-currency` class for monetary values in templates
 - Import chart theme from `@/utils/chartTheme` for all Chart.js charts
-- Use Vuetify color props (color="primary") not inline styles
-- Use CSS variables for financial colors (see docs/STYLING-GUIDE.md)
-- For positive/negative values use `text-positive` / `text-negative` classes
-- For expense categories, use the chart color palette from chartTheme
+- Use `createAssetAllocationDataset()` for portfolio allocation charts
+- Use asset class colors: `chartColors.assetClasses.equity`, `.debt`, `.gold`, `.retirement`, etc.
+- Use CSS classes: `.asset-equity`, `.asset-debt`, `.asset-gold`, `.asset-retirement`
+- For positive/negative returns use `text-positive` / `text-negative` classes
 
 ## Implementation Order
-1. Create `src/composables/useExpenses.ts` - Vue Query hooks for expense APIs
-2. Create `src/components/expenses/` components:
-   - ExpenseForm.vue
-   - ExpenseList.vue
-   - BudgetCard.vue
-   - CategoryPieChart.vue (use chartTheme with doughnutChartOptions)
-   - MonthlyTrendChart.vue (use lineChartOptions)
-   - CSVImportModal.vue
-3. Update `src/pages/dashboard/expenses/` pages (replace stubs)
-4. Then create Protection section composables and components
-5. Implement Protection pages including 4-step adequacy wizard
+1. Create `src/composables/useInvestments.ts` - Vue Query hooks for investment APIs
+2. Create `src/components/investments/` components:
+   - PortfolioAllocationChart.vue (use createAssetAllocationDataset + doughnutChartOptions)
+   - AssetCard.vue
+   - EPFCalculator.vue
+   - PPFTracker.vue
+   - NPSCalculator.vue
+   - ReturnsChart.vue (use lineChartOptions)
+3. Update `src/pages/dashboard/investments/` pages (replace stubs)
+4. Then create Liabilities section composables and components
+5. Implement debt payoff strategies with visualization
 
 ## API Endpoints
-- GET/POST/PUT/DELETE /api/expenses
-- GET /api/expenses/categories
-- GET /api/budgets
-- GET/POST /api/insurance
+- GET/POST /api/investments
+- GET /api/portfolio
+- GET/POST /api/epf, /api/ppf, /api/nps
+- GET/POST /api/loans, /api/credit-cards
 
 ## Start Now
-Begin with `useExpenses.ts` composable, then implement the Expenses section pages.
-After each major component, commit: `git commit -m "feat(expenses): description"`
+Begin with `useInvestments.ts` composable, then implement the Investments section pages.
+After each major component, commit: `git commit -m "feat(investments): description"`
 ```
 
 ---
@@ -60,26 +60,35 @@ After each major component, commit: `git commit -m "feat(expenses): description"
 
 ### Files to Create
 ```
-src/composables/useExpenses.ts
-src/composables/useProtection.ts
-src/components/expenses/*.vue
-src/components/protection/*.vue
+src/composables/useInvestments.ts
+src/composables/useLiabilities.ts
+src/components/investments/*.vue
+src/components/liabilities/*.vue
 ```
 
-### Chart Example (Category Pie Chart)
+### Asset Allocation Chart Example
 ```typescript
 import { Doughnut } from 'vue-chartjs'
-import { doughnutChartOptions, chartColors } from '@/utils/chartTheme'
+import { createAssetAllocationDataset, doughnutChartOptions } from '@/utils/chartTheme'
 
-const chartData = {
-  labels: ['Food', 'Transport', 'Utilities', 'Entertainment'],
-  datasets: [{
-    data: [15000, 8000, 5000, 3000],
-    backgroundColor: chartColors.primary.slice(0, 4),
-    borderWidth: 2,
-    borderColor: '#ffffff'
-  }]
-}
+const chartData = createAssetAllocationDataset({
+  equity: 500000,     // Stocks, MF
+  debt: 300000,       // Bonds, FD
+  gold: 100000,
+  retirement: 400000, // EPF, PPF, NPS
+  realEstate: 2000000
+})
+```
+
+### Asset Class Colors
+```typescript
+import { chartColors } from '@/utils/chartTheme'
+
+chartColors.assetClasses.equity      // #1976d2 - Blue
+chartColors.assetClasses.debt        // #7cb342 - Green
+chartColors.assetClasses.gold        // #ffc107 - Gold
+chartColors.assetClasses.retirement  // #00acc1 - Cyan
+chartColors.assetClasses.realEstate  // #8d6e63 - Brown
 ```
 
 ### When Done

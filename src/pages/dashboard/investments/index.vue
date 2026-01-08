@@ -1,6 +1,21 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
 import FamilyToggle from '@/components/shared/FamilyToggle.vue'
+import PortfolioAllocationChart from '@/components/investments/PortfolioAllocationChart.vue'
+import AssetForm from '@/components/investments/AssetForm.vue'
+import {
+  usePortfolio,
+  useInvestments,
+  useCreateInvestment,
+  formatINR,
+  formatINRCompact,
+  formatPercentage,
+  type Investment
+} from '@/composables/useInvestments'
+
+const router = useRouter()
 
 const tabs = [
   { title: 'Portfolio', route: '/dashboard/investments' },
@@ -11,6 +26,98 @@ const tabs = [
   { title: 'Property', route: '/dashboard/investments/property' },
   { title: 'Reports', route: '/dashboard/investments/reports' },
 ]
+
+// Data fetching
+const { data: portfolio, isLoading: portfolioLoading, error: portfolioError } = usePortfolio()
+const { data: investments, isLoading: investmentsLoading } = useInvestments()
+const createInvestment = useCreateInvestment()
+
+// Add investment dialog
+const showAddDialog = ref(false)
+
+const handleSaveInvestment = async (data: Partial<Investment>) => {
+  await createInvestment.mutateAsync(data as any)
+  showAddDialog.value = false
+}
+
+// Default portfolio data for loading/error states
+const defaultPortfolio = {
+  totalValue: 0,
+  totalInvested: 0,
+  totalReturns: 0,
+  returnsPercentage: 0,
+  xirr: 0,
+  allocation: { equity: 40, debt: 30, gold: 10, realEstate: 15, cash: 5 },
+  categoryBreakdown: {
+    stocks: { value: 0, invested: 0, count: 0 },
+    mutualFunds: { value: 0, invested: 0, count: 0 },
+    fixedDeposits: { value: 0, invested: 0, count: 0 },
+    bonds: { value: 0, invested: 0, count: 0 },
+    gold: { value: 0, invested: 0, count: 0 },
+    realEstate: { value: 0, invested: 0, count: 0 },
+  }
+}
+
+const portfolioData = computed(() => portfolio.value ?? defaultPortfolio)
+
+// Category cards configuration
+const categoryCards = computed(() => [
+  {
+    title: 'Stocks & ETFs',
+    value: portfolioData.value.categoryBreakdown.stocks.value,
+    invested: portfolioData.value.categoryBreakdown.stocks.invested,
+    count: portfolioData.value.categoryBreakdown.stocks.count,
+    icon: 'mdi-chart-line',
+    color: 'success',
+    route: '/dashboard/investments/stocks'
+  },
+  {
+    title: 'Mutual Funds',
+    value: portfolioData.value.categoryBreakdown.mutualFunds.value,
+    invested: portfolioData.value.categoryBreakdown.mutualFunds.invested,
+    count: portfolioData.value.categoryBreakdown.mutualFunds.count,
+    icon: 'mdi-chart-areaspline',
+    color: 'primary',
+    route: '/dashboard/investments/mutual-funds'
+  },
+  {
+    title: 'Fixed Deposits',
+    value: portfolioData.value.categoryBreakdown.fixedDeposits.value,
+    invested: portfolioData.value.categoryBreakdown.fixedDeposits.invested,
+    count: portfolioData.value.categoryBreakdown.fixedDeposits.count,
+    icon: 'mdi-bank',
+    color: 'info',
+    route: '/dashboard/investments'
+  },
+  {
+    title: 'Gold',
+    value: portfolioData.value.categoryBreakdown.gold.value,
+    invested: portfolioData.value.categoryBreakdown.gold.invested,
+    count: portfolioData.value.categoryBreakdown.gold.count,
+    icon: 'mdi-gold',
+    color: 'warning',
+    route: '/dashboard/investments'
+  },
+  {
+    title: 'Real Estate',
+    value: portfolioData.value.categoryBreakdown.realEstate.value,
+    invested: portfolioData.value.categoryBreakdown.realEstate.invested,
+    count: portfolioData.value.categoryBreakdown.realEstate.count,
+    icon: 'mdi-home-city',
+    color: 'purple',
+    route: '/dashboard/investments/property'
+  },
+])
+
+// Top holdings
+const topHoldings = computed(() => {
+  if (!investments.value) return []
+  return [...investments.value]
+    .sort((a, b) => b.currentValue - a.currentValue)
+    .slice(0, 5)
+})
+
+const isLoading = computed(() => portfolioLoading.value || investmentsLoading.value)
 </script>
 
 <template>
@@ -24,40 +131,274 @@ const tabs = [
 
     <FamilyToggle class="mb-6" />
 
-    <v-row>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4">
-          <div class="text-body-2 text-medium-emphasis">Total Portfolio</div>
-          <div class="text-h5 font-weight-bold">Loading...</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4">
-          <div class="text-body-2 text-medium-emphasis">Equity</div>
-          <div class="text-h5 font-weight-bold">Loading...</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4">
-          <div class="text-body-2 text-medium-emphasis">Debt</div>
-          <div class="text-h5 font-weight-bold">Loading...</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4">
-          <div class="text-body-2 text-medium-emphasis">Returns (XIRR)</div>
-          <div class="text-h5 font-weight-bold">Loading...</div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Loading State -->
+    <template v-if="isLoading">
+      <v-row>
+        <v-col v-for="n in 4" :key="n" cols="12" md="3">
+          <v-skeleton-loader type="card" />
+        </v-col>
+      </v-row>
+    </template>
 
-    <v-card class="mt-6">
-      <v-card-title>Portfolio Overview</v-card-title>
-      <v-card-text>
-        <p class="text-medium-emphasis">
-          Track stocks, mutual funds, EPF, PPF, NPS, and property investments with asset allocation analysis.
-        </p>
-      </v-card-text>
-    </v-card>
+    <!-- Error State -->
+    <v-alert v-else-if="portfolioError" type="error" variant="tonal" class="mb-6">
+      Failed to load portfolio data. Please try again.
+    </v-alert>
+
+    <!-- Main Content -->
+    <template v-else>
+      <!-- Summary Cards -->
+      <v-row class="mb-6">
+        <v-col cols="12" md="3">
+          <v-card class="pa-4 h-100">
+            <div class="d-flex align-center mb-2">
+              <v-icon icon="mdi-wallet" color="primary" class="mr-2" />
+              <span class="text-body-2 text-medium-emphasis">Total Portfolio</span>
+            </div>
+            <div class="text-h5 font-weight-bold">
+              {{ formatINRCompact(portfolioData.totalValue) }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              Invested: {{ formatINRCompact(portfolioData.totalInvested) }}
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3">
+          <v-card class="pa-4 h-100">
+            <div class="d-flex align-center mb-2">
+              <v-icon
+                :icon="portfolioData.totalReturns >= 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
+                :color="portfolioData.totalReturns >= 0 ? 'success' : 'error'"
+                class="mr-2"
+              />
+              <span class="text-body-2 text-medium-emphasis">Total Returns</span>
+            </div>
+            <div
+              class="text-h5 font-weight-bold"
+              :class="portfolioData.totalReturns >= 0 ? 'text-success' : 'text-error'"
+            >
+              {{ formatINRCompact(portfolioData.totalReturns) }}
+            </div>
+            <div
+              class="text-caption"
+              :class="portfolioData.totalReturns >= 0 ? 'text-success' : 'text-error'"
+            >
+              {{ formatPercentage(portfolioData.returnsPercentage) }}
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3">
+          <v-card class="pa-4 h-100">
+            <div class="d-flex align-center mb-2">
+              <v-icon icon="mdi-chart-timeline-variant" color="info" class="mr-2" />
+              <span class="text-body-2 text-medium-emphasis">XIRR</span>
+            </div>
+            <div class="text-h5 font-weight-bold">
+              {{ portfolioData.xirr ? formatPercentage(portfolioData.xirr) : 'N/A' }}
+            </div>
+            <div class="text-caption text-medium-emphasis">Annualized Returns</div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3">
+          <v-card class="pa-4 h-100">
+            <div class="d-flex align-center mb-2">
+              <v-icon icon="mdi-pie-chart" color="warning" class="mr-2" />
+              <span class="text-body-2 text-medium-emphasis">Equity %</span>
+            </div>
+            <div class="text-h5 font-weight-bold">
+              {{ portfolioData.allocation.equity.toFixed(1) }}%
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              Debt: {{ portfolioData.allocation.debt.toFixed(1) }}%
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Quick Actions -->
+      <v-card variant="outlined" class="mb-6">
+        <v-card-text class="d-flex gap-3 flex-wrap">
+          <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showAddDialog = true">
+            Add Investment
+          </v-btn>
+          <v-btn variant="outlined" prepend-icon="mdi-file-import">
+            Import CAS
+          </v-btn>
+          <v-btn variant="outlined" prepend-icon="mdi-sync">
+            Sync Broker
+          </v-btn>
+          <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :to="'/dashboard/investments/reports'">
+            Rebalance Check
+          </v-btn>
+        </v-card-text>
+      </v-card>
+
+      <v-row>
+        <!-- Asset Allocation Chart -->
+        <v-col cols="12" md="5">
+          <v-card class="h-100">
+            <v-card-title class="text-subtitle-1">Asset Allocation</v-card-title>
+            <v-card-text>
+              <PortfolioAllocationChart
+                :allocation="portfolioData.allocation"
+                :total-value="portfolioData.totalValue"
+                :height="280"
+              />
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- Top Holdings -->
+        <v-col cols="12" md="7">
+          <v-card class="h-100">
+            <v-card-title class="d-flex align-center justify-space-between">
+              <span class="text-subtitle-1">Top Holdings</span>
+              <v-btn variant="text" size="small" color="primary">View All</v-btn>
+            </v-card-title>
+            <v-card-text>
+              <v-list v-if="topHoldings.length > 0" density="compact">
+                <v-list-item
+                  v-for="(holding, index) in topHoldings"
+                  :key="holding.id"
+                  class="px-0"
+                >
+                  <template #prepend>
+                    <v-avatar color="primary" size="32" class="mr-3">
+                      <span class="text-caption font-weight-bold">{{ index + 1 }}</span>
+                    </v-avatar>
+                  </template>
+
+                  <v-list-item-title class="text-body-2 font-weight-medium">
+                    {{ holding.name }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle class="text-caption">
+                    {{ holding.type.replace('_', ' ').toUpperCase() }}
+                  </v-list-item-subtitle>
+
+                  <template #append>
+                    <div class="text-right">
+                      <div class="text-body-2 font-weight-medium">
+                        {{ formatINRCompact(holding.currentValue) }}
+                      </div>
+                      <div
+                        class="text-caption"
+                        :class="holding.currentValue >= holding.investedAmount ? 'text-success' : 'text-error'"
+                      >
+                        {{ formatPercentage(((holding.currentValue - holding.investedAmount) / holding.investedAmount) * 100) }}
+                      </div>
+                    </div>
+                  </template>
+                </v-list-item>
+              </v-list>
+
+              <v-alert v-else type="info" variant="tonal" density="compact">
+                No investments found. Add your first investment to get started.
+              </v-alert>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Category Breakdown -->
+      <v-row class="mt-4">
+        <v-col cols="12">
+          <h3 class="text-subtitle-1 font-weight-medium mb-3">Category Breakdown</h3>
+        </v-col>
+        <v-col
+          v-for="category in categoryCards"
+          :key="category.title"
+          cols="12"
+          sm="6"
+          md="4"
+          lg="2.4"
+        >
+          <v-card
+            variant="outlined"
+            class="category-card h-100"
+            @click="router.push(category.route)"
+          >
+            <v-card-text class="text-center">
+              <v-avatar :color="category.color" size="48" class="mb-3">
+                <v-icon :icon="category.icon" color="white" />
+              </v-avatar>
+              <div class="text-body-2 font-weight-medium">{{ category.title }}</div>
+              <div class="text-h6 font-weight-bold mt-1">
+                {{ formatINRCompact(category.value) }}
+              </div>
+              <div
+                v-if="category.invested > 0"
+                class="text-caption"
+                :class="category.value >= category.invested ? 'text-success' : 'text-error'"
+              >
+                {{ formatPercentage(((category.value - category.invested) / category.invested) * 100) }}
+              </div>
+              <v-chip v-if="category.count > 0" size="x-small" class="mt-2" variant="tonal">
+                {{ category.count }} holdings
+              </v-chip>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Retirement Funds Quick View -->
+      <v-row class="mt-4">
+        <v-col cols="12">
+          <v-card>
+            <v-card-title class="d-flex align-center justify-space-between">
+              <span class="text-subtitle-1">Retirement Funds</span>
+              <v-btn variant="text" size="small" color="primary" :to="'/dashboard/investments/epf-ppf'">
+                View Details
+              </v-btn>
+            </v-card-title>
+            <v-card-text>
+              <v-row>
+                <v-col cols="12" md="4">
+                  <v-card color="teal" variant="tonal" class="pa-4 text-center">
+                    <v-icon icon="mdi-briefcase" size="32" class="mb-2" />
+                    <div class="text-body-2 font-weight-medium">EPF</div>
+                    <div class="text-h6 font-weight-bold">₹0</div>
+                    <div class="text-caption text-medium-emphasis">8.25% interest</div>
+                  </v-card>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-card color="teal" variant="tonal" class="pa-4 text-center">
+                    <v-icon icon="mdi-piggy-bank" size="32" class="mb-2" />
+                    <div class="text-body-2 font-weight-medium">PPF</div>
+                    <div class="text-h6 font-weight-bold">₹0</div>
+                    <div class="text-caption text-medium-emphasis">7.1% interest (EEE)</div>
+                  </v-card>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-card color="orange" variant="tonal" class="pa-4 text-center" @click="router.push('/dashboard/investments/nps')">
+                    <v-icon icon="mdi-account-cash" size="32" class="mb-2" />
+                    <div class="text-body-2 font-weight-medium">NPS</div>
+                    <div class="text-h6 font-weight-bold">₹0</div>
+                    <div class="text-caption text-medium-emphasis">Market-linked</div>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </template>
+
+    <!-- Add Investment Dialog -->
+    <AssetForm
+      v-model="showAddDialog"
+      @save="handleSaveInvestment"
+    />
   </div>
 </template>
+
+<style scoped>
+.category-card {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+</style>
