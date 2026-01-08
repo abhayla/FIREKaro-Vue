@@ -1,11 +1,11 @@
-# Stream 1: Post-Implementation Checklist
+# Stream 3: Post-Implementation Checklist
 
-> Run these steps after completing Salary, Non-Salary Income, and Tax Planning sections.
+> Run these steps after completing Investments and Liabilities sections.
 
 ## Step 1: Verify Build
 
 ```bash
-cd D:\Abhay\VibeCoding\FIREKaro-Vue-S1
+cd D:\Abhay\VibeCoding\FIREKaro-Vue-S3
 
 npm run type-check   # Must pass with no errors
 npm run build        # Must build successfully
@@ -16,35 +16,43 @@ npm run lint         # Fix any lint issues
 
 With Next.js backend running (`npm run dev` in FIREKaro/):
 
-- [ ] Salary Overview loads with data
-- [ ] Salary History CRUD works
-- [ ] Non-Salary Income sources display
-- [ ] Business/Rental/Capital Gains forms work
-- [ ] Tax Calculator shows Old vs New regime
-- [ ] Deductions page works
+- [ ] Investments Overview shows portfolio allocation
+- [ ] Stocks page lists holdings
+- [ ] Mutual Funds page works
+- [ ] EPF/PPF page with calculators works
+- [ ] NPS page with projections works
+- [ ] Property page works
+- [ ] Liabilities Overview shows debt summary
+- [ ] Loans page with CRUD works
+- [ ] Credit Cards page works
+- [ ] Debt Payoff strategies (Snowball/Avalanche) work
+- [ ] DTI ratio gauge displays correctly
 - [ ] All Reports tabs render charts
 
 ## Step 3: Final Commit
 
 ```bash
-cd D:\Abhay\VibeCoding\FIREKaro-Vue-S1
+cd D:\Abhay\VibeCoding\FIREKaro-Vue-S3
 
 git add .
 git status  # Review changes
 
-git commit -m "feat(stream1): complete Salary, Non-Salary Income, and Tax Planning sections
+git commit -m "feat(stream3): complete Investments and Liabilities sections
 
-- Add useSalary, useIncome, useTax composables
-- Implement all salary components and pages
-- Implement all income source components and pages
-- Implement tax calculator with regime comparison
+- Add useInvestments, useLiabilities composables
+- Implement portfolio overview with allocation chart
+- Add EPF/PPF/NPS calculators and trackers
+- Implement stock and mutual fund management
+- Add loan and credit card management
+- Implement debt payoff strategies
+- Add DTI ratio visualization
 - Add charts and reports for all sections"
 ```
 
 ## Step 4: Push to Remote
 
 ```bash
-git push origin feature/vue-income-tax
+git push origin feature/vue-investments-liabilities
 ```
 
 ## Step 5: Merge to Main
@@ -56,8 +64,8 @@ cd D:\Abhay\VibeCoding\FIREKaro-Vue
 git checkout main
 git pull origin main
 
-# Merge Stream 1
-git merge feature/vue-income-tax
+# Merge Stream 3
+git merge feature/vue-investments-liabilities
 
 # Resolve any conflicts if needed, then:
 git push origin main
@@ -66,12 +74,12 @@ git push origin main
 ## Step 6: Update Other Worktrees
 
 ```bash
-# Update Stream 2 (if still active)
-cd D:\Abhay\VibeCoding\FIREKaro-Vue-S2
+# Update Stream 1 (if still active)
+cd D:\Abhay\VibeCoding\FIREKaro-Vue-S1
 git fetch origin && git rebase origin/main
 
-# Update Stream 3 (if still active)
-cd D:\Abhay\VibeCoding\FIREKaro-Vue-S3
+# Update Stream 2 (if still active)
+cd D:\Abhay\VibeCoding\FIREKaro-Vue-S2
 git fetch origin && git rebase origin/main
 
 # Update Stream 4 (if still active)
@@ -85,18 +93,18 @@ git fetch origin && git rebase origin/main
 cd D:\Abhay\VibeCoding\FIREKaro-Vue
 
 # Remove worktree
-git worktree remove ../FIREKaro-Vue-S1
+git worktree remove ../FIREKaro-Vue-S3
 
 # Delete branch
-git branch -d feature/vue-income-tax
+git branch -d feature/vue-investments-liabilities
 ```
 
 ---
 
 ## What's Next?
 
-Stream 1 provides income data needed by:
-- **Stream 4**: Financial Health (net worth calculations)
-- **Stream 4**: FIRE & Goals (income projections)
+Stream 3 provides data needed by:
+- **Stream 4**: Financial Health (investments + liabilities for net worth)
+- **Stream 4**: FIRE & Goals (portfolio data for projections)
 
-If Stream 4 is waiting, notify them that income APIs are now complete.
+If Stream 4 is waiting, notify them that investment/liability APIs are now complete.

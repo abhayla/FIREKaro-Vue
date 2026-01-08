@@ -1,52 +1,57 @@
-# Stream 1: Start Implementation Prompt
+# Stream 3: Start Implementation Prompt
 
-> Copy and paste this prompt into the Claude Code session for FIREKaro-Vue-S1
+> Copy and paste this prompt into the Claude Code session for FIREKaro-Vue-S3
 
 ---
 
 ## Implementation Prompt
 
 ```
-I'm implementing Stream 1 of FIREKaro Vue 3 SPA migration.
+I'm implementing Stream 3 of FIREKaro Vue 3 SPA migration.
 
 ## Context
-- Directory: FIREKaro-Vue-S1
-- Branch: feature/vue-income-tax
-- Sections: Salary (3d) + Non-Salary Income (5d) + Tax Planning (4d)
+- Directory: FIREKaro-Vue-S3
+- Branch: feature/vue-investments-liabilities
+- Sections: Investments (3.5d) + Liabilities (2.5d)
 
 ## Before Starting
 Read these files for context:
 1. CLAUDE.md - Project overview and API endpoints
 2. docs/STYLING-GUIDE.md - Theme colors, fonts, chart configuration
-3. docs/Salary-Section-Plan.md - Detailed salary requirements
+3. docs/Investments-Section-Plan.md - Detailed investments requirements
 
 ## Styling Requirements (MUST FOLLOW)
 - Use Inter font for text, JetBrains Mono for numbers (already configured in main.css)
 - Use `formatINR()` helper for all currency display
 - Use `text-currency` class for monetary values in templates
 - Import chart theme from `@/utils/chartTheme` for all Chart.js charts
-- Use Vuetify color props (color="primary") not inline styles
-- Use CSS variables for financial colors (see docs/STYLING-GUIDE.md)
-- For positive/negative values use `text-positive` / `text-negative` classes
+- Use `createAssetAllocationDataset()` for portfolio allocation charts
+- Use asset class colors: `chartColors.assetClasses.equity`, `.debt`, `.gold`, `.retirement`, etc.
+- Use CSS classes: `.asset-equity`, `.asset-debt`, `.asset-gold`, `.asset-retirement`
+- For positive/negative returns use `text-positive` / `text-negative` classes
 
 ## Implementation Order
-1. Create `src/composables/useSalary.ts` - Vue Query hooks for salary APIs
-2. Create `src/components/salary/` components:
-   - SalaryBreakdownCard.vue
-   - SalaryHistoryTable.vue
-   - SalaryHistoryForm.vue
-   - SalaryChart.vue (use chartTheme)
-3. Update `src/pages/dashboard/salary/` pages (replace stubs)
-4. Then repeat for Non-Salary Income section
-5. Finally Tax Planning section (depends on Income data)
+1. Create `src/composables/useInvestments.ts` - Vue Query hooks for investment APIs
+2. Create `src/components/investments/` components:
+   - PortfolioAllocationChart.vue (use createAssetAllocationDataset + doughnutChartOptions)
+   - AssetCard.vue
+   - EPFCalculator.vue
+   - PPFTracker.vue
+   - NPSCalculator.vue
+   - ReturnsChart.vue (use lineChartOptions)
+3. Update `src/pages/dashboard/investments/` pages (replace stubs)
+4. Then create Liabilities section composables and components
+5. Implement debt payoff strategies with visualization
 
 ## API Endpoints
-- GET /api/salary/current
-- GET/POST/PUT/DELETE /api/salary-history
+- GET/POST /api/investments
+- GET /api/portfolio
+- GET/POST /api/epf, /api/ppf, /api/nps
+- GET/POST /api/loans, /api/credit-cards
 
 ## Start Now
-Begin with `useSalary.ts` composable, then implement the Salary section pages.
-After each major component, commit: `git commit -m "feat(salary): description"`
+Begin with `useInvestments.ts` composable, then implement the Investments section pages.
+After each major component, commit: `git commit -m "feat(investments): description"`
 ```
 
 ---
@@ -55,22 +60,35 @@ After each major component, commit: `git commit -m "feat(salary): description"`
 
 ### Files to Create
 ```
-src/composables/useSalary.ts
-src/composables/useIncome.ts
-src/composables/useTax.ts
-src/components/salary/*.vue
-src/components/income/*.vue
-src/components/tax/*.vue
+src/composables/useInvestments.ts
+src/composables/useLiabilities.ts
+src/components/investments/*.vue
+src/components/liabilities/*.vue
 ```
 
-### Key Imports
+### Asset Allocation Chart Example
 ```typescript
-// Chart theme
-import { chartColors, lineChartOptions, formatINRForChart } from '@/utils/chartTheme'
+import { Doughnut } from 'vue-chartjs'
+import { createAssetAllocationDataset, doughnutChartOptions } from '@/utils/chartTheme'
 
-// INR formatting
-const formatINR = (amount: number) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount)
+const chartData = createAssetAllocationDataset({
+  equity: 500000,     // Stocks, MF
+  debt: 300000,       // Bonds, FD
+  gold: 100000,
+  retirement: 400000, // EPF, PPF, NPS
+  realEstate: 2000000
+})
+```
+
+### Asset Class Colors
+```typescript
+import { chartColors } from '@/utils/chartTheme'
+
+chartColors.assetClasses.equity      // #1976d2 - Blue
+chartColors.assetClasses.debt        // #7cb342 - Green
+chartColors.assetClasses.gold        // #ffc107 - Gold
+chartColors.assetClasses.retirement  // #00acc1 - Cyan
+chartColors.assetClasses.realEstate  // #8d6e63 - Brown
 ```
 
 ### When Done

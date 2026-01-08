@@ -1,11 +1,12 @@
-# CLAUDE.md - FIREKaro Vue 3 SPA (Stream 1)
+# CLAUDE.md - FIREKaro Vue 3 SPA (Stream 3)
 
 ## Project Overview
 
-This is **Stream 1** of the FIREKaro Vue 3 SPA migration, focusing on:
-- **Salary Section** (~3 days)
-- **Non-Salary Income Section** (~5 days)
-- **Tax Planning Section** (~4 days) - depends on Salary & Non-Salary
+This is **Stream 3** of the FIREKaro Vue 3 SPA migration, focusing on:
+- **Investments Section** (~3.5 days)
+- **Liabilities Section** (~2.5 days)
+
+These sections can be built in parallel as they don't depend on each other.
 
 ### Architecture
 - **Frontend**: Vue 3 + Vite + Vuetify 3 (SPA) - Port 5173
@@ -24,97 +25,82 @@ npm run lint         # ESLint check
 ## Branch
 
 ```bash
-git branch           # Should show: feature/vue-income-tax
+git branch           # Should show: feature/vue-investments-liabilities
 ```
 
 ## API Endpoints (Already Exist - DO NOT Modify)
 
-### Salary
-- `GET /api/salary/current` - Current salary breakdown
-- `GET /api/salary-history` - Salary history list
-- `POST /api/salary-history` - Add salary record
-- `PUT /api/salary-history/:id` - Update salary record
-- `DELETE /api/salary-history/:id` - Delete salary record
+### Investments
+- `GET /api/investments` - List all investments
+- `POST /api/investments` - Create investment
+- `PUT /api/investments/:id` - Update investment
+- `DELETE /api/investments/:id` - Delete investment
+- `GET /api/portfolio` - Portfolio summary
+- `GET /api/epf` - EPF details
+- `POST /api/epf` - Update EPF
+- `GET /api/ppf` - PPF details
+- `POST /api/ppf` - Update PPF
+- `GET /api/nps` - NPS details
+- `POST /api/nps` - Update NPS
 
-### Non-Salary Income
-- `GET /api/income-sources` - List all income sources
-- `POST /api/income-sources` - Create income source
-- `PUT /api/income-sources/:id` - Update income source
-- `DELETE /api/income-sources/:id` - Delete income source
-- `GET /api/business-income` - Business income details
-- `POST /api/business-income` - Add business income
-- `GET /api/rental-income` - Rental income
-- `POST /api/rental-income` - Add rental income
-- `GET /api/capital-gains` - Capital gains
-- `POST /api/capital-gains` - Add capital gains
-- `GET /api/other-income` - Other income sources
-
-### Tax Planning
-- `GET /api/tax-planning/calculate` - Calculate tax
-- `GET /api/tax-planning/comparison` - Old vs New regime comparison
-- `GET /api/tax/deductions` - List deductions
-- `POST /api/tax/deductions` - Add deduction
-- `GET /api/tax/exemptions` - List exemptions
+### Liabilities
+- `GET /api/loans` - List all loans
+- `POST /api/loans` - Create loan
+- `PUT /api/loans/:id` - Update loan
+- `DELETE /api/loans/:id` - Delete loan
+- `GET /api/credit-cards` - List credit cards
+- `POST /api/credit-cards` - Create credit card
+- `PUT /api/credit-cards/:id` - Update credit card
+- `DELETE /api/credit-cards/:id` - Delete credit card
+- `GET /api/debt-payoff/strategies` - Payoff strategies
 
 ## File Structure to Create
 
-### Salary Section
+### Investments Section
 ```
 src/
 ├── composables/
-│   └── useSalary.ts              # Vue Query hooks
-├── components/salary/
-│   ├── SalaryBreakdownCard.vue   # Salary components breakdown
-│   ├── SalaryHistoryTable.vue    # History data table
-│   ├── SalaryHistoryForm.vue     # Add/edit salary modal
-│   ├── SalaryChart.vue           # Salary trend chart
-│   └── SalaryComparisonCard.vue  # YoY comparison
-└── pages/dashboard/salary/
-    ├── index.vue                 # Overview (update stub)
-    ├── current.vue               # Current breakdown (update stub)
-    ├── history.vue               # Salary history (update stub)
+│   └── useInvestments.ts         # Vue Query hooks
+├── components/investments/
+│   ├── PortfolioAllocationChart.vue  # Donut chart
+│   ├── AssetCard.vue             # Generic asset card
+│   ├── AssetForm.vue             # Add/edit asset modal
+│   ├── EPFCalculator.vue         # EPF projection
+│   ├── PPFTracker.vue            # PPF with loan facility
+│   ├── NPSCalculator.vue         # NPS projection
+│   ├── StockHoldingCard.vue      # Stock holdings
+│   ├── MutualFundCard.vue        # MF holdings
+│   ├── PropertyCard.vue          # Real estate
+│   └── ReturnsChart.vue          # Returns over time
+└── pages/dashboard/investments/
+    ├── index.vue                 # Portfolio overview (update stub)
+    ├── stocks.vue                # Direct equity (update stub)
+    ├── mutual-funds.vue          # MF holdings (update stub)
+    ├── epf-ppf.vue               # EPF & PPF (update stub)
+    ├── nps.vue                   # NPS (update stub)
+    ├── property.vue              # Real estate (update stub)
     └── reports.vue               # Reports (update stub)
 ```
 
-### Non-Salary Income Section
+### Liabilities Section
 ```
 src/
 ├── composables/
-│   └── useIncome.ts              # Vue Query hooks
-├── components/income/
-│   ├── IncomeSourceCard.vue      # Income source card
-│   ├── IncomeSourceForm.vue      # Add/edit income source
-│   ├── BusinessIncomeForm.vue    # 44AD/44ADA form
-│   ├── RentalIncomeForm.vue      # House property form
-│   ├── CapitalGainsCalculator.vue # STCG/LTCG calculator
-│   ├── OtherIncomeForm.vue       # Interest, dividends, etc.
-│   └── IncomeSummaryChart.vue    # Income breakdown chart
-└── pages/dashboard/non-salary-income/
+│   └── useLiabilities.ts         # Vue Query hooks
+├── components/liabilities/
+│   ├── LoanCard.vue              # Loan summary card
+│   ├── LoanForm.vue              # Add/edit loan modal
+│   ├── CreditCardCard.vue        # Credit card card
+│   ├── CreditCardForm.vue        # Add/edit CC modal
+│   ├── DebtPayoffStrategy.vue    # Strategy comparison
+│   ├── AmortizationTable.vue     # Loan amortization
+│   ├── DebtToIncomeGauge.vue     # DTI ratio gauge
+│   └── PayoffProgressChart.vue   # Payoff timeline
+└── pages/dashboard/liabilities/
     ├── index.vue                 # Overview (update stub)
-    ├── business.vue              # Business income (update stub)
-    ├── rental.vue                # Rental income (update stub)
-    ├── capital-gains.vue         # Capital gains (update stub)
-    ├── other.vue                 # Other sources (update stub)
-    └── reports.vue               # Reports (update stub)
-```
-
-### Tax Planning Section
-```
-src/
-├── composables/
-│   └── useTax.ts                 # Vue Query hooks
-├── components/tax/
-│   ├── TaxRegimeSelector.vue     # Old/New regime toggle
-│   ├── TaxComparisonCard.vue     # Regime comparison
-│   ├── TaxBreakdownTable.vue     # Tax calculation breakdown
-│   ├── DeductionsOptimizer.vue   # 80C/80D optimizer
-│   ├── DeductionCategory.vue     # Single deduction category
-│   ├── TaxSavingsRecommendations.vue
-│   └── ITRFormSuggestion.vue     # ITR-1/2/3/4 suggestion
-└── pages/dashboard/tax-planning/
-    ├── index.vue                 # Overview (update stub)
-    ├── calculator.vue            # Tax calculator (update stub)
-    ├── deductions.vue            # Deductions (update stub)
+    ├── loans.vue                 # All loans (update stub)
+    ├── credit-cards.vue          # Credit cards (update stub)
+    ├── debt-payoff.vue           # Payoff strategies (update stub)
     └── reports.vue               # Reports (update stub)
 ```
 
@@ -122,26 +108,62 @@ src/
 
 ### Vue Query Data Fetching
 ```typescript
-// src/composables/useSalary.ts
+// src/composables/useInvestments.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 
-export function useCurrentSalary() {
+export function usePortfolio() {
   return useQuery({
-    queryKey: ['salary', 'current'],
+    queryKey: ['portfolio'],
     queryFn: async () => {
-      const res = await fetch('/api/salary/current')
-      if (!res.ok) throw new Error('Failed to fetch salary')
+      const res = await fetch('/api/portfolio')
+      if (!res.ok) throw new Error('Failed to fetch portfolio')
       return res.json()
     }
   })
 }
 
-export function useSalaryHistory() {
+export function useInvestments() {
   return useQuery({
-    queryKey: ['salary', 'history'],
+    queryKey: ['investments'],
     queryFn: async () => {
-      const res = await fetch('/api/salary-history')
-      if (!res.ok) throw new Error('Failed to fetch salary history')
+      const res = await fetch('/api/investments')
+      if (!res.ok) throw new Error('Failed to fetch investments')
+      return res.json()
+    }
+  })
+}
+
+export function useEPF() {
+  return useQuery({
+    queryKey: ['epf'],
+    queryFn: async () => {
+      const res = await fetch('/api/epf')
+      if (!res.ok) throw new Error('Failed to fetch EPF')
+      return res.json()
+    }
+  })
+}
+```
+
+```typescript
+// src/composables/useLiabilities.ts
+export function useLoans() {
+  return useQuery({
+    queryKey: ['loans'],
+    queryFn: async () => {
+      const res = await fetch('/api/loans')
+      if (!res.ok) throw new Error('Failed to fetch loans')
+      return res.json()
+    }
+  })
+}
+
+export function useCreditCards() {
+  return useQuery({
+    queryKey: ['credit-cards'],
+    queryFn: async () => {
+      const res = await fetch('/api/credit-cards')
+      if (!res.ok) throw new Error('Failed to fetch credit cards')
       return res.json()
     }
   })
@@ -171,59 +193,62 @@ const formatINR = (amount: number) =>
 | Chips | `<v-chip>` |
 | Icons | `<v-icon>` with mdi-* names |
 
-## Indian Tax Context
+## Indian Investment Context
 
-### Financial Year
-- April to March (not calendar year)
-- Month 1 = April, Month 12 = March
-
-### Tax Regimes
-- **Old Regime**: Deductions allowed (80C, 80D, HRA, etc.)
-- **New Regime**: Lower rates, no deductions, ₹75K standard deduction
+### Retirement Instruments
+- **EPF**: Employee Provident Fund (8.25% interest, employer matched)
+- **VPF**: Voluntary PF (additional contribution to EPF)
+- **PPF**: Public Provident Fund (7.1% interest, 15-year lock-in)
+- **NPS**: National Pension System (market-linked, 80CCD benefits)
 
 ### Key Limits
-- Section 80C: ₹1,50,000
-- Section 80D (Health): ₹25,000 (₹50,000 for seniors)
-- NPS 80CCD(1B): ₹50,000 additional
-- Standard Deduction (New): ₹75,000
+- EPF: 12% of basic (employee) + 12% (employer)
+- PPF: ₹1.5L per year max
+- NPS 80CCD(1B): ₹50K additional deduction
+- Section 80C: ₹1.5L total (includes EPF, PPF, ELSS, etc.)
 
-### ITR Forms
-- **ITR-1 (Sahaj)**: Salary + 1 house property + other sources (< ₹50L)
-- **ITR-2**: Multiple house properties, capital gains, foreign income
-- **ITR-3**: Business/profession income
-- **ITR-4 (Sugam)**: Presumptive income (44AD/44ADA)
+### Loan Types
+- Home Loan (80C principal + 80EE/80EEA interest)
+- Car Loan
+- Personal Loan
+- Education Loan (80E interest deduction)
+- Gold Loan
+
+### Debt Payoff Strategies
+- **Snowball**: Smallest balance first (psychological wins)
+- **Avalanche**: Highest interest first (mathematically optimal)
+- **Custom**: User-defined priority
 
 ## Implementation Order
 
-### Phase 1: Salary (Days 1-3)
-1. Create `useSalary.ts` composable
-2. Create salary components
-3. Update all salary pages
+### Phase 1: Investments (Days 1-3.5)
+1. Create `useInvestments.ts` composable
+2. Create investment components
+3. Update `index.vue` (Portfolio overview with allocation chart)
+4. Update `stocks.vue` and `mutual-funds.vue`
+5. Update `epf-ppf.vue` and `nps.vue`
+6. Update `property.vue` and `reports.vue`
 
-### Phase 2: Non-Salary Income (Days 1-5, parallel with Salary)
-1. Create `useIncome.ts` composable
-2. Create income components
-3. Update all non-salary-income pages
-
-### Phase 3: Tax Planning (Days 6-9, after Income complete)
-1. Create `useTax.ts` composable
-2. Create tax components
-3. Update all tax-planning pages
-4. Integrate with Salary + Non-Salary data
+### Phase 2: Liabilities (Days 1-2.5, can run parallel)
+1. Create `useLiabilities.ts` composable
+2. Create liability components
+3. Update `index.vue` (Debt overview with DTI)
+4. Update `loans.vue` and `credit-cards.vue`
+5. Update `debt-payoff.vue` and `reports.vue`
 
 ## Commit Convention
 
 ```bash
 git add .
-git commit -m "feat(salary): add useSalary composable"
-git commit -m "feat(income): implement business income form"
-git commit -m "feat(tax): add regime comparison calculator"
+git commit -m "feat(investments): add useInvestments composable"
+git commit -m "feat(investments): implement portfolio allocation chart"
+git commit -m "feat(liabilities): add loan management"
+git commit -m "feat(liabilities): implement debt payoff strategies"
 ```
 
 ## Documentation
 
 See `docs/` folder for detailed plans:
 - `Parallel-Implementation-Guide.md` - Full stream prompts
-- `Salary-Section-Plan.md` - Detailed salary requirements
-- `Non-Salary-Income-Plan.md` - Detailed income requirements
-- `Tax-Planning-Section-Plan.md` - Detailed tax requirements
+- `Investments-Section-Plan.md` - Detailed investments requirements
+- `Liabilities-Section-Plan.md` - Detailed liabilities requirements

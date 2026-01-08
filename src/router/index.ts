@@ -305,10 +305,20 @@ router.beforeEach(async (to, from, next) => {
       const res = await fetch("/api/auth/session");
       const session = await res.json();
       if (!session?.user) {
-        return next("/auth/signin");
+        // DEV MODE: Skip auth if backend unavailable
+        if (import.meta.env.DEV) {
+          console.warn('[DEV] Auth bypassed - backend not available')
+          return next()
+        }
+        return next('/auth/signin')
       }
     } catch {
-      return next("/auth/signin");
+      // DEV MODE: Skip auth if backend unavailable
+      if (import.meta.env.DEV) {
+        console.warn('[DEV] Auth bypassed - backend not available')
+        return next()
+      }
+      return next('/auth/signin')
     }
   }
   next();
