@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
+import SectionHeader from "@/components/shared/SectionHeader.vue";
+import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 
 const tabs = [
-  { title: 'FIRE Dashboard', route: '/dashboard/fire-goals' },
-  { title: 'Calculators', route: '/dashboard/fire-goals/calculators' },
-  { title: 'Goals', route: '/dashboard/fire-goals/goals' },
-  { title: 'Projections', route: '/dashboard/fire-goals/projections' },
-  { title: 'Withdrawal', route: '/dashboard/fire-goals/withdrawal' },
-  { title: 'Reports', route: '/dashboard/fire-goals/reports' },
-]
+  { title: "FIRE Dashboard", route: "/dashboard/fire-goals" },
+  { title: "Calculators", route: "/dashboard/fire-goals/calculators" },
+  { title: "Goals", route: "/dashboard/fire-goals/goals" },
+  { title: "Projections", route: "/dashboard/fire-goals/projections" },
+  { title: "Withdrawal", route: "/dashboard/fire-goals/withdrawal" },
+  { title: "Reports", route: "/dashboard/fire-goals/reports" },
+];
 </script>
 
 <template>
   <div>
-    <SectionHeader title="FIRE & Goals" subtitle="Your path to Financial Independence" icon="mdi-fire" :tabs="tabs" />
+    <SectionHeader
+      title="FIRE & Goals"
+      subtitle="Your path to Financial Independence"
+      icon="mdi-fire"
+      :tabs="tabs"
+    />
     <FamilyToggle class="mb-6" />
 
     <!-- FIRE Freedom Score -->
@@ -63,9 +68,17 @@ const tabs = [
         <v-card>
           <v-card-title>FIRE Journey Progress</v-card-title>
           <v-card-text>
-            <div class="d-flex align-center justify-center" style="height: 300px">
+            <div
+              class="d-flex align-center justify-center"
+              style="height: 300px"
+            >
               <div class="text-center">
-                <v-icon icon="mdi-chart-line" size="64" color="primary" class="mb-4" />
+                <v-icon
+                  icon="mdi-chart-line"
+                  size="64"
+                  color="primary"
+                  class="mb-4"
+                />
                 <p class="text-medium-emphasis">
                   Your FIRE progress chart will appear here once data is loaded.
                 </p>

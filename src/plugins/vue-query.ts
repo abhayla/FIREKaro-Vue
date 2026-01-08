@@ -1,5 +1,5 @@
-import type { VueQueryPluginOptions } from '@tanstack/vue-query'
-import { QueryClient } from '@tanstack/vue-query'
+import type { VueQueryPluginOptions } from "@tanstack/vue-query";
+import { QueryClient } from "@tanstack/vue-query";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -10,8 +10,8 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
-})
+});
 
 export const vueQueryPluginOptions: VueQueryPluginOptions = {
   queryClient,
-}
+};

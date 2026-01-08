@@ -1,20 +1,95 @@
 /* FIREKaro Vue - Main Stylesheet */
+/* ProjectionLab-Inspired Theme */
 
-/* Base styles */
+/* ============================================
+   CSS VARIABLES - Financial Colors
+   ============================================ */
+:root {
+  /* Primary Colors (ProjectionLab Blue) */
+  --pl-blue-50:  #e3f2fd;
+  --pl-blue-100: #bbdefb;
+  --pl-blue-200: #90caf9;
+  --pl-blue-300: #64b5f6;
+  --pl-blue-400: #42a5f5;
+  --pl-blue-500: #2196f3;
+  --pl-blue-600: #1e88e5;
+  --pl-blue-700: #1976d2;
+  --pl-blue-800: #1867c0;
+  --pl-blue-900: #0d47a1;
+
+  /* Secondary Colors (Teal) */
+  --pl-teal-400: #26a69a;
+  --pl-teal-500: #009688;
+  --pl-teal-600: #00897b;
+
+  /* FIRE Progress Colors */
+  --fire-progress-0:   #ef5350;  /* 0-25% - Red - Starting */
+  --fire-progress-25:  #ff9800;  /* 25-50% - Orange - Building */
+  --fire-progress-50:  #ffeb3b;  /* 50-75% - Yellow - Halfway */
+  --fire-progress-75:  #8bc34a;  /* 75-99% - Light Green - Almost */
+  --fire-progress-100: #4caf50;  /* 100% - Green - FIRE Achieved! */
+
+  /* Net Worth Indicators */
+  --networth-positive: #4caf50;
+  --networth-negative: #f44336;
+  --networth-neutral:  #9e9e9e;
+
+  /* Asset Class Colors (for charts) */
+  --asset-equity:      #1976d2;  /* Blue - Stocks, MF */
+  --asset-debt:        #7cb342;  /* Green - Bonds, FD */
+  --asset-gold:        #ffc107;  /* Gold/Amber */
+  --asset-realestate:  #8d6e63;  /* Brown - Property */
+  --asset-cash:        #78909c;  /* Blue-gray - Liquid */
+  --asset-crypto:      #9c27b0;  /* Purple */
+  --asset-retirement:  #00acc1;  /* Cyan - EPF, PPF, NPS */
+
+  /* Income vs Expense (Crossover Chart) */
+  --income-line:       #4caf50;
+  --expense-line:      #f44336;
+  --crossover-point:   #ffc107;
+
+  /* Chart Colors */
+  --chart-1: #1867c0;
+  --chart-2: #26a69a;
+  --chart-3: #4caf50;
+  --chart-4: #ff9800;
+  --chart-5: #9c27b0;
+  --chart-6: #00bcd4;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 html {
   overflow-y: auto;
-}
-
-body {
-  font-family: 'Roboto', sans-serif;
-}
-
-/* Smooth scrolling */
-html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Monospace for numbers */
+.font-mono,
+.currency-value,
+.percentage-value {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ============================================
+   SCROLLBAR STYLES
+   ============================================ */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -42,7 +117,11 @@ html {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Utility classes */
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Gap utilities */
 .gap-1 { gap: 4px; }
 .gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
@@ -60,36 +139,174 @@ html {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Card hover effects */
+/* ============================================
+   FINANCIAL STATUS COLORS
+   ============================================ */
+.status-positive,
+.text-positive {
+  color: var(--networth-positive) !important;
+}
+
+.status-negative,
+.text-negative {
+  color: var(--networth-negative) !important;
+}
+
+.status-neutral,
+.text-neutral {
+  color: var(--networth-neutral) !important;
+}
+
+.bg-positive {
+  background-color: var(--networth-positive) !important;
+}
+
+.bg-negative {
+  background-color: var(--networth-negative) !important;
+}
+
+/* ============================================
+   FIRE PROGRESS COLORS
+   ============================================ */
+.fire-progress-0   { color: var(--fire-progress-0); }
+.fire-progress-25  { color: var(--fire-progress-25); }
+.fire-progress-50  { color: var(--fire-progress-50); }
+.fire-progress-75  { color: var(--fire-progress-75); }
+.fire-progress-100 { color: var(--fire-progress-100); }
+
+.bg-fire-progress-0   { background-color: var(--fire-progress-0); }
+.bg-fire-progress-25  { background-color: var(--fire-progress-25); }
+.bg-fire-progress-50  { background-color: var(--fire-progress-50); }
+.bg-fire-progress-75  { background-color: var(--fire-progress-75); }
+.bg-fire-progress-100 { background-color: var(--fire-progress-100); }
+
+/* ============================================
+   ASSET CLASS COLORS
+   ============================================ */
+.asset-equity     { color: var(--asset-equity); }
+.asset-debt       { color: var(--asset-debt); }
+.asset-gold       { color: var(--asset-gold); }
+.asset-realestate { color: var(--asset-realestate); }
+.asset-cash       { color: var(--asset-cash); }
+.asset-crypto     { color: var(--asset-crypto); }
+.asset-retirement { color: var(--asset-retirement); }
+
+.bg-asset-equity     { background-color: var(--asset-equity); }
+.bg-asset-debt       { background-color: var(--asset-debt); }
+.bg-asset-gold       { background-color: var(--asset-gold); }
+.bg-asset-realestate { background-color: var(--asset-realestate); }
+.bg-asset-cash       { background-color: var(--asset-cash); }
+.bg-asset-crypto     { background-color: var(--asset-crypto); }
+.bg-asset-retirement { background-color: var(--asset-retirement); }
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
 .v-card {
-  transition: box-shadow 0.2s ease-in-out;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 .v-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Chart container styles */
+/* Metric Card - for KPI displays */
+.metric-card {
+  background: linear-gradient(135deg, var(--pl-blue-800) 0%, var(--pl-blue-900) 100%);
+  color: white;
+  border-radius: 16px;
+}
+
+.metric-card .metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.metric-card .metric-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+/* ============================================
+   CHART STYLES
+   ============================================ */
 .chart-container {
   position: relative;
   width: 100%;
   min-height: 300px;
 }
 
-/* INR currency formatting helper */
+.chart-container-sm {
+  min-height: 200px;
+}
+
+.chart-container-lg {
+  min-height: 400px;
+}
+
+/* ============================================
+   CURRENCY & NUMBER FORMATTING
+   ============================================ */
 .currency-inr::before {
   content: '₹';
 }
 
-/* Financial status colors */
-.status-positive {
-  color: #4caf50;
+.text-currency {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
 }
 
-.status-negative {
-  color: #ff5252;
+.text-large-currency {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
-.status-neutral {
-  color: #fb8c00;
+.text-xl-currency {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* ============================================
+   SECTION HEADER STYLES
+   ============================================ */
+.section-header {
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+/* ============================================
+   DATA TABLE ENHANCEMENTS
+   ============================================ */
+.v-data-table {
+  font-family: 'Inter', sans-serif;
+}
+
+.v-data-table .text-right {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+@media (max-width: 600px) {
+  .metric-card .metric-value {
+    font-size: 1.5rem;
+  }
+
+  .text-xl-currency {
+    font-size: 1.5rem;
+  }
 }

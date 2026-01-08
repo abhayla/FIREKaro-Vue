@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRouter } from "vue-router";
 
-const router = useRouter()
+const router = useRouter();
 </script>
 
 <template>
@@ -28,8 +28,15 @@ const router = useRouter()
             <v-row class="mb-8">
               <v-col cols="12" sm="4">
                 <v-card variant="outlined" class="pa-4">
-                  <v-icon icon="mdi-calculator" size="36" color="primary" class="mb-2" />
-                  <div class="text-subtitle-1 font-weight-medium">Tax Planning</div>
+                  <v-icon
+                    icon="mdi-calculator"
+                    size="36"
+                    color="primary"
+                    class="mb-2"
+                  />
+                  <div class="text-subtitle-1 font-weight-medium">
+                    Tax Planning
+                  </div>
                   <div class="text-body-2 text-medium-emphasis">
                     Optimize your taxes with Old vs New regime comparison
                   </div>
@@ -37,8 +44,15 @@ const router = useRouter()
               </v-col>
               <v-col cols="12" sm="4">
                 <v-card variant="outlined" class="pa-4">
-                  <v-icon icon="mdi-chart-line" size="36" color="primary" class="mb-2" />
-                  <div class="text-subtitle-1 font-weight-medium">Investments</div>
+                  <v-icon
+                    icon="mdi-chart-line"
+                    size="36"
+                    color="primary"
+                    class="mb-2"
+                  />
+                  <div class="text-subtitle-1 font-weight-medium">
+                    Investments
+                  </div>
                   <div class="text-body-2 text-medium-emphasis">
                     Track EPF, PPF, NPS, Stocks & Mutual Funds
                   </div>
@@ -46,8 +60,15 @@ const router = useRouter()
               </v-col>
               <v-col cols="12" sm="4">
                 <v-card variant="outlined" class="pa-4">
-                  <v-icon icon="mdi-fire" size="36" color="fire-orange" class="mb-2" />
-                  <div class="text-subtitle-1 font-weight-medium">FIRE Goals</div>
+                  <v-icon
+                    icon="mdi-fire"
+                    size="36"
+                    color="fire-orange"
+                    class="mb-2"
+                  />
+                  <div class="text-subtitle-1 font-weight-medium">
+                    FIRE Goals
+                  </div>
                   <div class="text-body-2 text-medium-emphasis">
                     Plan your path to Financial Independence
                   </div>

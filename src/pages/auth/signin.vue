@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
-const isLoading = ref(false)
+const isLoading = ref(false);
 
 const signInWithGoogle = async () => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
     // Redirect to Next.js OAuth endpoint
-    window.location.href = '/api/auth/signin/google'
+    window.location.href = "/api/auth/signin/google";
   } catch (error) {
-    console.error('Sign in error:', error)
-    isLoading.value = false
+    console.error("Sign in error:", error);
+    isLoading.value = false;
   }
-}
+};
 </script>
 
 <template>

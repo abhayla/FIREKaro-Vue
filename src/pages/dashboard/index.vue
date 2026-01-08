@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
+import { useUserStore } from "@/stores/user";
+import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 
-const userStore = useUserStore()
+const userStore = useUserStore();
 </script>
 
 <template>
@@ -55,7 +55,9 @@ const userStore = useUserStore()
               <v-icon icon="mdi-cart" />
             </v-avatar>
             <div>
-              <div class="text-body-2 text-medium-emphasis">Monthly Expenses</div>
+              <div class="text-body-2 text-medium-emphasis">
+                Monthly Expenses
+              </div>
               <div class="text-h6 font-weight-bold">Loading...</div>
             </div>
           </div>
@@ -84,7 +86,10 @@ const userStore = useUserStore()
         <v-card class="mb-6">
           <v-card-title>Net Worth Trend</v-card-title>
           <v-card-text>
-            <div class="d-flex align-center justify-center" style="height: 300px">
+            <div
+              class="d-flex align-center justify-center"
+              style="height: 300px"
+            >
               <v-progress-circular indeterminate color="primary" />
             </div>
           </v-card-text>

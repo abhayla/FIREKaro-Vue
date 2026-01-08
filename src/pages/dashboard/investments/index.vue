@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
+import SectionHeader from "@/components/shared/SectionHeader.vue";
+import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 
 const tabs = [
-  { title: 'Portfolio', route: '/dashboard/investments' },
-  { title: 'Stocks', route: '/dashboard/investments/stocks' },
-  { title: 'Mutual Funds', route: '/dashboard/investments/mutual-funds' },
-  { title: 'EPF & PPF', route: '/dashboard/investments/epf-ppf' },
-  { title: 'NPS', route: '/dashboard/investments/nps' },
-  { title: 'Property', route: '/dashboard/investments/property' },
-  { title: 'Reports', route: '/dashboard/investments/reports' },
-]
+  { title: "Portfolio", route: "/dashboard/investments" },
+  { title: "Stocks", route: "/dashboard/investments/stocks" },
+  { title: "Mutual Funds", route: "/dashboard/investments/mutual-funds" },
+  { title: "EPF & PPF", route: "/dashboard/investments/epf-ppf" },
+  { title: "NPS", route: "/dashboard/investments/nps" },
+  { title: "Property", route: "/dashboard/investments/property" },
+  { title: "Reports", route: "/dashboard/investments/reports" },
+];
 </script>
 
 <template>
@@ -55,7 +55,8 @@ const tabs = [
       <v-card-title>Portfolio Overview</v-card-title>
       <v-card-text>
         <p class="text-medium-emphasis">
-          Track stocks, mutual funds, EPF, PPF, NPS, and property investments with asset allocation analysis.
+          Track stocks, mutual funds, EPF, PPF, NPS, and property investments
+          with asset allocation analysis.
         </p>
       </v-card-text>
     </v-card>

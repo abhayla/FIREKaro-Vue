@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useUiStore } from '@/stores/ui'
-import { useUserStore } from '@/stores/user'
+import { computed } from "vue";
+import { useUiStore } from "@/stores/ui";
+import { useUserStore } from "@/stores/user";
 
-const uiStore = useUiStore()
-const userStore = useUserStore()
+const uiStore = useUiStore();
+const userStore = useUserStore();
 
 const viewMode = computed({
-  get: () => (uiStore.isFamilyView ? 'family' : 'personal'),
+  get: () => (uiStore.isFamilyView ? "family" : "personal"),
   set: (value: string) => {
-    if (value === 'family' && !uiStore.isFamilyView) {
-      uiStore.toggleFamilyView()
-    } else if (value === 'personal' && uiStore.isFamilyView) {
-      uiStore.toggleFamilyView()
+    if (value === "family" && !uiStore.isFamilyView) {
+      uiStore.toggleFamilyView();
+    } else if (value === "personal" && uiStore.isFamilyView) {
+      uiStore.toggleFamilyView();
     }
   },
-})
+});
 
 const selectedMember = computed({
-  get: () => uiStore.selectedFamilyMemberId ?? 'all',
+  get: () => uiStore.selectedFamilyMemberId ?? "all",
   set: (value: string) => {
-    uiStore.setSelectedFamilyMember(value === 'all' ? null : value)
+    uiStore.setSelectedFamilyMember(value === "all" ? null : value);
   },
-})
+});
 </script>
 
 <template>

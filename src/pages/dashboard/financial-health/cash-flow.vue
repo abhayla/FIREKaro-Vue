@@ -1,23 +1,34 @@
 <script setup lang="ts">
-import SectionHeader from '@/components/shared/SectionHeader.vue'
+import SectionHeader from "@/components/shared/SectionHeader.vue";
 
 const tabs = [
-  { title: 'Health Score', route: '/dashboard/financial-health' },
-  { title: 'Net Worth', route: '/dashboard/financial-health/net-worth' },
-  { title: 'Cash Flow', route: '/dashboard/financial-health/cash-flow' },
-  { title: 'Banking', route: '/dashboard/financial-health/banking' },
-  { title: 'Emergency Fund', route: '/dashboard/financial-health/emergency-fund' },
-  { title: 'Reports', route: '/dashboard/financial-health/reports' },
-]
+  { title: "Health Score", route: "/dashboard/financial-health" },
+  { title: "Net Worth", route: "/dashboard/financial-health/net-worth" },
+  { title: "Cash Flow", route: "/dashboard/financial-health/cash-flow" },
+  { title: "Banking", route: "/dashboard/financial-health/banking" },
+  {
+    title: "Emergency Fund",
+    route: "/dashboard/financial-health/emergency-fund",
+  },
+  { title: "Reports", route: "/dashboard/financial-health/reports" },
+];
 </script>
 
 <template>
   <div>
-    <SectionHeader title="Financial Health" subtitle="Cash Flow Analysis" icon="mdi-heart-pulse" :tabs="tabs" />
+    <SectionHeader
+      title="Financial Health"
+      subtitle="Cash Flow Analysis"
+      icon="mdi-heart-pulse"
+      :tabs="tabs"
+    />
     <v-card class="mt-6">
       <v-card-title>Cash Flow</v-card-title>
       <v-card-text>
-        <v-alert type="info" variant="tonal">Analyze monthly income vs expenses with Sankey diagram visualization.</v-alert>
+        <v-alert type="info" variant="tonal"
+          >Analyze monthly income vs expenses with Sankey diagram
+          visualization.</v-alert
+        >
       </v-card-text>
     </v-card>
   </div>

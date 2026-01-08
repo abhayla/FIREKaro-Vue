@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
+import SectionHeader from "@/components/shared/SectionHeader.vue";
+import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/expenses' },
-  { title: 'Track', route: '/dashboard/expenses/track' },
-  { title: 'Budgets', route: '/dashboard/expenses/budgets' },
-  { title: 'Reports', route: '/dashboard/expenses/reports' },
-]
+  { title: "Overview", route: "/dashboard/expenses" },
+  { title: "Track", route: "/dashboard/expenses/track" },
+  { title: "Budgets", route: "/dashboard/expenses/budgets" },
+  { title: "Reports", route: "/dashboard/expenses/reports" },
+];
 </script>
 
 <template>
@@ -46,7 +46,8 @@ const tabs = [
       <v-card-title>Expense Overview</v-card-title>
       <v-card-text>
         <p class="text-medium-emphasis">
-          Track expenses with AI-powered categorization, set budgets, and view spending patterns.
+          Track expenses with AI-powered categorization, set budgets, and view
+          spending patterns.
         </p>
       </v-card-text>
     </v-card>
