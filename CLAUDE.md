@@ -1,10 +1,12 @@
-# CLAUDE.md - FIREKaro Vue 3 SPA (Stream 2)
+# CLAUDE.md - FIREKaro Vue 3 SPA (Stream 3)
 
 ## Project Overview
 
-This is **Stream 2** of the FIREKaro Vue 3 SPA migration, focusing on:
-- **Expenses Section** (~3 days)
-- **Protection Section** (~2 days)
+This is **Stream 3** of the FIREKaro Vue 3 SPA migration, focusing on:
+- **Investments Section** (~3.5 days)
+- **Liabilities Section** (~2.5 days)
+
+These sections can be built in parallel as they don't depend on each other.
 
 ### Architecture
 - **Frontend**: Vue 3 + Vite + Vuetify 3 (SPA) - Port 5173
@@ -23,109 +25,146 @@ npm run lint         # ESLint check
 ## Branch
 
 ```bash
-git branch           # Should show: feature/vue-expenses-protection
+git branch           # Should show: feature/vue-investments-liabilities
 ```
 
 ## API Endpoints (Already Exist - DO NOT Modify)
 
-### Expenses
-- `GET /api/expenses` - List expenses (supports ?month=YYYY-MM)
-- `POST /api/expenses` - Create expense
-- `PUT /api/expenses/:id` - Update expense
-- `DELETE /api/expenses/:id` - Delete expense
-- `GET /api/expenses/categories` - List categories
-- `GET /api/expenses/ai/categorize` - AI categorization
-- `GET /api/budgets` - List budgets
-- `POST /api/budgets` - Create budget
-- `GET /api/expense-rules` - Category rules
+### Investments
+- `GET /api/investments` - List all investments
+- `POST /api/investments` - Create investment
+- `PUT /api/investments/:id` - Update investment
+- `DELETE /api/investments/:id` - Delete investment
+- `GET /api/portfolio` - Portfolio summary
+- `GET /api/epf` - EPF details
+- `POST /api/epf` - Update EPF
+- `GET /api/ppf` - PPF details
+- `POST /api/ppf` - Update PPF
+- `GET /api/nps` - NPS details
+- `POST /api/nps` - Update NPS
 
-### Protection (Insurance)
-- `GET /api/insurance` - List policies
-- `POST /api/insurance` - Create policy
-- `PUT /api/insurance/:id` - Update policy
-- `DELETE /api/insurance/:id` - Delete policy
-- `GET /api/insurance/coverage-analysis` - Coverage analysis
-- `GET /api/insurance/recommendations` - Recommendations
+### Liabilities
+- `GET /api/loans` - List all loans
+- `POST /api/loans` - Create loan
+- `PUT /api/loans/:id` - Update loan
+- `DELETE /api/loans/:id` - Delete loan
+- `GET /api/credit-cards` - List credit cards
+- `POST /api/credit-cards` - Create credit card
+- `PUT /api/credit-cards/:id` - Update credit card
+- `DELETE /api/credit-cards/:id` - Delete credit card
+- `GET /api/debt-payoff/strategies` - Payoff strategies
 
 ## File Structure to Create
 
-### Expenses Section
+### Investments Section
 ```
 src/
 ├── composables/
-│   └── useExpenses.ts          # Vue Query hooks
-├── components/expenses/
-│   ├── ExpenseForm.vue         # Add/edit expense modal
-│   ├── ExpenseList.vue         # Expense table/list
-│   ├── ExpenseCard.vue         # Single expense card
-│   ├── BudgetCard.vue          # Budget progress card
-│   ├── BudgetForm.vue          # Add/edit budget modal
-│   ├── CategoryPieChart.vue    # Pie chart by category
-│   ├── MonthlyTrendChart.vue   # Line chart trends
-│   ├── CSVImportModal.vue      # CSV import dialog
-│   └── ExpenseFilters.vue      # Date/category filters
-└── pages/dashboard/expenses/
-    ├── index.vue               # Overview (update stub)
-    ├── track.vue               # Track expenses (update stub)
-    ├── budgets.vue             # Budgets (update stub)
-    └── reports.vue             # Reports (update stub)
+│   └── useInvestments.ts         # Vue Query hooks
+├── components/investments/
+│   ├── PortfolioAllocationChart.vue  # Donut chart
+│   ├── AssetCard.vue             # Generic asset card
+│   ├── AssetForm.vue             # Add/edit asset modal
+│   ├── EPFCalculator.vue         # EPF projection
+│   ├── PPFTracker.vue            # PPF with loan facility
+│   ├── NPSCalculator.vue         # NPS projection
+│   ├── StockHoldingCard.vue      # Stock holdings
+│   ├── MutualFundCard.vue        # MF holdings
+│   ├── PropertyCard.vue          # Real estate
+│   └── ReturnsChart.vue          # Returns over time
+└── pages/dashboard/investments/
+    ├── index.vue                 # Portfolio overview (update stub)
+    ├── stocks.vue                # Direct equity (update stub)
+    ├── mutual-funds.vue          # MF holdings (update stub)
+    ├── epf-ppf.vue               # EPF & PPF (update stub)
+    ├── nps.vue                   # NPS (update stub)
+    ├── property.vue              # Real estate (update stub)
+    └── reports.vue               # Reports (update stub)
 ```
 
-### Protection Section
+### Liabilities Section
 ```
 src/
 ├── composables/
-│   └── useProtection.ts        # Vue Query hooks
-├── components/protection/
-│   ├── InsurancePolicyCard.vue
-│   ├── InsurancePolicyForm.vue
-│   ├── CoverageAdequacyWizard.vue  # 4-step wizard
-│   ├── HLVCalculator.vue       # Human Life Value
-│   ├── CoverageGapAlert.vue
-│   ├── InsuranceSummaryCard.vue
-│   └── FamilyCoverageView.vue
-└── pages/dashboard/protection/
-    ├── index.vue               # Overview (update stub)
-    ├── life.vue                # Life insurance (update stub)
-    ├── health.vue              # Health insurance (update stub)
-    ├── other.vue               # Motor/Home/Travel (update stub)
-    ├── calculator.vue          # Adequacy calculator (update stub)
-    └── reports.vue             # Reports (update stub)
+│   └── useLiabilities.ts         # Vue Query hooks
+├── components/liabilities/
+│   ├── LoanCard.vue              # Loan summary card
+│   ├── LoanForm.vue              # Add/edit loan modal
+│   ├── CreditCardCard.vue        # Credit card card
+│   ├── CreditCardForm.vue        # Add/edit CC modal
+│   ├── DebtPayoffStrategy.vue    # Strategy comparison
+│   ├── AmortizationTable.vue     # Loan amortization
+│   ├── DebtToIncomeGauge.vue     # DTI ratio gauge
+│   └── PayoffProgressChart.vue   # Payoff timeline
+└── pages/dashboard/liabilities/
+    ├── index.vue                 # Overview (update stub)
+    ├── loans.vue                 # All loans (update stub)
+    ├── credit-cards.vue          # Credit cards (update stub)
+    ├── debt-payoff.vue           # Payoff strategies (update stub)
+    └── reports.vue               # Reports (update stub)
 ```
 
 ## Key Patterns
 
 ### Vue Query Data Fetching
 ```typescript
-// src/composables/useExpenses.ts
+// src/composables/useInvestments.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 
-export function useExpenses(month?: string) {
+export function usePortfolio() {
   return useQuery({
-    queryKey: ['expenses', month],
+    queryKey: ['portfolio'],
     queryFn: async () => {
-      const url = month ? `/api/expenses?month=${month}` : '/api/expenses'
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('Failed to fetch expenses')
+      const res = await fetch('/api/portfolio')
+      if (!res.ok) throw new Error('Failed to fetch portfolio')
       return res.json()
     }
   })
 }
 
-export function useCreateExpense() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (data: CreateExpenseInput) => {
-      const res = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-      if (!res.ok) throw new Error('Failed to create expense')
+export function useInvestments() {
+  return useQuery({
+    queryKey: ['investments'],
+    queryFn: async () => {
+      const res = await fetch('/api/investments')
+      if (!res.ok) throw new Error('Failed to fetch investments')
       return res.json()
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+    }
+  })
+}
+
+export function useEPF() {
+  return useQuery({
+    queryKey: ['epf'],
+    queryFn: async () => {
+      const res = await fetch('/api/epf')
+      if (!res.ok) throw new Error('Failed to fetch EPF')
+      return res.json()
+    }
+  })
+}
+```
+
+```typescript
+// src/composables/useLiabilities.ts
+export function useLoans() {
+  return useQuery({
+    queryKey: ['loans'],
+    queryFn: async () => {
+      const res = await fetch('/api/loans')
+      if (!res.ok) throw new Error('Failed to fetch loans')
+      return res.json()
+    }
+  })
+}
+
+export function useCreditCards() {
+  return useQuery({
+    queryKey: ['credit-cards'],
+    queryFn: async () => {
+      const res = await fetch('/api/credit-cards')
+      if (!res.ok) throw new Error('Failed to fetch credit cards')
+      return res.json()
     }
   })
 }
@@ -154,41 +193,62 @@ const formatINR = (amount: number) =>
 | Chips | `<v-chip>` |
 | Icons | `<v-icon>` with mdi-* names |
 
-## User Preferences
+## Indian Investment Context
 
-1. **Alerts**: In-app only (no email/push notifications)
-2. **Date Navigation**: Month dropdown + Prev/Next buttons
-3. **CSV Import**: Modal in Track tab, not separate page
-4. **Reports**: Monthly/Quarterly/Yearly/Custom date picker
+### Retirement Instruments
+- **EPF**: Employee Provident Fund (8.25% interest, employer matched)
+- **VPF**: Voluntary PF (additional contribution to EPF)
+- **PPF**: Public Provident Fund (7.1% interest, 15-year lock-in)
+- **NPS**: National Pension System (market-linked, 80CCD benefits)
+
+### Key Limits
+- EPF: 12% of basic (employee) + 12% (employer)
+- PPF: ₹1.5L per year max
+- NPS 80CCD(1B): ₹50K additional deduction
+- Section 80C: ₹1.5L total (includes EPF, PPF, ELSS, etc.)
+
+### Loan Types
+- Home Loan (80C principal + 80EE/80EEA interest)
+- Car Loan
+- Personal Loan
+- Education Loan (80E interest deduction)
+- Gold Loan
+
+### Debt Payoff Strategies
+- **Snowball**: Smallest balance first (psychological wins)
+- **Avalanche**: Highest interest first (mathematically optimal)
+- **Custom**: User-defined priority
 
 ## Implementation Order
 
-### Phase 1: Expenses (Days 1-3)
-1. Create `useExpenses.ts` composable
-2. Create expense components
-3. Update `index.vue` (Overview with summary cards)
-4. Update `track.vue` (Expense list + add form)
-5. Update `budgets.vue` (Budget management)
-6. Update `reports.vue` (Charts + export)
+### Phase 1: Investments (Days 1-3.5)
+1. Create `useInvestments.ts` composable
+2. Create investment components
+3. Update `index.vue` (Portfolio overview with allocation chart)
+4. Update `stocks.vue` and `mutual-funds.vue`
+5. Update `epf-ppf.vue` and `nps.vue`
+6. Update `property.vue` and `reports.vue`
 
-### Phase 2: Protection (Days 4-5)
-1. Create `useProtection.ts` composable
-2. Create protection components
-3. Update all protection pages
-4. Implement 4-step adequacy wizard
+### Phase 2: Liabilities (Days 1-2.5, can run parallel)
+1. Create `useLiabilities.ts` composable
+2. Create liability components
+3. Update `index.vue` (Debt overview with DTI)
+4. Update `loans.vue` and `credit-cards.vue`
+5. Update `debt-payoff.vue` and `reports.vue`
 
 ## Commit Convention
 
 ```bash
 git add .
-git commit -m "feat(expenses): add useExpenses composable"
-git commit -m "feat(expenses): implement expense tracking page"
-git commit -m "feat(protection): add insurance policy management"
+git commit -m "feat(investments): add useInvestments composable"
+git commit -m "feat(investments): implement portfolio allocation chart"
+git commit -m "feat(liabilities): add loan management"
+git commit -m "feat(liabilities): implement debt payoff strategies"
 ```
 
 ## Documentation
 
 See `docs/` folder for detailed plans:
 - `Parallel-Implementation-Guide.md` - Full stream prompts
-- `Expenses-Section-Plan.md` - Detailed expenses requirements
-- `Protection-Section-Plan.md` - Detailed protection requirements
+- `Investments-Section-Plan.md` - Detailed investments requirements
+- `Liabilities-Section-Plan.md` - Detailed liabilities requirements
