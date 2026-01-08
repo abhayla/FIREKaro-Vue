@@ -45,3 +45,10 @@ coverage
 nul
 Thumbs.db
 desktop.ini
+e2e/.auth/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Misc
+Notes

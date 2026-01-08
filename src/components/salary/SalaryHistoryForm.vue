@@ -107,15 +107,20 @@ watch(
   },
 );
 
-// Update year based on month selection (for FY calculation)
+// Calculate year from FY and month
+function calculateYearFromFY(fy: string, month: number): number {
+  const [startYear] = fy.split("-").map(Number);
+  // Months 1-9 (Apr-Dec) are in startYear, months 10-12 (Jan-Mar) are in startYear+1
+  return month <= 9 ? startYear : startYear + 1;
+}
+
+// Update year based on month or FY selection
 watch(
-  () => form.value.month,
-  (month) => {
-    const fy = form.value.financialYear;
-    const [startYear] = fy.split("-").map(Number);
-    // Months 1-9 (Apr-Dec) are in startYear, months 10-12 (Jan-Mar) are in startYear+1
-    form.value.year = month <= 9 ? startYear : startYear + 1;
+  [() => form.value.month, () => form.value.financialYear],
+  ([month, fy]) => {
+    form.value.year = calculateYearFromFY(fy, month);
   },
+  { immediate: true },
 );
 
 // Computed totals

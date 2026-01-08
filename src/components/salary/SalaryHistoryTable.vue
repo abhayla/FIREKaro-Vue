@@ -30,8 +30,16 @@ const headers = [
   },
 ];
 
+// Ensure records is always an array
+const safeRecords = computed(() => {
+  if (Array.isArray(props.records)) {
+    return props.records;
+  }
+  return [];
+});
+
 const tableItems = computed(() => {
-  return props.records.map((record) => ({
+  return safeRecords.value.map((record) => ({
     ...record,
     monthDisplay: `${getShortMonthName(record.month)}'${record.year.toString().slice(-2)}`,
   }));
@@ -39,16 +47,16 @@ const tableItems = computed(() => {
 
 // Calculate totals for footer
 const totals = computed(() => {
-  if (!props.records.length) return null;
+  if (!safeRecords.value.length) return null;
   return {
-    paidDays: props.records.reduce((sum, r) => sum + r.paidDays, 0),
-    grossEarnings: props.records.reduce((sum, r) => sum + r.grossEarnings, 0),
-    totalDeductions: props.records.reduce(
+    paidDays: safeRecords.value.reduce((sum, r) => sum + r.paidDays, 0),
+    grossEarnings: safeRecords.value.reduce((sum, r) => sum + r.grossEarnings, 0),
+    totalDeductions: safeRecords.value.reduce(
       (sum, r) => sum + r.totalDeductions,
       0,
     ),
-    netSalary: props.records.reduce((sum, r) => sum + r.netSalary, 0),
-    tdsDeduction: props.records.reduce((sum, r) => sum + r.tdsDeduction, 0),
+    netSalary: safeRecords.value.reduce((sum, r) => sum + r.netSalary, 0),
+    tdsDeduction: safeRecords.value.reduce((sum, r) => sum + r.tdsDeduction, 0),
   };
 });
 </script>

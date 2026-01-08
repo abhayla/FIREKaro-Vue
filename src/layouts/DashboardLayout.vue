@@ -183,16 +183,20 @@ const handleSignOut = async () => {
       rail-width="72"
       width="280"
       permanent
-      color="surface"
       class="sidebar"
     >
       <!-- Logo Section -->
       <div class="sidebar-header pa-4">
         <div class="d-flex align-center">
-          <v-icon icon="mdi-fire" size="32" color="fire-orange" class="mr-2" />
-          <span v-if="!uiStore.sidebarMini" class="text-h6 font-weight-bold">
-            FIREKaro
-          </span>
+          <div class="logo-container">
+            <v-icon icon="mdi-fire" size="28" color="fire-orange" />
+          </div>
+          <transition name="fade">
+            <div v-if="!uiStore.sidebarMini" class="ml-3">
+              <span class="text-h6 font-weight-bold">FIRE</span>
+              <span class="text-h6 font-weight-bold text-gradient">Karo</span>
+            </div>
+          </transition>
         </div>
       </div>
 
@@ -357,12 +361,76 @@ const handleSignOut = async () => {
 
 <style scoped>
 .sidebar {
-  border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgb(var(--v-theme-sidebar-bg)) !important;
+  border-right: 1px solid rgba(var(--v-border-color), 0.08) !important;
+  transition: background var(--transition-base, 200ms);
 }
 
 .sidebar-header {
   min-height: 64px;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.08);
+}
+
+.logo-container {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--v-theme-fire-orange), 0.1);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* Navigation item styling */
+:deep(.v-list-item) {
+  margin: 2px 8px;
+  border-radius: 12px !important;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.v-list-item:hover) {
+  background: rgb(var(--v-theme-sidebar-hover));
+}
+
+:deep(.v-list-item--active) {
+  background: rgb(var(--v-theme-sidebar-active)) !important;
+}
+
+:deep(.v-list-item--active)::before {
+  opacity: 0;
+}
+
+:deep(.v-list-item--active) .v-list-item__prepend .v-icon {
+  color: rgb(var(--v-theme-primary));
+}
+
+/* Group items indentation */
+:deep(.v-list-group__items .v-list-item) {
+  padding-left: 48px !important;
+}
+
+/* Mini mode adjustments */
+.v-navigation-drawer--rail :deep(.v-list-item) {
+  margin: 4px 8px;
+  justify-content: center;
+}
+
+/* Fade transition for logo text */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Divider styling */
+:deep(.v-divider) {
+  opacity: 0.08;
 }
 </style>

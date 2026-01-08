@@ -1,98 +1,184 @@
-/* FIREKaro Vue - Main Stylesheet */
-/* ProjectionLab-Inspired Theme */
+/* FIREKaro Vue - ProjectionLab Theme */
+/* Complete Design System */
 
 /* ============================================
-   CSS VARIABLES - Financial Colors
+   CSS VARIABLES - Core Design Tokens
    ============================================ */
 :root {
-  /* Primary Colors (ProjectionLab Blue) */
-  --pl-blue-50:  #e3f2fd;
-  --pl-blue-100: #bbdefb;
-  --pl-blue-200: #90caf9;
-  --pl-blue-300: #64b5f6;
-  --pl-blue-400: #42a5f5;
-  --pl-blue-500: #2196f3;
-  --pl-blue-600: #1e88e5;
-  --pl-blue-700: #1976d2;
+  /* ---- Spacing Scale ---- */
+  --space-0: 0;
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+
+  /* ---- Border Radius ---- */
+  --radius-sm: 0.375rem;  /* 6px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.5rem;   /* 24px */
+  --radius-full: 9999px;
+
+  /* ---- Shadows (Light Mode) ---- */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 10px 25px -5px rgb(0 0 0 / 0.08), 0 4px 10px -4px rgb(0 0 0 / 0.04);
+
+  /* ---- Transitions ---- */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- ProjectionLab Blue Palette ---- */
+  --pl-blue-50:  #eff6ff;
+  --pl-blue-100: #dbeafe;
+  --pl-blue-200: #bfdbfe;
+  --pl-blue-300: #93c5fd;
+  --pl-blue-400: #60a5fa;
+  --pl-blue-500: #3b82f6;
+  --pl-blue-600: #2563eb;
+  --pl-blue-700: #1d4ed8;
   --pl-blue-800: #1867c0;
-  --pl-blue-900: #0d47a1;
+  --pl-blue-900: #1e3a5f;
 
-  /* Secondary Colors (Teal) */
-  --pl-teal-400: #26a69a;
-  --pl-teal-500: #009688;
-  --pl-teal-600: #00897b;
+  /* ---- Secondary Teal Palette ---- */
+  --pl-teal-50:  #f0fdfa;
+  --pl-teal-100: #ccfbf1;
+  --pl-teal-200: #99f6e4;
+  --pl-teal-300: #5eead4;
+  --pl-teal-400: #2dd4bf;
+  --pl-teal-500: #14b8a6;
+  --pl-teal-600: #0d9488;
+  --pl-teal-700: #0f766e;
+  --pl-teal-800: #115e59;
+  --pl-teal-900: #134e4a;
 
-  /* FIRE Progress Colors */
-  --fire-progress-0:   #ef5350;  /* 0-25% - Red - Starting */
-  --fire-progress-25:  #ff9800;  /* 25-50% - Orange - Building */
-  --fire-progress-50:  #ffeb3b;  /* 50-75% - Yellow - Halfway */
-  --fire-progress-75:  #8bc34a;  /* 75-99% - Light Green - Almost */
-  --fire-progress-100: #4caf50;  /* 100% - Green - FIRE Achieved! */
+  /* ---- Slate Gray Palette (Text & Backgrounds) ---- */
+  --slate-50:  #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
 
-  /* Net Worth Indicators */
-  --networth-positive: #4caf50;
-  --networth-negative: #f44336;
-  --networth-neutral:  #9e9e9e;
+  /* ---- FIRE Progress Colors ---- */
+  --fire-progress-0:   #ef4444;  /* 0-25% - Red - Starting */
+  --fire-progress-25:  #f97316;  /* 25-50% - Orange - Building */
+  --fire-progress-50:  #eab308;  /* 50-75% - Yellow - Halfway */
+  --fire-progress-75:  #84cc16;  /* 75-99% - Lime - Almost */
+  --fire-progress-100: #10b981;  /* 100% - Emerald - FIRE Achieved! */
 
-  /* Asset Class Colors (for charts) */
-  --asset-equity:      #1976d2;  /* Blue - Stocks, MF */
-  --asset-debt:        #7cb342;  /* Green - Bonds, FD */
-  --asset-gold:        #ffc107;  /* Gold/Amber */
-  --asset-realestate:  #8d6e63;  /* Brown - Property */
-  --asset-cash:        #78909c;  /* Blue-gray - Liquid */
-  --asset-crypto:      #9c27b0;  /* Purple */
-  --asset-retirement:  #00acc1;  /* Cyan - EPF, PPF, NPS */
+  /* ---- Financial Indicators ---- */
+  --positive: #10b981;
+  --negative: #ef4444;
+  --neutral:  #64748b;
 
-  /* Income vs Expense (Crossover Chart) */
-  --income-line:       #4caf50;
-  --expense-line:      #f44336;
-  --crossover-point:   #ffc107;
+  /* ---- Asset Class Colors ---- */
+  --asset-equity:      #3b82f6;  /* Blue - Stocks */
+  --asset-debt:        #10b981;  /* Emerald - Bonds, FD */
+  --asset-gold:        #eab308;  /* Yellow - Gold */
+  --asset-realestate:  #78716c;  /* Stone - Property */
+  --asset-cash:        #64748b;  /* Slate - Liquid */
+  --asset-crypto:      #a855f7;  /* Purple */
+  --asset-retirement:  #06b6d4;  /* Cyan - EPF, PPF, NPS */
 
-  /* Chart Colors */
+  /* ---- Chart Colors ---- */
   --chart-1: #1867c0;
-  --chart-2: #26a69a;
-  --chart-3: #4caf50;
-  --chart-4: #ff9800;
-  --chart-5: #9c27b0;
-  --chart-6: #00bcd4;
+  --chart-2: #14b8a6;
+  --chart-3: #10b981;
+  --chart-4: #f97316;
+  --chart-5: #a855f7;
+  --chart-6: #06b6d4;
+  --chart-7: #f43f5e;
+  --chart-8: #78716c;
 
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
+  /* ---- Gradient Definitions ---- */
+  --gradient-primary: linear-gradient(135deg, #1867c0 0%, #1e3a5f 100%);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-fire: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --gradient-text: linear-gradient(135deg, #1867c0 0%, #3b82f6 50%, #8b5cf6 100%);
+}
+
+/* Dark Mode Variables */
+.v-theme--dark {
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.35), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-card-hover: 0 10px 25px -5px rgb(0 0 0 / 0.3), 0 4px 10px -4px rgb(0 0 0 / 0.15);
+
+  --gradient-surface: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
 }
 
 /* ============================================
    BASE STYLES
    ============================================ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 html {
   overflow-y: auto;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  letter-spacing: -0.011em;
+}
+
+/* Typography Scale */
+.text-display {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.text-headline {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 /* Monospace for numbers */
 .font-mono,
 .currency-value,
-.percentage-value {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+.percentage-value,
+.text-currency {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-feature-settings: 'tnum';
 }
 
 /* ============================================
    SCROLLBAR STYLES
    ============================================ */
+
+/* Modern thin scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -100,74 +186,424 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* Dark mode scrollbar */
 .v-theme--dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .v-theme--dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+.v-theme--dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 /* ============================================
-   UTILITY CLASSES
+   PROJECTIONLAB CARD STYLES
    ============================================ */
 
-/* Gap utilities */
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
-.gap-5 { gap: 20px; }
-.gap-6 { gap: 24px; }
-
-/* Animation for loading states */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+/* Base Card - Clean and Modern */
+.v-card {
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-border-color), 0.08);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow var(--transition-base),
+    transform var(--transition-base),
+    border-color var(--transition-base);
 }
 
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.v-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(var(--v-theme-primary), 0.12);
+}
+
+/* Interactive Card */
+.pl-card-interactive {
+  cursor: pointer;
+}
+
+.pl-card-interactive:hover {
+  transform: translateY(-2px);
+}
+
+.pl-card-interactive:active {
+  transform: translateY(0);
+}
+
+/* Metric Card - Hero Stats */
+.metric-card {
+  background: var(--gradient-primary) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden;
+  position: relative;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  transform: translate(30%, -30%);
+}
+
+.metric-card .metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.metric-card .metric-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Stat Card - Secondary Stats */
+.stat-card {
+  background: rgba(var(--v-theme-primary), 0.04) !important;
+  border: 1px solid rgba(var(--v-theme-primary), 0.08) !important;
+  border-radius: var(--radius-lg) !important;
+  transition: all var(--transition-base);
+}
+
+.stat-card:hover {
+  background: rgba(var(--v-theme-primary), 0.08) !important;
+  border-color: rgba(var(--v-theme-primary), 0.15) !important;
+}
+
+.v-theme--dark .stat-card {
+  background: rgba(var(--v-theme-primary), 0.08) !important;
+  border-color: rgba(var(--v-theme-primary), 0.15) !important;
+}
+
+/* Card with Gradient Border */
+.pl-card-gradient {
+  position: relative;
+  background: rgb(var(--v-theme-surface));
+  border: none !important;
+}
+
+.pl-card-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(24, 103, 192, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 /* ============================================
-   FINANCIAL STATUS COLORS
+   PROJECTIONLAB BUTTON STYLES
    ============================================ */
+
+/* Base Button */
+.v-btn {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  transition: all var(--transition-base);
+}
+
+/* Primary Button (CTA) with shadow */
+.v-btn.v-btn--variant-flat.bg-primary,
+.v-btn.v-btn--variant-elevated {
+  box-shadow: var(--shadow-sm);
+}
+
+.v-btn.v-btn--variant-flat.bg-primary:hover,
+.v-btn.v-btn--variant-elevated:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.v-btn.v-btn--variant-flat.bg-primary:active,
+.v-btn.v-btn--variant-elevated:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Gradient CTA Button */
+.pl-btn-gradient {
+  background: var(--gradient-primary) !important;
+  color: white !important;
+  border: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.pl-btn-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.pl-btn-gradient:hover::before {
+  opacity: 1;
+}
+
+/* Outlined Button with Gradient Hover */
+.pl-btn-outline-gradient {
+  border: 1px solid rgba(var(--v-theme-primary), 0.5) !important;
+  transition: all var(--transition-base);
+}
+
+.pl-btn-outline-gradient:hover {
+  background: rgba(var(--v-theme-primary), 0.08) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
+/* ============================================
+   PROJECTIONLAB INPUT STYLES
+   ============================================ */
+
+/* Enhanced focus states */
+.v-field--focused .v-field__outline {
+  --v-field-border-width: 2px;
+}
+
+/* Input with Icon */
+.pl-input-icon .v-field__prepend-inner {
+  color: var(--slate-400);
+  transition: color var(--transition-base);
+}
+
+.pl-input-icon:focus-within .v-field__prepend-inner {
+  color: rgb(var(--v-theme-primary));
+}
+
+/* Currency Input */
+.pl-input-currency .v-field__input {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* Search Input */
+.pl-search-input {
+  background: rgba(var(--v-theme-surface-variant), 0.5);
+  border-radius: var(--radius-full) !important;
+}
+
+.pl-search-input .v-field__outline {
+  display: none;
+}
+
+.v-theme--dark .pl-search-input {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   PROJECTIONLAB TABLE STYLES
+   ============================================ */
+
+.v-data-table {
+  border: 1px solid rgba(var(--v-border-color), 0.08);
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden;
+}
+
+.v-data-table .v-data-table__thead {
+  background: rgba(var(--v-theme-surface-variant), 0.5);
+}
+
+.v-data-table .v-data-table__thead th {
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-500) !important;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.1) !important;
+}
+
+.v-theme--dark .v-data-table .v-data-table__thead th {
+  color: var(--slate-400) !important;
+}
+
+.v-data-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.v-data-table tbody tr:hover {
+  background: rgba(var(--v-theme-primary), 0.04) !important;
+}
+
+.v-data-table .text-right,
+.v-data-table .text-currency {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Table Row Actions */
+.v-data-table .row-actions {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.v-data-table tbody tr:hover .row-actions {
+  opacity: 1;
+}
+
+/* ============================================
+   PROJECTIONLAB NAVIGATION STYLES
+   ============================================ */
+
+/* Sidebar - Theme Adaptive */
+.sidebar {
+  background: rgb(var(--v-theme-sidebar-bg)) !important;
+  border-right: 1px solid rgba(var(--v-border-color), 0.08) !important;
+}
+
+.sidebar .sidebar-header {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.08);
+}
+
+/* App Bar */
+.v-app-bar {
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.08) !important;
+}
+
+/* Breadcrumb Style Tabs */
+.pl-tabs {
+  background: transparent;
+}
+
+.pl-tabs .v-tab {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  min-width: auto;
+  padding: 0 16px;
+}
+
+.pl-tabs .v-tab--selected {
+  background: rgba(var(--v-theme-primary), 0.1);
+}
+
+/* ============================================
+   PROJECTIONLAB GRADIENT TEXT
+   ============================================ */
+
+.text-gradient {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-fire {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-success {
+  background: var(--gradient-success);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   PROJECTIONLAB PROGRESS & CHARTS
+   ============================================ */
+
+/* Progress Bars */
+.pl-progress {
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.pl-progress .v-progress-linear__background {
+  opacity: 0.15;
+}
+
+/* Circular Progress */
+.pl-progress-circular .v-progress-circular__underlay {
+  stroke: rgba(var(--v-theme-primary), 0.1);
+}
+
+/* Chart Container */
+.chart-container,
+.pl-chart-container {
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+}
+
+.chart-container-sm {
+  min-height: 200px;
+}
+
+.chart-container-lg {
+  min-height: 400px;
+}
+
+/* Chart Tooltip */
+.pl-chart-tooltip {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-xl);
+}
+
+.v-theme--dark .pl-chart-tooltip {
+  background: rgba(30, 41, 59, 0.95);
+}
+
+/* ============================================
+   PROJECTIONLAB UTILITY CLASSES
+   ============================================ */
+
+/* Status Colors */
 .status-positive,
-.text-positive {
-  color: var(--networth-positive) !important;
-}
-
+.text-positive { color: var(--positive) !important; }
 .status-negative,
-.text-negative {
-  color: var(--networth-negative) !important;
-}
-
+.text-negative { color: var(--negative) !important; }
 .status-neutral,
-.text-neutral {
-  color: var(--networth-neutral) !important;
-}
+.text-neutral { color: var(--neutral) !important; }
 
-.bg-positive {
-  background-color: var(--networth-positive) !important;
-}
+.bg-positive { background-color: var(--positive) !important; }
+.bg-negative { background-color: var(--negative) !important; }
 
-.bg-negative {
-  background-color: var(--networth-negative) !important;
-}
-
-/* ============================================
-   FIRE PROGRESS COLORS
-   ============================================ */
+/* FIRE Progress */
 .fire-progress-0   { color: var(--fire-progress-0); }
 .fire-progress-25  { color: var(--fire-progress-25); }
 .fire-progress-50  { color: var(--fire-progress-50); }
@@ -180,9 +616,7 @@ body {
 .bg-fire-progress-75  { background-color: var(--fire-progress-75); }
 .bg-fire-progress-100 { background-color: var(--fire-progress-100); }
 
-/* ============================================
-   ASSET CLASS COLORS
-   ============================================ */
+/* Asset Classes */
 .asset-equity     { color: var(--asset-equity); }
 .asset-debt       { color: var(--asset-debt); }
 .asset-gold       { color: var(--asset-gold); }
@@ -199,62 +633,38 @@ body {
 .bg-asset-crypto     { background-color: var(--asset-crypto); }
 .bg-asset-retirement { background-color: var(--asset-retirement); }
 
-/* ============================================
-   CARD STYLES
-   ============================================ */
-.v-card {
-  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+/* Background variants */
+.bg-surface-light { background: rgb(var(--v-theme-surface-light)); }
+.bg-gradient-subtle { background: var(--gradient-surface); }
+
+/* Backdrop blur */
+.backdrop-blur-sm { backdrop-filter: blur(4px); }
+.backdrop-blur { backdrop-filter: blur(8px); }
+.backdrop-blur-lg { backdrop-filter: blur(16px); }
+
+/* Gap utilities */
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+.gap-8 { gap: 32px; }
+
+/* Hover transitions */
+.hover-lift {
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
-.v-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* Metric Card - for KPI displays */
-.metric-card {
-  background: linear-gradient(135deg, var(--pl-blue-800) 0%, var(--pl-blue-900) 100%);
-  color: white;
-  border-radius: 16px;
-}
-
-.metric-card .metric-value {
+/* Currency formatting */
+.text-xl-currency {
   font-family: 'JetBrains Mono', monospace;
   font-size: 2rem;
   font-weight: 700;
-}
-
-.metric-card .metric-label {
-  font-size: 0.875rem;
-  opacity: 0.9;
-}
-
-/* ============================================
-   CHART STYLES
-   ============================================ */
-.chart-container {
-  position: relative;
-  width: 100%;
-  min-height: 300px;
-}
-
-.chart-container-sm {
-  min-height: 200px;
-}
-
-.chart-container-lg {
-  min-height: 400px;
-}
-
-/* ============================================
-   CURRENCY & NUMBER FORMATTING
-   ============================================ */
-.currency-inr::before {
-  content: '₹';
-}
-
-.text-currency {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 500;
 }
 
 .text-large-currency {
@@ -263,15 +673,11 @@ body {
   font-weight: 700;
 }
 
-.text-xl-currency {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 2rem;
-  font-weight: 700;
+.currency-inr::before {
+  content: '\20B9';
 }
 
-/* ============================================
-   SECTION HEADER STYLES
-   ============================================ */
+/* Section Styles */
 .section-header {
   margin-bottom: 1.5rem;
 }
@@ -287,15 +693,33 @@ body {
   opacity: 0.7;
 }
 
-/* ============================================
-   DATA TABLE ENHANCEMENTS
-   ============================================ */
-.v-data-table {
-  font-family: 'Inter', sans-serif;
+/* Animations */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-.v-data-table .text-right {
-  font-family: 'JetBrains Mono', monospace;
+.animate-pulse,
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 2s infinite;
 }
 
 /* ============================================
@@ -308,5 +732,9 @@ body {
 
   .text-xl-currency {
     font-size: 1.5rem;
+  }
+
+  .text-large-currency {
+    font-size: 1.25rem;
   }
 }

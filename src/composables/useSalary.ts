@@ -33,13 +33,13 @@ export function formatINRLakhs(amount: number): string {
 // Current Financial Year state
 const selectedFinancialYear = ref(getCurrentFinancialYear());
 
-// Generate financial year options (current + 2 previous years)
+// Generate financial year options (current + 3 previous years for 4 total)
 function generateFinancialYearOptions(): string[] {
   const current = getCurrentFinancialYear();
   const [startYear] = current.split("-").map(Number);
   const options: string[] = [];
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const year = startYear - i;
     options.push(`${year}-${(year + 1).toString().slice(-2)}`);
   }
@@ -73,21 +73,91 @@ export function useCurrentSalary() {
   });
 }
 
+// Transform backend response to Vue app format
+function transformFromBackendFormat(entry: Record<string, unknown>): SalaryHistoryRecord {
+  return {
+    id: entry.id as string,
+    month: entry.month as number,
+    year: entry.year as number,
+    financialYear: entry.financialYear as string,
+    basicSalary: (entry.basicSalary as number) || 0,
+    hra: (entry.houseRentAllowance as number) || 0,
+    conveyanceAllowance: (entry.conveyanceAllowance as number) || 0,
+    medicalAllowance: (entry.medicalAllowance as number) || 0,
+    specialAllowance: ((entry.otherEarnings as Record<string, number>)?.specialAllowance) || 0,
+    specialPay: ((entry.otherEarnings as Record<string, number>)?.specialPay) || 0,
+    otherAllowances: ((entry.otherEarnings as Record<string, number>)?.otherAllowances) || 0,
+    grossEarnings: (entry.grossSalary as number) || 0,
+    epfDeduction: (entry.employeePF as number) || 0,
+    vpfDeduction: (entry.voluntaryPF as number) || 0,
+    professionalTax: (entry.professionalTax as number) || 0,
+    tdsDeduction: (entry.incomeTax as number) || 0,
+    otherDeductions: ((entry.otherDeductions as Record<string, number>)?.other) || 0,
+    totalDeductions: (entry.totalDeductions as number) || 0,
+    netSalary: (entry.netSalary as number) || 0,
+    paidDays: (entry.paidDays as number) || 30,
+    employerPf: (entry.employerPF as number) || 0,
+    employerNps: (entry.npsContribution as number) || 0,
+    pensionFund: (entry.pensionFund as number) || 0,
+    superannuation: (entry.superannuation as number) || 0,
+    createdAt: (entry.createdAt as string) || "",
+    updatedAt: (entry.updatedAt as string) || "",
+  };
+}
+
 // Fetch salary history
 export function useSalaryHistory(financialYear?: string) {
-  const fy = financialYear || selectedFinancialYear.value;
+  // Use computed to make query reactive to FY changes
+  const fyRef = computed(() => financialYear || selectedFinancialYear.value);
 
   return useQuery({
-    queryKey: ["salary", "history", fy],
+    queryKey: computed(() => ["salary", "history", fyRef.value]),
     queryFn: async (): Promise<SalaryHistoryRecord[]> => {
-      const url = fy ? `/api/salary-history?fy=${fy}` : "/api/salary-history";
+      const fy = fyRef.value;
+      const url = fy ? `/api/salary-history?financialYear=${fy}` : "/api/salary-history";
       const res = await fetch(url);
       if (!res.ok) {
         throw new Error("Failed to fetch salary history");
       }
-      return res.json();
+      const json = await res.json();
+      // Backend returns { success, data: { salaryEntries: [...] } }
+      const entries = json.data?.salaryEntries || [];
+      return entries.map(transformFromBackendFormat);
     },
   });
+}
+
+// Transform Vue app data to backend API format
+function transformToBackendFormat(data: SalaryHistoryInput) {
+  return {
+    financialYear: data.financialYear,
+    month: data.month,
+    year: data.year,
+    // Earnings - map Vue fields to backend fields
+    basicSalary: data.basicSalary || 0,
+    houseRentAllowance: data.hra || 0,
+    conveyanceAllowance: data.conveyanceAllowance || 0,
+    medicalAllowance: data.medicalAllowance || 0,
+    // Use otherEarnings object for special allowances
+    otherEarnings: {
+      specialAllowance: data.specialAllowance || 0,
+      specialPay: data.specialPay || 0,
+      otherAllowances: data.otherAllowances || 0,
+    },
+    // Deductions - map Vue fields to backend fields
+    employeePF: data.epfDeduction || 0,
+    voluntaryPF: data.vpfDeduction || 0,
+    professionalTax: data.professionalTax || 0,
+    incomeTax: data.tdsDeduction || 0,
+    otherDeductions: {
+      other: data.otherDeductions || 0,
+    },
+    // Employer contributions
+    employerPF: data.employerPf || 0,
+    pensionFund: data.pensionFund || 0,
+    npsContribution: data.employerNps || 0,
+    superannuation: data.superannuation || 0,
+  };
 }
 
 // Add salary history record
@@ -98,10 +168,11 @@ export function useAddSalaryHistory() {
     mutationFn: async (
       data: SalaryHistoryInput,
     ): Promise<SalaryHistoryRecord> => {
+      const backendData = transformToBackendFormat(data);
       const res = await fetch("/api/salary-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(backendData),
       });
       if (!res.ok) {
         const error = await res.json();
