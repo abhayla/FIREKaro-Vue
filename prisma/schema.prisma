@@ -43,7 +43,9 @@ model User {
   investmentTransactions InvestmentTransaction[]
   investmentGoals        InvestmentGoal[]
   epfAccount             EPFAccount?
+  ppfAccounts            PPFAccount[]
   npsAccounts            NPSAccount[]
+  esopGrants             ESOPGrant[]
   portfolio              Portfolio[]
 
   // Liabilities relations
@@ -57,6 +59,22 @@ model User {
   bankAccounts           BankAccount[]
   emergencyFund          EmergencyFund?
   financialGoals         FinancialGoal[]
+
+  // Non-Salary Income relations
+  businessIncomes        BusinessIncome[]
+  rentalIncomes          RentalIncome[]
+  capitalGains           CapitalGain[]
+  interestIncomes        InterestIncome[]
+  dividendIncomes        DividendIncome[]
+  otherIncomes           OtherIncome[]
+
+  // Expense relations
+  expenses               Expense[]
+  budgets                Budget[]
+  expenseCategories      ExpenseCategory[]
+  expenseCategoryRules   ExpenseCategoryRule[]
+  alertPreferences       AlertPreference?
+  alertDeliveries        AlertDelivery[]
 
   @@index([email])
 }
@@ -582,6 +600,217 @@ model NPSTransaction {
   @@index([npsAccountId, transactionDate])
 }
 
+// PPF Account - Public Provident Fund (7.1% interest, 15-year lock-in)
+model PPFAccount {
+  id                   String    @id @default(cuid())
+  userId               String
+  accountNumber        String?
+  bankName             String?
+  branchName           String?
+  openingDate          DateTime
+  maturityDate         DateTime  // 15 years from opening
+  currentBalance       Float     @default(0)
+  interestRate         Float     @default(0.071) // 7.1%
+  totalDeposited       Float     @default(0)
+  totalInterestEarned  Float     @default(0)
+
+  // Annual contribution tracking (max Rs 1.5L per year)
+  currentYearDeposit   Float     @default(0)
+  maxAnnualDeposit     Float     @default(150000) // Rs 1.5 Lakh
+
+  // Extension tracking (after 15 years)
+  isExtended           Boolean   @default(false)
+  extensionType        String?   // "WITH_CONTRIBUTION", "WITHOUT_CONTRIBUTION"
+  extensionEndDate     DateTime?
+  extensionCount       Int       @default(0) // Each extension = 5 years
+
+  // Loan facility (available from 3rd to 6th year)
+  loanTaken            Float     @default(0)
+  loanOutstanding      Float     @default(0)
+  loanInterestRate     Float     @default(0.01) // 1% above PPF rate
+
+  // Partial withdrawal (after 7th year)
+  totalWithdrawn       Float     @default(0)
+
+  // Nominee details
+  nomineeName          String?
+  nomineeRelation      String?
+
+  // Status
+  isActive             Boolean   @default(true)
+  closedAt             DateTime?
+  closureReason        String?   // "MATURITY", "PREMATURE_DEATH", "NRI_STATUS"
+
+  lastUpdated          DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions PPFTransaction[]
+
+  @@index([userId])
+  @@index([maturityDate])
+}
+
+model PPFTransaction {
+  id              String   @id @default(cuid())
+  ppfAccountId    String
+  transactionType String   // "DEPOSIT", "INTEREST", "PARTIAL_WITHDRAWAL", "LOAN_TAKEN", "LOAN_REPAID", "MATURITY", "CLOSURE"
+  amount          Float
+  balance         Float    // Balance after this transaction
+  financialYear   String   // "2024-25"
+  description     String?
+  transactionDate DateTime
+
+  // For deposits - track monthly contributions
+  depositMonth    Int?     // 1-12 (April = 1)
+
+  // For interest crediting
+  interestYear    String?  // Year for which interest was credited
+
+  // For partial withdrawal
+  eligibleAmount  Float?   // 50% of balance at end of 4th preceding year
+
+  // For loan
+  loanYear        Int?     // Which year loan was taken (3-6)
+  loanDueDate     DateTime?
+
+  createdAt       DateTime @default(now())
+
+  ppfAccount PPFAccount @relation(fields: [ppfAccountId], references: [id], onDelete: Cascade)
+
+  @@index([ppfAccountId, transactionDate])
+  @@index([financialYear])
+}
+
+// ESOP/RSU Grant Model
+enum ESOPGrantType {
+  ESOP        // Employee Stock Option Plan
+  RSU         // Restricted Stock Unit
+  RSA         // Restricted Stock Award
+  SAR         // Stock Appreciation Right
+  PHANTOM     // Phantom Stock
+}
+
+enum ESOPGrantStatus {
+  ACTIVE
+  PARTIALLY_VESTED
+  FULLY_VESTED
+  EXERCISED
+  EXPIRED
+  CANCELLED
+  FORFEITED
+}
+
+enum VestingScheduleType {
+  CLIFF           // All vest at once after cliff period
+  GRADED          // Vest over time (e.g., 25% per year)
+  MILESTONE       // Vest on achievement of milestones
+  HYBRID          // Cliff + Graded combination
+}
+
+model ESOPGrant {
+  id                    String              @id @default(cuid())
+  userId                String
+
+  // Grant Details
+  grantType             ESOPGrantType
+  grantDate             DateTime
+  grantNumber           String?             // Company's grant reference
+  companyName           String
+  companySymbol         String?             // Stock symbol (for listed companies)
+
+  // Option/Unit Details
+  totalUnits            Float               // Total options/RSUs granted
+  grantPrice            Float               @default(0) // Exercise price (0 for RSUs)
+  fairMarketValue       Float               // FMV at grant date
+  currentFMV            Float?              // Latest FMV
+
+  // Vesting Details
+  vestingScheduleType   VestingScheduleType @default(GRADED)
+  vestingStartDate      DateTime
+  cliffMonths           Int                 @default(12) // Cliff period in months
+  totalVestingMonths    Int                 @default(48) // Total vesting period
+  vestingFrequency      Int                 @default(12) // Vest every N months after cliff
+
+  // Current Status
+  status                ESOPGrantStatus     @default(ACTIVE)
+  vestedUnits           Float               @default(0)
+  exercisedUnits        Float               @default(0)
+  exercisableUnits      Float               @default(0) // Vested but not yet exercised
+  unvestedUnits         Float               @default(0)
+  forfeitedUnits        Float               @default(0)
+
+  // Expiry
+  expiryDate            DateTime?           // When options expire
+  postTerminationExercisePeriod Int?        // Days to exercise after leaving
+
+  // Tax & Valuation
+  perquisiteValue       Float?              // Taxable value at vesting (FMV - Exercise Price)
+  taxPaid               Float               @default(0)
+  section80C_Exemption  Float               @default(0) // If ESOP qualifies
+
+  // Company Status
+  isListedCompany       Boolean             @default(false)
+  isStartup             Boolean             @default(false)
+  startupDPIITNumber    String?             // For eligible startups (tax deferral)
+
+  // Notes
+  planName              String?             // ESOP Plan name
+  notes                 String?
+
+  lastUpdated           DateTime            @default(now())
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vestingEvents         ESOPVestingEvent[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([companyName])
+}
+
+model ESOPVestingEvent {
+  id                String    @id @default(cuid())
+  esopGrantId       String
+
+  // Vesting Details
+  vestingDate       DateTime
+  unitsVested       Float
+  vestingPercentage Float     // What % of total grant this represents
+
+  // Valuation at Vesting
+  fmvAtVesting      Float     // Fair Market Value at vesting
+  exercisePrice     Float     // Exercise price (from grant)
+  perquisiteValue   Float     // (FMV - Exercise Price) * Units
+
+  // Exercise Details (if exercised)
+  isExercised       Boolean   @default(false)
+  exerciseDate      DateTime?
+  unitsExercised    Float?
+  salePrice         Float?    // If sold immediately (cashless exercise)
+
+  // Tax
+  taxableAmount     Float     @default(0)
+  tdsDeducted       Float     @default(0)
+
+  // Status
+  status            String    @default("PENDING") // "PENDING", "VESTED", "EXERCISED", "EXPIRED", "FORFEITED"
+
+  // Notes
+  description       String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  esopGrant         ESOPGrant @relation(fields: [esopGrantId], references: [id], onDelete: Cascade)
+
+  @@index([esopGrantId])
+  @@index([vestingDate])
+  @@index([status])
+}
+
 model Portfolio {
   id           String    @id @default(cuid())
   userId       String
@@ -851,4 +1080,456 @@ model FinancialGoal {
 
   @@index([userId])
   @@index([status])
+}
+
+// ============================================================================
+// EXPENSE & BUDGET MODELS
+// ============================================================================
+
+enum PaymentMethod {
+  UPI
+  CREDIT_CARD
+  DEBIT_CARD
+  CASH
+  NET_BANKING
+  WALLET
+  OTHER
+}
+
+enum BudgetCategoryType {
+  NEEDS
+  WANTS
+  SAVINGS
+}
+
+model Expense {
+  id              String        @id @default(cuid())
+  userId          String
+  amount          Float
+  description     String
+  category        String
+  subcategory     String?
+  date            DateTime
+  merchant        String?
+  paymentMethod   PaymentMethod @default(OTHER)
+  tags            String[]      @default([])
+  isRecurring     Boolean       @default(false)
+  receiptUrl      String?
+  notes           String?
+
+  // AI Categorization tracking
+  aiCategorized   Boolean       @default(false)
+  aiConfidence    Float?
+
+  // Family member tracking (optional)
+  familyMemberId  String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, category])
+  @@index([date])
+}
+
+model Budget {
+  id              String   @id @default(cuid())
+  userId          String
+  month           Int      // 1-12
+  year            Int      // Calendar year
+  income          Float
+
+  // 50/30/20 Budget Limits
+  needsLimit      Float    // 50% default
+  wantsLimit      Float    // 30% default
+  savingsLimit    Float    // 20% default
+
+  // Actual spending (computed or tracked)
+  needsActual     Float    @default(0)
+  wantsActual     Float    @default(0)
+  savingsActual   Float    @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year])
+  @@index([userId, year])
+}
+
+model ExpenseCategory {
+  id              String             @id @default(cuid())
+  userId          String?            // null = system default
+  name            String
+  icon            String?            // mdi-icon name
+  color           String?            // hex color
+  budgetType      BudgetCategoryType @default(WANTS)
+  subcategories   String[]           @default([])
+  isActive        Boolean            @default(true)
+  isSystem        Boolean            @default(false)
+  displayOrder    Int                @default(0)
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user            User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([name, userId])
+  @@index([userId])
+  @@index([budgetType])
+}
+
+model ExpenseCategoryRule {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String
+  isActive          Boolean  @default(true)
+  priority          Int      @default(0) // Higher = checked first
+
+  // Matching conditions stored as JSON
+  // Format: [{ field, operator, value }]
+  conditions        Json
+
+  // Actions when rule matches
+  targetCategory    String
+  targetSubcategory String?
+  applyTags         String[] @default([])
+
+  // Stats
+  timesApplied      Int      @default(0)
+  lastAppliedAt     DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([priority])
+}
+
+model AlertPreference {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  budgetAlerts      Boolean  @default(true)
+  overspendAlerts   Boolean  @default(true)
+  alertThreshold    Int      @default(80) // Percentage trigger (e.g., 80%)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AlertDelivery {
+  id              String   @id @default(cuid())
+  userId          String
+  alertType       String   // BUDGET_WARNING, OVERSPEND, GOAL_PROGRESS
+  category        String   // needs, wants, savings, or specific category
+  percentage      Float
+  message         String
+  isRead          Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// NON-SALARY INCOME MODELS
+// ============================================================================
+
+// Business Income - Section 44AD/44ADA Presumptive Taxation
+model BusinessIncome {
+  id                String   @id @default(cuid())
+  userId            String
+  fiscalYear        String   // "2024-25"
+  businessName      String
+  businessType      String   // "PROPRIETORSHIP", "PARTNERSHIP", "LLP"
+  taxationScheme    String   // "44AD", "44ADA", "REGULAR"
+  natureOfBusiness  String?  // "TRADING", "MANUFACTURING", "PROFESSIONAL", etc.
+  grossReceipts     Float
+  digitalPaymentPct Float    @default(50)
+  deemedProfitRate  Float    // 8%, 6%, or 50%
+  taxableProfit     Float
+  gstRegistered     Boolean  @default(false)
+  gstNumber         String?
+  gstFilingFreq     String?  // "MONTHLY", "QUARTERLY"
+  pan               String?
+
+  // For 5-year lock-in tracking
+  schemeStartYear   String?  // First year of 44AD/44ADA adoption
+  yearsOnScheme     Int      @default(1)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, fiscalYear])
+  @@index([taxationScheme])
+}
+
+// Rental Income - House Property with Section 24 Deductions
+model RentalIncome {
+  id                  String    @id @default(cuid())
+  userId              String
+  fiscalYear          String
+  propertyId          String?   // Link to Property in investments (optional)
+  propertyName        String
+  propertyAddress     String?
+  propertyType        String    // "RESIDENTIAL", "COMMERCIAL", "LAND"
+  ownershipType       String    @default("SELF") // "SELF", "JOINT", "HUF"
+
+  // Rental Details
+  grossAnnualRent     Float
+  monthlyRent         Float?
+  vacantMonths        Int       @default(0)
+  municipalTaxes      Float     @default(0)
+
+  // Section 24 Deductions
+  netAnnualValue      Float     // GAV - Municipal Taxes
+  standardDeduction   Float     // 30% of NAV
+  housingLoanInterest Float     @default(0)
+  preConstructionInt  Float     @default(0) // 1/5th per year for 5 years
+  preCnstIntStartYear String?   // Year when pre-construction interest started
+  taxableIncome       Float
+
+  // Tenant Details
+  tenantName          String?
+  tenantPan           String?
+  tenantStartDate     DateTime?
+  rentAgreementExpiry DateTime?
+
+  // Co-owners (JSON array)
+  coOwners            Json?     // [{name, pan, percentage, share}]
+  ownershipPercent    Float     @default(100)
+
+  // Loan Details
+  loanAccountNumber   String?
+  lenderName          String?
+  loanSanctionDate    DateTime?
+  possessionDate      DateTime?
+  isSelfOccupied      Boolean   @default(false)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, fiscalYear])
+  @@index([propertyType])
+}
+
+// Capital Gains - STCG/LTCG with Budget 2024 Rules
+model CapitalGain {
+  id                  String    @id @default(cuid())
+  userId              String
+  fiscalYear          String
+
+  // Asset Details
+  assetType           String    // "EQUITY", "EQUITY_MF", "DEBT_MF", "PROPERTY", "GOLD", "CRYPTO", "OTHER"
+  assetName           String
+  assetDescription    String?
+  quantity            Float?
+
+  // Transaction Details
+  purchaseDate        DateTime
+  purchasePrice       Float
+  saleDate            DateTime
+  salePrice           Float
+  expenses            Float     @default(0) // Brokerage, stamp duty, etc.
+
+  // Holding & Classification
+  holdingPeriodMonths Int
+  gainType            String    // "STCG", "LTCG"
+
+  // Indexation (for LTCG on property/gold/debt MF before April 2023)
+  purchaseCII         Int?      // Cost Inflation Index for purchase year
+  saleCII             Int?      // Cost Inflation Index for sale year
+  indexedCost         Float?
+  useIndexation       Boolean   @default(false)
+
+  // Tax Calculation
+  grossGain           Float     // Sale - Purchase - Expenses (or - IndexedCost)
+  exemptionSection    String?   // "54", "54F", "54EC", "54B"
+  exemptionAmount     Float     @default(0)
+  taxableGain         Float
+  taxRate             Float     // 12.5%, 20%, 30% (crypto), slab rate
+  estimatedTax        Float
+
+  // For LTCG choice (property bought before July 2024)
+  isPreJuly2024       Boolean   @default(false)
+  taxWithIndexation   Float?    // 20% + CII calculation
+  taxWithoutIndex     Float?    // 12.5% flat calculation
+  recommendedOption   String?   // "WITH_INDEX" or "WITHOUT_INDEX"
+
+  // Broker Import
+  brokerName          String?
+  brokerOrderId       String?
+  importedFrom        String?   // "ZERODHA", "GROWW", "UPSTOX", "MANUAL"
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, fiscalYear])
+  @@index([assetType])
+  @@index([gainType])
+}
+
+// Interest Income - FD, RD, Savings, P2P, Bonds
+model InterestIncome {
+  id                String    @id @default(cuid())
+  userId            String
+  fiscalYear        String
+
+  // Source Details
+  sourceType        String    // "FD", "RD", "SAVINGS", "P2P", "BONDS", "NSC", "SCSS", "PPF", "OTHER"
+  institutionName   String
+  accountNumber     String?
+  branchName        String?
+
+  // Interest Details
+  principalAmount   Float?
+  interestRate      Float?
+  interestEarned    Float
+  accruedInterest   Float?    // For bonds/debentures
+
+  // TDS
+  tdsDeducted       Float     @default(0)
+  tdsRate           Float?
+  form16AReceived   Boolean   @default(false)
+
+  // Maturity (for FD/RD)
+  depositDate       DateTime?
+  maturityDate      DateTime?
+  maturityAmount    Float?
+  tenureMonths      Int?
+  isAutoRenew       Boolean   @default(false)
+
+  // 80TTA/80TTB Eligibility
+  is80TTAEligible   Boolean   @default(false) // Savings account interest
+  is80TTBEligible   Boolean   @default(false) // Senior citizen (60+)
+  deductionClaimed  Float     @default(0)
+
+  // For P2P Lending
+  platformName      String?
+  borrowerCount     Int?
+  defaultAmount     Float?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, fiscalYear])
+  @@index([sourceType])
+  @@index([maturityDate])
+}
+
+// Dividend Income - Stocks & Mutual Funds
+model DividendIncome {
+  id                String    @id @default(cuid())
+  userId            String
+  fiscalYear        String
+
+  // Source Details
+  sourceType        String    // "STOCK", "MUTUAL_FUND", "REIT", "INVIT"
+  companyOrFundName String
+  symbol            String?
+  isin              String?
+  folioNumber       String?
+
+  // Dividend Details
+  dividendType      String?   // "INTERIM", "FINAL", "SPECIAL"
+  recordDate        DateTime?
+  exDividendDate    DateTime?
+  paymentDate       DateTime
+  dividendPerShare  Float?
+  numberOfShares    Float?
+  dividendAmount    Float
+
+  // TDS (10% above Rs 5,000)
+  tdsDeducted       Float     @default(0)
+  tdsRate           Float?
+
+  // For yield calculation
+  investmentValue   Float?    // Market value of holding
+  dividendYield     Float?    // Annual yield %
+
+  // Source tracking
+  dematAccount      String?
+  brokerName        String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, fiscalYear])
+  @@index([sourceType])
+  @@index([paymentDate])
+}
+
+// Other Income - Commission, Royalties, Gifts, Lottery, Pension, Agricultural
+model OtherIncome {
+  id                String    @id @default(cuid())
+  userId            String
+  fiscalYear        String
+
+  // Income Details
+  category          String    // "COMMISSION", "ROYALTY", "PENSION", "GIFT", "LOTTERY", "AGRICULTURAL", "FAMILY_PENSION", "OTHER"
+  description       String
+  sourceName        String?   // Payer name
+  sourcePan         String?
+
+  // Amount
+  grossAmount       Float
+  tdsDeducted       Float     @default(0)
+  netAmount         Float?
+
+  // Category-specific fields
+
+  // Commission
+  isRegular         Boolean   @default(false) // Regular = 44AD eligible, Occasional = Other sources
+  commissionType    String?   // "INSURANCE", "REAL_ESTATE", "MLM", "REFERRAL", "OTHER"
+
+  // Gift
+  giftDate          DateTime?
+  donorRelationship String?   // "RELATIVE", "NON_RELATIVE" (>50K from non-relative is taxable)
+  isFromRelative    Boolean   @default(false)
+  isExempt          Boolean   @default(false)
+
+  // Lottery/Game Show
+  gameShowName      String?
+  winningDate       DateTime?
+  flatTaxRate       Float?    // 30% for lottery/game show
+
+  // Pension
+  pensionType       String?   // "COMMUTED", "UNCOMMUTED", "FAMILY"
+  pensionerName     String?
+
+  // Agricultural (exempt but for rate purposes)
+  landLocation      String?
+  cropType          String?
+
+  // Royalty
+  royaltyType       String?   // "BOOK", "MUSIC", "PATENT", "SOFTWARE"
+
+  receiptDate       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, fiscalYear])
+  @@index([category])
 }
