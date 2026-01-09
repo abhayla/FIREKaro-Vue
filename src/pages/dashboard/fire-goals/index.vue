@@ -26,9 +26,12 @@ const isLoading = computed(() => scoreLoading.value || crossoverLoading.value ||
 
 // Calculate years and months to FIRE
 const yearsToFIRE = computed(() => {
-  if (!metrics.value) return '--'
+  if (!metrics.value || typeof metrics.value.yearsToFIRE !== 'number' || isNaN(metrics.value.yearsToFIRE)) {
+    return '--'
+  }
   const years = Math.floor(metrics.value.yearsToFIRE)
   const months = Math.round((metrics.value.yearsToFIRE - years) * 12)
+  if (isNaN(years) || isNaN(months)) return '--'
   if (years === 0 && months === 0) return 'Achieved!'
   if (years === 0) return `${months}m`
   if (months === 0) return `${years}y`
