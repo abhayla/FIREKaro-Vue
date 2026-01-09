@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUiStore } from "@/stores/ui";
 import { useUserStore } from "@/stores/user";
+import AlertNotificationBell from "@/components/shared/AlertNotificationBell.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -64,6 +65,7 @@ const sections = [
       { title: "Track Expenses", route: "/dashboard/expenses/track" },
       { title: "Budgets", route: "/dashboard/expenses/budgets" },
       { title: "Reports", route: "/dashboard/expenses/reports" },
+      { title: "Categories & Rules", route: "/dashboard/expenses/categories" },
     ],
   },
   {
@@ -308,6 +310,9 @@ const handleSignOut = async () => {
           {{ uiStore.isDarkMode ? "Light Mode" : "Dark Mode" }}
         </v-tooltip>
       </v-btn>
+
+      <!-- Notification Bell -->
+      <AlertNotificationBell />
 
       <!-- User Menu -->
       <v-menu v-model="userMenuOpen" :close-on-content-click="false">

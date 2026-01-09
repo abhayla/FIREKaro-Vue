@@ -83,8 +83,38 @@ export interface ExpenseRule {
 
 export interface RuleCondition {
   field: 'merchant' | 'description' | 'amount' | 'paymentMethod'
-  operator: 'equals' | 'contains' | 'startsWith' | 'greaterThan' | 'lessThan'
-  value: string | number
+  operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'greaterThan' | 'lessThan' | 'between'
+  value: string | number | [number, number]
+  caseSensitive?: boolean
+}
+
+export interface CreateRuleInput {
+  name: string
+  isActive?: boolean
+  priority?: number
+  conditions: RuleCondition[]
+  targetCategory: string
+  targetSubcategory?: string | null
+  applyTags?: string[]
+}
+
+export interface RuleSuggestion {
+  suggestion: string
+  conditions: RuleCondition[]
+  targetCategory: string
+  matchCount: number
+}
+
+export interface RuleTestResult {
+  matches: number
+  total: number
+  matchPercentage: number
+  matchedExpenses: Array<{
+    description: string
+    merchant?: string
+    amount: number
+    category: string
+  }>
 }
 
 export interface AICategorization {
@@ -322,8 +352,18 @@ export function useExpenseRules() {
     },
   })
 
+  const suggestionsQuery = useQuery({
+    queryKey: ['expense-rules', 'suggestions'],
+    queryFn: async () => {
+      const res = await fetch('/api/expense-rules/suggestions')
+      if (!res.ok) return [] // Fail silently - suggestions are optional
+      return res.json() as Promise<RuleSuggestion[]>
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
   const createRule = useMutation({
-    mutationFn: async (data: Omit<ExpenseRule, 'id' | 'timesApplied'>) => {
+    mutationFn: async (data: CreateRuleInput) => {
       const res = await fetch('/api/expense-rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -337,11 +377,71 @@ export function useExpenseRules() {
     },
   })
 
+  const updateRule = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<CreateRuleInput>) => {
+      const res = await fetch(`/api/expense-rules/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to update rule')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-rules'] })
+    },
+  })
+
+  const deleteRule = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/expense-rules/${id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete rule')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-rules'] })
+    },
+  })
+
+  const toggleRule = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/expense-rules/${id}/toggle`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Failed to toggle rule')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-rules'] })
+    },
+  })
+
+  const testRule = useMutation({
+    mutationFn: async (conditions: RuleCondition[]) => {
+      const res = await fetch('/api/expense-rules/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conditions }),
+      })
+      if (!res.ok) throw new Error('Failed to test rule')
+      return res.json() as Promise<RuleTestResult>
+    },
+  })
+
   return {
     rules: rulesQuery.data,
+    suggestions: suggestionsQuery.data,
     isLoading: rulesQuery.isLoading,
+    isSuggestionsLoading: suggestionsQuery.isLoading,
     createRule,
+    updateRule,
+    deleteRule,
+    toggleRule,
+    testRule,
     refetch: rulesQuery.refetch,
+    refetchSuggestions: suggestionsQuery.refetch,
   }
 }
 

@@ -17,6 +17,7 @@ const tabs = [
   { title: 'Track', route: '/dashboard/expenses/track' },
   { title: 'Budgets', route: '/dashboard/expenses/budgets' },
   { title: 'Reports', route: '/dashboard/expenses/reports' },
+  { title: 'Categories', route: '/dashboard/expenses/categories' },
 ]
 
 // Current month filter

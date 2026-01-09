@@ -10,6 +10,7 @@ import {
 const props = defineProps<{
   modelValue: boolean
   expense?: Expense | null
+  prefillData?: Partial<CreateExpenseInput> | null
 }>()
 
 const emit = defineEmits<{
@@ -43,6 +44,7 @@ watch(
   () => props.modelValue,
   (open) => {
     if (open && props.expense) {
+      // Editing existing expense
       form.value = {
         amount: props.expense.amount,
         description: props.expense.description,
@@ -55,7 +57,22 @@ watch(
         isRecurring: props.expense.isRecurring || false,
         notes: props.expense.notes || '',
       }
+    } else if (open && props.prefillData) {
+      // Creating new expense with prefilled data (e.g., from receipt scan)
+      form.value = {
+        amount: props.prefillData.amount ?? 0,
+        description: props.prefillData.description ?? '',
+        category: props.prefillData.category ?? '',
+        subcategory: props.prefillData.subcategory ?? '',
+        date: props.prefillData.date ?? new Date().toISOString().split('T')[0],
+        merchant: props.prefillData.merchant ?? '',
+        paymentMethod: props.prefillData.paymentMethod ?? 'UPI',
+        tags: props.prefillData.tags ?? [],
+        isRecurring: props.prefillData.isRecurring ?? false,
+        notes: props.prefillData.notes ?? '',
+      }
     } else if (open) {
+      // Creating new expense with blank form
       form.value = {
         amount: 0,
         description: '',

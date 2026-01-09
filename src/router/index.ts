@@ -125,6 +125,11 @@ const router = createRouter({
           name: "expenses-reports",
           component: () => import("@/pages/dashboard/expenses/reports.vue"),
         },
+        {
+          path: "expenses/categories",
+          name: "expenses-categories",
+          component: () => import("@/pages/dashboard/expenses/categories.vue"),
+        },
         // Section 5: Investments
         {
           path: "investments",

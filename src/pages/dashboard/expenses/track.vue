@@ -5,6 +5,7 @@ import ExpenseFilters from '@/components/expenses/ExpenseFilters.vue'
 import ExpenseList from '@/components/expenses/ExpenseList.vue'
 import ExpenseForm from '@/components/expenses/ExpenseForm.vue'
 import CSVImportModal from '@/components/expenses/CSVImportModal.vue'
+import ReceiptUploader from '@/components/expenses/ReceiptUploader.vue'
 import {
   useExpenses,
   useCategories,
@@ -19,6 +20,7 @@ const tabs = [
   { title: 'Track', route: '/dashboard/expenses/track' },
   { title: 'Budgets', route: '/dashboard/expenses/budgets' },
   { title: 'Reports', route: '/dashboard/expenses/reports' },
+  { title: 'Categories', route: '/dashboard/expenses/categories' },
 ]
 
 // Current month filter
@@ -51,7 +53,9 @@ const filteredExpenses = computed(() => {
 // Dialogs
 const showExpenseForm = ref(false)
 const showCSVImport = ref(false)
+const showReceiptUploader = ref(false)
 const editingExpense = ref<Expense | null>(null)
+const prefillData = ref<Partial<CreateExpenseInput> | null>(null)
 const deleteConfirmDialog = ref(false)
 const deletingExpenseId = ref<string | null>(null)
 
@@ -68,6 +72,27 @@ const showMessage = (message: string, color = 'success') => {
 
 // Open add form
 const openAddForm = () => {
+  editingExpense.value = null
+  prefillData.value = null
+  showExpenseForm.value = true
+}
+
+// Handle receipt processed - prefill form with extracted data
+const handleReceiptProcessed = (data: {
+  merchant: string | null
+  date: string | null
+  amount: number | null
+  paymentMethod: string | null
+  suggestedCategory: string | null
+}) => {
+  prefillData.value = {
+    merchant: data.merchant || undefined,
+    date: data.date || new Date().toISOString().split('T')[0],
+    amount: data.amount || 0,
+    paymentMethod: data.paymentMethod || undefined,
+    category: data.suggestedCategory || 'Other',
+    description: data.merchant ? `Purchase at ${data.merchant}` : '',
+  }
   editingExpense.value = null
   showExpenseForm.value = true
 }
@@ -90,6 +115,7 @@ const handleSaveExpense = async (data: CreateExpenseInput) => {
     }
     showExpenseForm.value = false
     editingExpense.value = null
+    prefillData.value = null
   } catch (error) {
     showMessage('Failed to save expense', 'error')
   }
@@ -157,6 +183,11 @@ const monthName = computed(() => {
           Add Expense
         </v-btn>
 
+        <v-btn variant="outlined" color="secondary" @click="showReceiptUploader = true">
+          <v-icon icon="mdi-camera" class="mr-1" />
+          Scan Receipt
+        </v-btn>
+
         <v-btn variant="outlined" @click="showCSVImport = true">
           <v-icon icon="mdi-file-upload" class="mr-1" />
           Import CSV
@@ -194,6 +225,7 @@ const monthName = computed(() => {
     <ExpenseForm
       v-model="showExpenseForm"
       :expense="editingExpense"
+      :prefill-data="prefillData"
       @save="handleSaveExpense"
     />
 
@@ -201,6 +233,12 @@ const monthName = computed(() => {
     <CSVImportModal
       v-model="showCSVImport"
       @import="handleCSVImport"
+    />
+
+    <!-- Receipt Uploader Dialog -->
+    <ReceiptUploader
+      v-model="showReceiptUploader"
+      @receipt-processed="handleReceiptProcessed"
     />
 
     <!-- Delete Confirmation Dialog -->
