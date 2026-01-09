@@ -16,6 +16,7 @@ import epfRoutes from './routes/epf'
 import ppfRoutes from './routes/ppf'
 import npsRoutes from './routes/nps'
 import esopRoutes from './routes/esop'
+import investmentReportsRoutes from './routes/investment-reports'
 
 // Non-Salary Income routes
 import businessIncomeRoutes from './routes/business-income'
@@ -68,6 +69,7 @@ app.route('/api/epf', epfRoutes)
 app.route('/api/ppf', ppfRoutes)
 app.route('/api/nps', npsRoutes)
 app.route('/api/esop', esopRoutes)
+app.route('/api/investment-reports', investmentReportsRoutes)
 
 // API routes - Non-Salary Income
 app.route('/api/business-income', businessIncomeRoutes)
