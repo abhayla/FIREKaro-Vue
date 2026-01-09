@@ -1,70 +1,89 @@
 /**
  * Protection (Insurance) Test Data
+ * Updated to match backend API schema (January 2026)
  *
  * Coverage: Term Life, Health Insurance, Other policies
  * Total Annual Premium: ~Rs. 1.2L
  */
 
-import { testUserProfile, getDependents, hasParentDependents } from './unified-profile';
+import { testUserProfile } from './unified-profile';
 
 // ============================================
-// Types
+// Types - Matching backend API schema
 // ============================================
 
-export interface LifeInsuranceTestData {
-  id?: string;
-  policyType: 'term' | 'whole_life' | 'ulip' | 'endowment';
-  policyName: string;
-  insurer: string;
+// Backend enum values
+export type InsuranceType = 'LIFE' | 'HEALTH' | 'MOTOR' | 'HOME' | 'TRAVEL';
+export type PolicyStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
+export type PaymentFrequency = 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY';
+export type TaxBenefitType = 'SECTION_80C' | 'SECTION_80D' | 'BOTH' | 'NONE';
+
+// API input format for creating policies
+export interface CreatePolicyInput {
   policyNumber: string;
+  policyName: string;
+  type: InsuranceType;
+  provider: string;
+  status?: PolicyStatus;
   sumAssured: number;
-  premiumAmount: number;
-  premiumFrequency: 'monthly' | 'quarterly' | 'half_yearly' | 'yearly';
-  policyStartDate: string;
-  policyEndDate: string;
-  maturityDate?: string;
-  maturityAmount?: number;
-  nomineeNames: string[];
-  riders?: string[];
-  // Tax benefits
-  section80C: number;
-  section10_10D: boolean; // Maturity exempt
+  premium: number;
+  paymentFrequency: PaymentFrequency;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;
+  nextDueDate?: string | null;
+  lastPremiumPaidDate?: string | null;
+  // Life insurance specific
+  maturityDate?: string | null;
+  maturityAmount?: number | null;
+  surrenderValue?: number | null;
+  loanAvailable?: boolean;
+  loanAmount?: number | null;
+  // Health insurance specific
+  coverType?: string | null; // individual, family, floater
+  roomRentLimit?: number | null;
+  copayPercent?: number | null;
+  waitingPeriod?: number | null;
+  preExistingWaiting?: number | null;
+  networkHospitals?: number | null;
+  // Motor insurance specific
+  vehicleNumber?: string | null;
+  vehicleType?: string | null;
+  vehicleModel?: string | null;
+  idvValue?: number | null;
+  ncbPercent?: number | null;
+  // Home insurance specific
+  propertyType?: string | null;
+  propertyAddress?: string | null;
+  propertyValue?: number | null;
+  contentsCover?: number | null;
+  // Tax & metadata
+  taxBenefit?: TaxBenefitType | null;
+  policyDocument?: string | null;
+  notes?: string | null;
+  familyMemberId?: string | null;
 }
 
-export interface HealthInsuranceTestData {
-  id?: string;
-  policyType: 'individual' | 'family_floater' | 'super_top_up' | 'critical_illness';
-  policyName: string;
-  insurer: string;
-  policyNumber: string;
-  sumInsured: number;
-  premiumAmount: number;
-  premiumFrequency: 'yearly';
-  policyStartDate: string;
-  policyEndDate: string;
-  coveredMembers: string[];
-  roomRentLimit?: string;
-  ncbPercent: number; // No Claim Bonus
-  waitingPeriod: number; // in days
-  copayPercent?: number;
-  // Tax benefits
-  section80D: number;
-  section80DSenior?: number; // For parents
+// Full policy response from API
+export interface InsurancePolicy extends CreatePolicyInput {
+  id: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  nominees?: InsuranceNominee[];
 }
 
-export interface OtherInsuranceTestData {
-  id?: string;
-  policyType: 'motor' | 'home' | 'travel' | 'personal_accident';
-  policyName: string;
-  insurer: string;
-  policyNumber: string;
-  sumInsured: number;
-  premiumAmount: number;
-  premiumFrequency: 'yearly';
-  policyStartDate: string;
-  policyEndDate: string;
-  assetDetails?: string;
-  coverageDetails?: string[];
+export interface InsuranceNominee {
+  id: string;
+  policyId: string;
+  name: string;
+  relationship: string;
+  dateOfBirth?: string | null;
+  sharePercent: number;
+  isMinor: boolean;
+  appointeeName?: string | null;
+  appointeeRelation?: string | null;
+  phone?: string | null;
+  isPrimary: boolean;
 }
 
 export interface CoverageNeedCalculation {
@@ -85,52 +104,47 @@ export interface CoverageNeedCalculation {
 // Life Insurance Data
 // ============================================
 
-export const lifeInsuranceData: LifeInsuranceTestData[] = [
+export const lifeInsuranceData: CreatePolicyInput[] = [
   {
-    policyType: "term",
-    policyName: "HDFC Click 2 Protect Life",
-    insurer: "HDFC Life",
-    policyNumber: "TERM001234567",
+    type: 'LIFE',
+    policyName: 'HDFC Click 2 Protect Life',
+    provider: 'HDFC Life',
+    policyNumber: 'TERM001234567',
     sumAssured: 10000000, // Rs. 1 Crore
-    premiumAmount: 12000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2021-04-01",
-    policyEndDate: "2053-04-01", // Till age 60
-    nomineeNames: ["Priya (Spouse)", "Arjun (Child)"],
-    riders: ["Accidental Death Benefit", "Critical Illness Rider"],
-    section80C: 12000,
-    section10_10D: false, // Term plans don't have maturity
+    premium: 12000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2021-04-01',
+    endDate: '2053-04-01', // Till age 60
+    taxBenefit: 'SECTION_80C',
+    notes: 'Term plan with riders: Accidental Death Benefit, Critical Illness',
   },
   {
-    policyType: "term",
-    policyName: "ICICI Pru iProtect Smart",
-    insurer: "ICICI Prudential",
-    policyNumber: "TERM007654321",
+    type: 'LIFE',
+    policyName: 'ICICI Pru iProtect Smart',
+    provider: 'ICICI Prudential',
+    policyNumber: 'TERM007654321',
     sumAssured: 5000000, // Rs. 50 Lakhs (additional cover)
-    premiumAmount: 8000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2022-06-15",
-    policyEndDate: "2053-06-15",
-    nomineeNames: ["Priya (Spouse)"],
-    riders: ["Waiver of Premium"],
-    section80C: 8000,
-    section10_10D: false,
+    premium: 8000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2022-06-15',
+    endDate: '2053-06-15',
+    taxBenefit: 'SECTION_80C',
+    notes: 'Additional term coverage with Waiver of Premium rider',
   },
   {
-    policyType: "ulip",
-    policyName: "HDFC ProGrowth Plus",
-    insurer: "HDFC Life",
-    policyNumber: "ULIP00987654",
+    type: 'LIFE',
+    policyName: 'HDFC ProGrowth Plus ULIP',
+    provider: 'HDFC Life',
+    policyNumber: 'ULIP00987654',
     sumAssured: 1000000, // Rs. 10 Lakhs
-    premiumAmount: 50000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2020-01-15",
-    policyEndDate: "2040-01-15",
-    maturityDate: "2040-01-15",
+    premium: 50000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2020-01-15',
+    endDate: '2040-01-15',
+    maturityDate: '2040-01-15',
     maturityAmount: 2500000, // Projected
-    nomineeNames: ["Priya (Spouse)"],
-    section80C: 50000,
-    section10_10D: true, // ULIP maturity is tax-free
+    taxBenefit: 'SECTION_80C',
+    notes: 'ULIP - maturity is tax-free under Section 10(10D)',
   },
 ];
 
@@ -138,114 +152,126 @@ export const lifeInsuranceData: LifeInsuranceTestData[] = [
 // Health Insurance Data
 // ============================================
 
-export const healthInsuranceData: HealthInsuranceTestData[] = [
+export const healthInsuranceData: CreatePolicyInput[] = [
   {
-    policyType: "family_floater",
-    policyName: "HDFC Ergo Optima Secure",
-    insurer: "HDFC Ergo",
-    policyNumber: "HEALTH001234",
-    sumInsured: 1000000, // Rs. 10 Lakhs
-    premiumAmount: 25000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2025-04-01",
-    policyEndDate: "2026-03-31",
-    coveredMembers: ["Self", "Spouse", "Child"],
-    roomRentLimit: "No Limit",
-    ncbPercent: 20, // 20% NCB after 2 claim-free years
+    type: 'HEALTH',
+    policyName: 'HDFC Ergo Optima Secure',
+    provider: 'HDFC Life', // Using provider from form dropdown
+    policyNumber: 'HEALTH001234',
+    sumAssured: 1000000, // Rs. 10 Lakhs
+    premium: 25000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2025-04-01',
+    endDate: '2026-03-31',
+    coverType: 'floater',
+    roomRentLimit: 0, // No limit
+    copayPercent: 0,
     waitingPeriod: 30,
-    section80D: 25000,
+    taxBenefit: 'SECTION_80D',
+    notes: 'Family floater covering Self, Spouse, Child. 20% NCB after claim-free years.',
   },
   {
-    policyType: "super_top_up",
-    policyName: "Star Health Super Top Up",
-    insurer: "Star Health",
-    policyNumber: "TOPUP007654",
-    sumInsured: 5000000, // Rs. 50 Lakhs
-    premiumAmount: 8000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2025-04-01",
-    policyEndDate: "2026-03-31",
-    coveredMembers: ["Self", "Spouse", "Child"],
+    type: 'HEALTH',
+    policyName: 'Star Health Super Top Up',
+    provider: 'Care Health', // Using provider from form dropdown
+    policyNumber: 'TOPUP007654',
+    sumAssured: 5000000, // Rs. 50 Lakhs
+    premium: 8000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2025-04-01',
+    endDate: '2026-03-31',
+    coverType: 'floater',
     waitingPeriod: 0, // No waiting for super top-up
     copayPercent: 0,
-    section80D: 0, // Already claimed in base policy
+    taxBenefit: 'NONE', // Already claimed in base policy
+    notes: 'Super top-up for family - kicks in after base policy exhausted',
   },
   {
-    policyType: "family_floater",
-    policyName: "Care Health Senior",
-    insurer: "Care Health",
-    policyNumber: "SENIOR00123",
-    sumInsured: 500000, // Rs. 5 Lakhs
-    premiumAmount: 45000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2025-04-01",
-    policyEndDate: "2026-03-31",
-    coveredMembers: ["Father", "Mother"],
-    roomRentLimit: "Rs. 5,000/day",
-    ncbPercent: 0, // First year
-    waitingPeriod: 30,
+    type: 'HEALTH',
+    policyName: 'Care Health Senior',
+    provider: 'Care Health',
+    policyNumber: 'SENIOR00123',
+    sumAssured: 500000, // Rs. 5 Lakhs
+    premium: 45000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2025-04-01',
+    endDate: '2026-03-31',
+    coverType: 'floater',
+    roomRentLimit: 5000, // Rs. 5,000/day
     copayPercent: 20, // 20% co-pay for senior citizens
-    section80D: 0,
-    section80DSenior: 50000, // Senior citizen deduction
+    waitingPeriod: 30,
+    taxBenefit: 'SECTION_80D',
+    notes: 'Senior citizen health plan for parents. Section 80D up to Rs 50,000.',
   },
   {
-    policyType: "critical_illness",
-    policyName: "Max Bupa Critical Illness",
-    insurer: "Max Bupa",
-    policyNumber: "CI00987654",
-    sumInsured: 2500000, // Rs. 25 Lakhs
-    premiumAmount: 12000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2025-04-01",
-    policyEndDate: "2026-03-31",
-    coveredMembers: ["Self"],
+    type: 'HEALTH',
+    policyName: 'Max Bupa Critical Illness',
+    provider: 'Max Life',
+    policyNumber: 'CI00987654',
+    sumAssured: 2500000, // Rs. 25 Lakhs
+    premium: 12000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2025-04-01',
+    endDate: '2026-03-31',
+    coverType: 'individual',
     waitingPeriod: 90,
-    section80D: 0, // Counted under main 80D limit
+    taxBenefit: 'NONE', // Counted under main 80D limit
+    notes: 'Critical illness cover for self',
   },
 ];
 
 // ============================================
-// Other Insurance Data
+// Other Insurance Data (Motor, Home, Travel)
 // ============================================
 
-export const otherInsuranceData: OtherInsuranceTestData[] = [
+export const otherInsuranceData: CreatePolicyInput[] = [
   {
-    policyType: "motor",
-    policyName: "HDFC Ergo Motor Insurance",
-    insurer: "HDFC Ergo",
-    policyNumber: "MOTOR001234",
-    sumInsured: 800000, // IDV
-    premiumAmount: 15000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2025-01-15",
-    policyEndDate: "2026-01-14",
-    assetDetails: "Hyundai Creta 2022 - KA05AB1234",
-    coverageDetails: ["Comprehensive", "Zero Depreciation", "Engine Protect", "RSA"],
+    type: 'MOTOR',
+    policyName: 'HDFC Ergo Motor Insurance',
+    provider: 'HDFC Life',
+    policyNumber: 'MOTOR001234',
+    sumAssured: 800000, // IDV
+    premium: 15000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2025-01-15',
+    endDate: '2026-01-14',
+    vehicleNumber: 'KA05AB1234',
+    vehicleType: 'Car',
+    vehicleModel: 'Hyundai Creta 2022',
+    idvValue: 800000,
+    ncbPercent: 20,
+    taxBenefit: 'NONE',
+    notes: 'Comprehensive cover with Zero Depreciation, Engine Protect, RSA',
   },
   {
-    policyType: "home",
-    policyName: "ICICI Lombard Home Insurance",
-    insurer: "ICICI Lombard",
-    policyNumber: "HOME007654",
-    sumInsured: 5000000, // Rs. 50 Lakhs (contents + building)
-    premiumAmount: 5000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2025-04-01",
-    policyEndDate: "2026-03-31",
-    assetDetails: "Whitefield Apartment",
-    coverageDetails: ["Fire", "Theft", "Natural Calamity", "Contents Cover"],
+    type: 'HOME',
+    policyName: 'ICICI Lombard Home Insurance',
+    provider: 'ICICI Prudential',
+    policyNumber: 'HOME007654',
+    sumAssured: 5000000, // Rs. 50 Lakhs (contents + building)
+    premium: 5000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2025-04-01',
+    endDate: '2026-03-31',
+    propertyType: 'Apartment',
+    propertyAddress: 'Whitefield, Bangalore',
+    propertyValue: 5000000,
+    contentsCover: 1000000,
+    taxBenefit: 'NONE',
+    notes: 'Covers Fire, Theft, Natural Calamity, Contents',
   },
   {
-    policyType: "personal_accident",
-    policyName: "Bajaj Allianz PA Cover",
-    insurer: "Bajaj Allianz",
-    policyNumber: "PA00123456",
-    sumInsured: 5000000, // Rs. 50 Lakhs
-    premiumAmount: 3000,
-    premiumFrequency: "yearly",
-    policyStartDate: "2025-04-01",
-    policyEndDate: "2026-03-31",
-    coverageDetails: ["Accidental Death", "Permanent Total Disability", "Permanent Partial Disability"],
+    type: 'TRAVEL',
+    policyName: 'Bajaj Allianz PA Cover',
+    provider: 'Bajaj Allianz',
+    policyNumber: 'PA00123456',
+    sumAssured: 5000000, // Rs. 50 Lakhs
+    premium: 3000,
+    paymentFrequency: 'YEARLY',
+    startDate: '2025-04-01',
+    endDate: '2026-03-31',
+    taxBenefit: 'NONE',
+    notes: 'Personal Accident: Accidental Death, Permanent Total/Partial Disability',
   },
 ];
 
@@ -257,30 +283,21 @@ export const coverageSummary = {
   life: {
     count: lifeInsuranceData.length,
     totalSumAssured: lifeInsuranceData.reduce((sum, p) => sum + p.sumAssured, 0),
-    totalPremium: lifeInsuranceData.reduce((sum, p) => sum + p.premiumAmount, 0),
+    totalPremium: lifeInsuranceData.reduce((sum, p) => sum + p.premium, 0),
     termCover: lifeInsuranceData
-      .filter(p => p.policyType === 'term')
-      .reduce((sum, p) => sum + p.sumAssured, 0),
-    ulipCover: lifeInsuranceData
-      .filter(p => p.policyType === 'ulip')
+      .filter(p => p.policyName.toLowerCase().includes('term') || p.policyName.toLowerCase().includes('protect'))
       .reduce((sum, p) => sum + p.sumAssured, 0),
   },
 
   health: {
     count: healthInsuranceData.length,
-    totalSumInsured: healthInsuranceData.reduce((sum, p) => sum + p.sumInsured, 0),
-    totalPremium: healthInsuranceData.reduce((sum, p) => sum + p.premiumAmount, 0),
-    selfFamilyCover: healthInsuranceData
-      .filter(p => p.coveredMembers.includes('Self'))
-      .reduce((sum, p) => sum + p.sumInsured, 0),
-    parentsCover: healthInsuranceData
-      .filter(p => p.coveredMembers.includes('Father') || p.coveredMembers.includes('Mother'))
-      .reduce((sum, p) => sum + p.sumInsured, 0),
+    totalSumAssured: healthInsuranceData.reduce((sum, p) => sum + p.sumAssured, 0),
+    totalPremium: healthInsuranceData.reduce((sum, p) => sum + p.premium, 0),
   },
 
   other: {
     count: otherInsuranceData.length,
-    totalPremium: otherInsuranceData.reduce((sum, p) => sum + p.premiumAmount, 0),
+    totalPremium: otherInsuranceData.reduce((sum, p) => sum + p.premium, 0),
   },
 
   get totalAnnualPremium() {
@@ -289,9 +306,12 @@ export const coverageSummary = {
 
   // Tax Benefits
   taxBenefits: {
-    section80C: lifeInsuranceData.reduce((sum, p) => sum + p.section80C, 0),
-    section80D: healthInsuranceData.reduce((sum, p) => sum + p.section80D, 0),
-    section80DSenior: healthInsuranceData.reduce((sum, p) => sum + (p.section80DSenior || 0), 0),
+    section80C: lifeInsuranceData
+      .filter(p => p.taxBenefit === 'SECTION_80C' || p.taxBenefit === 'BOTH')
+      .reduce((sum, p) => sum + p.premium, 0),
+    section80D: healthInsuranceData
+      .filter(p => p.taxBenefit === 'SECTION_80D' || p.taxBenefit === 'BOTH')
+      .reduce((sum, p) => sum + p.premium, 0),
   },
 };
 
@@ -332,22 +352,22 @@ export const coverageNeedCalculation: CoverageNeedCalculation = {
 
 export const renewalCalendar = [
   ...lifeInsuranceData.map(p => ({
-    type: 'Life Insurance',
+    type: 'LIFE' as InsuranceType,
     name: p.policyName,
-    renewalDate: p.policyEndDate,
-    premium: p.premiumAmount,
+    renewalDate: p.endDate,
+    premium: p.premium,
   })),
   ...healthInsuranceData.map(p => ({
-    type: 'Health Insurance',
+    type: 'HEALTH' as InsuranceType,
     name: p.policyName,
-    renewalDate: p.policyEndDate,
-    premium: p.premiumAmount,
+    renewalDate: p.endDate,
+    premium: p.premium,
   })),
   ...otherInsuranceData.map(p => ({
-    type: 'Other Insurance',
+    type: p.type,
     name: p.policyName,
-    renewalDate: p.policyEndDate,
-    premium: p.premiumAmount,
+    renewalDate: p.endDate,
+    premium: p.premium,
   })),
 ].sort((a, b) => new Date(a.renewalDate).getTime() - new Date(b.renewalDate).getTime());
 
@@ -355,12 +375,19 @@ export const renewalCalendar = [
 // Test Helpers
 // ============================================
 
-export function getLifePoliciesByType(type: LifeInsuranceTestData['policyType']): LifeInsuranceTestData[] {
-  return lifeInsuranceData.filter(p => p.policyType === type);
-}
-
-export function getHealthPoliciesByType(type: HealthInsuranceTestData['policyType']): HealthInsuranceTestData[] {
-  return healthInsuranceData.filter(p => p.policyType === type);
+export function getPoliciesByType(type: InsuranceType): CreatePolicyInput[] {
+  switch (type) {
+    case 'LIFE':
+      return lifeInsuranceData;
+    case 'HEALTH':
+      return healthInsuranceData;
+    case 'MOTOR':
+    case 'HOME':
+    case 'TRAVEL':
+      return otherInsuranceData.filter(p => p.type === type);
+    default:
+      return [];
+  }
 }
 
 export function getPoliciesExpiringInDays(days: number): typeof renewalCalendar {
@@ -369,13 +396,30 @@ export function getPoliciesExpiringInDays(days: number): typeof renewalCalendar 
   return renewalCalendar.filter(p => new Date(p.renewalDate) <= cutoffDate);
 }
 
-export function getMemberCoverage(memberName: string) {
-  const healthPolicies = healthInsuranceData.filter(p =>
-    p.coveredMembers.some(m => m.toLowerCase().includes(memberName.toLowerCase()))
-  );
-  return {
-    count: healthPolicies.length,
-    totalCoverage: healthPolicies.reduce((sum, p) => sum + p.sumInsured, 0),
-    policies: healthPolicies,
-  };
-}
+// Sample policy for quick tests
+export const sampleLifePolicy: CreatePolicyInput = {
+  type: 'LIFE',
+  policyName: 'Test Term Plan',
+  provider: 'LIC',
+  policyNumber: 'TEST123456',
+  sumAssured: 5000000,
+  premium: 10000,
+  paymentFrequency: 'YEARLY',
+  startDate: new Date().toISOString().split('T')[0],
+  endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  taxBenefit: 'SECTION_80C',
+};
+
+export const sampleHealthPolicy: CreatePolicyInput = {
+  type: 'HEALTH',
+  policyName: 'Test Health Plan',
+  provider: 'Star Health',
+  policyNumber: 'TESTH123456',
+  sumAssured: 1000000,
+  premium: 20000,
+  paymentFrequency: 'YEARLY',
+  startDate: new Date().toISOString().split('T')[0],
+  endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  coverType: 'family',
+  taxBenefit: 'SECTION_80D',
+};

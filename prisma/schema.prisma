@@ -52,6 +52,7 @@ model User {
   loans          Loan[]
   loanPayments   LoanPayment[]
   debtPayoffPlans DebtPayoffPlan[]
+  creditCards    CreditCard[]
 
   // Financial Health relations
   netWorth               NetWorth[]
@@ -75,6 +76,14 @@ model User {
   expenseCategoryRules   ExpenseCategoryRule[]
   alertPreferences       AlertPreference?
   alertDeliveries        AlertDelivery[]
+
+  // Tax Planning relations
+  advanceTaxEstimates    AdvanceTaxEstimate[]
+  advanceTaxPayments     AdvanceTaxPayment[]
+  taxWhatIfScenarios     TaxWhatIfScenario[]
+
+  // Protection/Insurance relations
+  insurancePolicies      InsurancePolicy[]
 
   @@index([email])
 }
@@ -180,7 +189,8 @@ model FamilyMember {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCards CreditCard[]
 
   @@index([userId])
 }
@@ -951,6 +961,54 @@ model DebtPayoffPlan {
   @@index([userId])
 }
 
+model CreditCard {
+  id                  String                @id @default(cuid())
+  userId              String
+  familyMemberId      String?
+  cardName            String
+  bankName            String
+  cardNumber          String                // Masked: ****1234
+  cardType            String                // VISA, MASTERCARD, RUPAY, AMEX
+  creditLimit         Float
+  availableLimit      Float
+  currentOutstanding  Float                 @default(0)
+  billingCycleDate    Int                   // Day of month (1-31)
+  paymentDueDate      Int                   // Day of month (1-31)
+  rewardPointsBalance Int                   @default(0)
+  interestRateAPR     Float?
+  annualFee           Float                 @default(0)
+  feeWaiverSpend      Float?
+  cardExpiryDate      DateTime?
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyMember FamilyMember?         @relation(fields: [familyMemberId], references: [id])
+  statements   CreditCardStatement[]
+
+  @@index([userId, isActive])
+  @@index([paymentDueDate])
+}
+
+model CreditCardStatement {
+  id              String     @id @default(cuid())
+  creditCardId    String
+  statementDate   DateTime
+  statementAmount Float
+  minimumDue      Float
+  dueDate         DateTime
+  isPaid          Boolean    @default(false)
+  paidAmount      Float?
+  paidDate        DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+
+  @@index([creditCardId, statementDate])
+}
+
 // ============================================================================
 // FINANCIAL HEALTH MODELS
 // ============================================================================
@@ -1532,4 +1590,247 @@ model OtherIncome {
 
   @@index([userId, fiscalYear])
   @@index([category])
+}
+
+// ============================================================================
+// PROTECTION/INSURANCE MODELS
+// ============================================================================
+
+enum InsuranceType {
+  LIFE
+  HEALTH
+  MOTOR
+  HOME
+  TRAVEL
+}
+
+enum InsurancePolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum InsurancePaymentFrequency {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+}
+
+enum TaxBenefitType {
+  SECTION_80C
+  SECTION_80D
+  BOTH
+  NONE
+}
+
+model InsurancePolicy {
+  id                    String                    @id @default(cuid())
+  userId                String
+  familyMemberId        String?
+
+  // Policy basics
+  policyNumber          String
+  policyName            String
+  type                  InsuranceType
+  provider              String
+  status                InsurancePolicyStatus     @default(ACTIVE)
+
+  // Coverage
+  sumAssured            Float
+  premium               Float
+  paymentFrequency      InsurancePaymentFrequency
+
+  // Dates
+  startDate             DateTime
+  endDate               DateTime
+  nextDueDate           DateTime?
+  lastPremiumPaidDate   DateTime?
+
+  // Life insurance specific
+  maturityDate          DateTime?
+  maturityAmount        Float?
+  surrenderValue        Float?
+  loanAvailable         Boolean                   @default(false)
+  loanAmount            Float?
+
+  // Health insurance specific
+  coverType             String?                   // individual, family, floater
+  roomRentLimit         Float?
+  copayPercent          Float?
+  waitingPeriod         Int?                      // days
+  preExistingWaiting    Int?                      // years
+  networkHospitals      Int?                      // count
+
+  // Motor insurance specific
+  vehicleNumber         String?
+  vehicleType           String?                   // car, bike, commercial
+  vehicleModel          String?
+  idvValue              Float?                    // Insured Declared Value
+  ncbPercent            Float?                    // No Claim Bonus
+
+  // Home insurance specific
+  propertyType          String?                   // apartment, house, commercial
+  propertyAddress       String?
+  propertyValue         Float?
+  contentsCover         Float?
+
+  // Tax benefits
+  taxBenefit            TaxBenefitType?
+
+  // Additional details
+  policyDocument        String?                   // URL to uploaded document
+  notes                 String?
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  // Relations
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nominees              InsuranceNominee[]
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([userId, status])
+  @@index([endDate])
+}
+
+model InsuranceNominee {
+  id                String           @id @default(cuid())
+  policyId          String
+
+  name              String
+  relationship      String
+  dateOfBirth       DateTime?
+  sharePercent      Float            @default(100)
+  isMinor           Boolean          @default(false)
+  appointeeName     String?          // Required if nominee is minor
+  appointeeRelation String?
+  phone             String?
+  isPrimary         Boolean          @default(true)
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  policy            InsurancePolicy  @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([policyId])
+}
+
+// ============================================================================
+// TAX PLANNING MODELS
+// ============================================================================
+
+// Advance Tax Estimate - Track quarterly advance tax obligations
+model AdvanceTaxEstimate {
+  id                    String   @id @default(cuid())
+  userId                String
+  financialYear         String   // "2024-25"
+  selectedRegime        String   @default("NEW") // "OLD" | "NEW"
+  totalEstimatedIncome  Float    @default(0)
+  incomeBreakdown       Json?    // { salary, business, rental, capitalGains, other }
+  estimatedDeductions   Float    @default(0)
+  totalTDSDeducted      Float    @default(0)
+  grossTaxLiability     Float    @default(0)
+  netTaxLiability       Float    @default(0)
+  advanceTaxRequired    Boolean  @default(false) // True if > ₹10,000
+  interest234B          Float    @default(0)
+  interest234C          Float    @default(0)
+  lastCalculatedAt      DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules             AdvanceTaxSchedule[]
+  payments              AdvanceTaxPayment[]
+
+  @@unique([userId, financialYear])
+  @@index([userId])
+}
+
+// Advance Tax Schedule - Quarterly due dates and payment tracking
+model AdvanceTaxSchedule {
+  id                    String   @id @default(cuid())
+  estimateId            String
+  quarter               Int      // 1, 2, 3, 4
+  dueDate               DateTime // Jun 15, Sep 15, Dec 15, Mar 15
+  cumulativePercentage  Float    // 15, 45, 75, 100
+  cumulativeAmountDue   Float    @default(0)
+  quarterAmountDue      Float    @default(0)
+  amountPaid            Float    @default(0)
+  shortfall             Float    @default(0)
+  status                String   @default("PENDING") // PENDING, PAID, PARTIAL, OVERDUE
+  interest234C          Float    @default(0)
+
+  estimate              AdvanceTaxEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  payments              AdvanceTaxPayment[]
+
+  @@unique([estimateId, quarter])
+  @@index([estimateId])
+  @@index([dueDate])
+}
+
+// Advance Tax Payment - Individual payment records with challan details
+model AdvanceTaxPayment {
+  id                    String   @id @default(cuid())
+  userId                String
+  estimateId            String
+  scheduleId            String?
+  paymentDate           DateTime
+  amount                Float
+  challanSerialNumber   String
+  bsrCode               String
+  bankName              String?
+  quarter               Int      // 1, 2, 3, 4
+  financialYear         String
+  isVerified            Boolean  @default(false)
+  challanDocumentUrl    String?
+  notes                 String?
+  createdAt             DateTime @default(now())
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estimate              AdvanceTaxEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  schedule              AdvanceTaxSchedule? @relation(fields: [scheduleId], references: [id])
+
+  @@index([userId, financialYear])
+  @@index([estimateId])
+}
+
+// Tax What-If Scenario - Saved scenarios for tax planning comparison
+model TaxWhatIfScenario {
+  id                      String   @id @default(cuid())
+  userId                  String
+  financialYear           String
+  name                    String
+  description             String?
+  isBaseline              Boolean  @default(false) // Baseline scenario (current state)
+  isAutoGenerated         Boolean  @default(false) // Smart suggestion generated
+  selectedRegime          String   // 'OLD' | 'NEW'
+
+  // Adjustments stored as JSON
+  incomeAdjustments       Json     @default("{}") // { salary: 100000, business: 50000, ... }
+  deductionAdjustments    Json     @default("{}") // { section80C: 150000, section80D: 25000, ... }
+
+  // Calculated values
+  totalGrossIncome        Float    @default(0)
+  totalDeductions         Float    @default(0)
+  taxableIncome           Float    @default(0)
+  totalTaxLiability       Float    @default(0)
+  taxDifferenceFromBaseline Float  @default(0) // Negative = savings
+  percentageSavings       Float    @default(0)
+
+  // Smart suggestion metadata
+  suggestionReason        String?  // Why this scenario was suggested
+  optimizationCategory    String?  // MAX_80C, MAX_NPS, REGIME_SWITCH, COMBINED_OPTIMAL
+
+  lastCalculatedAt        DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, financialYear, name])
+  @@index([userId, financialYear])
+  @@index([isBaseline])
 }

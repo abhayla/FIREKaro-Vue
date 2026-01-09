@@ -35,6 +35,20 @@ import expenseRulesRoutes from './routes/expense-rules'
 // Alert routes
 import alertsRoutes from './routes/alerts'
 
+// Tax Planning routes
+import advanceTaxRoutes from './routes/advance-tax'
+import taxScenariosRoutes from './routes/tax-scenarios'
+import taxReportsRoutes from './routes/tax-reports'
+
+// Liabilities routes
+import loansRoutes from './routes/loans'
+import creditCardsRoutes from './routes/credit-cards'
+import liabilitiesRoutes from './routes/liabilities'
+import liabilitiesReportsRoutes from './routes/liabilities-reports'
+
+// Protection/Insurance routes
+import insuranceRoutes from './routes/insurance'
+
 const app = new Hono()
 
 // Middleware
@@ -87,6 +101,20 @@ app.route('/api/expense-rules', expenseRulesRoutes)
 
 // API routes - Alerts
 app.route('/api/alerts', alertsRoutes)
+
+// API routes - Tax Planning
+app.route('/api/advance-tax', advanceTaxRoutes)
+app.route('/api/tax-planning/scenarios', taxScenariosRoutes)
+app.route('/api/tax-planning/reports', taxReportsRoutes)
+
+// API routes - Liabilities
+app.route('/api/loans', loansRoutes)
+app.route('/api/credit-cards', creditCardsRoutes)
+app.route('/api/liabilities', liabilitiesRoutes)
+app.route('/api/liabilities/reports', liabilitiesReportsRoutes)
+
+// API routes - Protection/Insurance
+app.route('/api/insurance', insuranceRoutes)
 
 // 404 handler
 app.notFound((c) => {

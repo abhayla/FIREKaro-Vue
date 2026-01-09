@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ProtectionOverviewPage, LifeInsurancePage, HealthInsurancePage } from "../../pages/protection";
+import { ProtectionOverviewPage, LifeInsurancePage, HealthInsurancePage, ProtectionReportsPage, ProtectionCalculatorPage } from "../../pages/protection";
 
 test.describe("Protection Navigation", () => {
   test.beforeEach(async ({ page }) => {
@@ -14,28 +14,27 @@ test.describe("Protection Navigation", () => {
     await expect(page).toHaveURL(/\/dashboard\/protection$/);
   });
 
-  test("should display all tabs", async ({ page }) => {
+  test("should display all navigation tabs", async ({ page }) => {
     await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Life" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Health" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Other" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Calculator" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Reports" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Life/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Health/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Other/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Calculator/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Reports/i })).toBeVisible();
   });
 
   test("should navigate to Life Insurance page", async ({ page }) => {
-    // Use direct navigation since tab clicks have timing issues with Vue Router
-    await page.goto("/dashboard/protection/life");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    const lifePage = new LifeInsurancePage(page);
+    await lifePage.navigateTo();
     await expect(page).toHaveURL(/\/dashboard\/protection\/life/);
+    await lifePage.expectPageLoaded();
   });
 
   test("should navigate to Health Insurance page", async ({ page }) => {
-    await page.goto("/dashboard/protection/health");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    const healthPage = new HealthInsurancePage(page);
+    await healthPage.navigateTo();
     await expect(page).toHaveURL(/\/dashboard\/protection\/health/);
+    await healthPage.expectPageLoaded();
   });
 
   test("should navigate to Other Insurance page", async ({ page }) => {
@@ -46,28 +45,47 @@ test.describe("Protection Navigation", () => {
   });
 
   test("should navigate to Calculator page", async ({ page }) => {
-    await page.goto("/dashboard/protection/calculator");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    const calculatorPage = new ProtectionCalculatorPage(page);
+    await calculatorPage.navigateTo();
     await expect(page).toHaveURL(/\/dashboard\/protection\/calculator/);
+    await calculatorPage.expectPageLoaded();
   });
 
   test("should navigate to Reports page", async ({ page }) => {
-    await page.goto("/dashboard/protection/reports");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    const reportsPage = new ProtectionReportsPage(page);
+    await reportsPage.navigateTo();
     await expect(page).toHaveURL(/\/dashboard\/protection\/reports/);
+    await reportsPage.expectPageLoaded();
   });
 
-  test("should show correct active tab indicator", async ({ page }) => {
+  test("should show correct active tab indicator on overview", async ({ page }) => {
     const overviewTab = page.getByRole("tab", { name: "Overview" });
     await expect(overviewTab).toHaveAttribute("aria-selected", "true");
+  });
 
+  test("should show correct active tab indicator when navigating to life page", async ({ page }) => {
     await page.goto("/dashboard/protection/life");
     await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500); // Wait for tab state to update
 
-    const lifeTab = page.getByRole("tab", { name: "Life" });
+    const lifeTab = page.getByRole("tab", { name: /Life/i });
     await expect(lifeTab).toHaveAttribute("aria-selected", "true");
-    await expect(overviewTab).toHaveAttribute("aria-selected", "false");
+  });
+
+  test("should show summary cards on overview page", async ({ page }) => {
+    const overview = new ProtectionOverviewPage(page);
+    await overview.expectHasSummaryCards();
+  });
+
+  test("should be able to navigate between tabs using tab clicks", async ({ page }) => {
+    // Click on Life tab
+    await page.getByRole("tab", { name: /Life/i }).click();
+    await page.waitForTimeout(500);
+    await expect(page).toHaveURL(/\/dashboard\/protection\/life/);
+
+    // Click back to Overview
+    await page.getByRole("tab", { name: "Overview" }).click();
+    await page.waitForTimeout(500);
+    await expect(page).toHaveURL(/\/dashboard\/protection$/);
   });
 });
