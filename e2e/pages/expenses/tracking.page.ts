@@ -23,6 +23,31 @@ export class ExpenseTrackingPage extends BasePage {
     return this.page.getByRole("button", { name: /Add Expense|Add/i });
   }
 
+  get scanReceiptButton(): Locator {
+    return this.page.getByRole("button", { name: /Scan Receipt|Receipt/i });
+  }
+
+  get importCSVButton(): Locator {
+    return this.page.getByRole("button", { name: /Import CSV|Import/i });
+  }
+
+  // Receipt Uploader Dialog
+  get receiptUploaderDialog(): Locator {
+    return this.page.locator(".v-dialog").filter({ hasText: /Scan Receipt|Upload Receipt/i });
+  }
+
+  get receiptFileInput(): Locator {
+    return this.page.locator("input[type='file']");
+  }
+
+  get extractDataButton(): Locator {
+    return this.page.getByRole("button", { name: /Extract Data|Process/i });
+  }
+
+  get useExtractedDataButton(): Locator {
+    return this.page.getByRole("button", { name: /Use This Data|Apply/i });
+  }
+
   // Expense form dialog
   get expenseFormDialog(): Locator {
     return this.page.locator(".v-dialog").filter({ hasText: /Add Expense|Edit Expense/i });
@@ -91,6 +116,17 @@ export class ExpenseTrackingPage extends BasePage {
   async openAddForm() {
     await this.addExpenseButton.click();
     await this.expenseFormDialog.waitFor({ state: "visible" });
+  }
+
+  async openReceiptScanner() {
+    await this.scanReceiptButton.click();
+    await this.receiptUploaderDialog.waitFor({ state: "visible" });
+  }
+
+  async closeReceiptScanner() {
+    const closeBtn = this.receiptUploaderDialog.getByRole("button", { name: /Cancel|Close/i });
+    await closeBtn.click();
+    await this.page.waitForTimeout(300);
   }
 
   async fillExpenseForm(data: {
@@ -198,5 +234,21 @@ export class ExpenseTrackingPage extends BasePage {
 
   async expectExpenseNotInTable(description: string) {
     await expect(this.getTableRowByText(description)).not.toBeVisible();
+  }
+
+  async expectReceiptDialogVisible() {
+    await expect(this.receiptUploaderDialog).toBeVisible();
+  }
+
+  async expectReceiptDialogClosed() {
+    await expect(this.receiptUploaderDialog).not.toBeVisible();
+  }
+
+  async expectScanReceiptButtonVisible() {
+    await expect(this.scanReceiptButton).toBeVisible();
+  }
+
+  async expectImportCSVButtonVisible() {
+    await expect(this.importCSVButton).toBeVisible();
   }
 }

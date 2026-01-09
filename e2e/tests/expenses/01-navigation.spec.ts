@@ -4,6 +4,7 @@ import {
   ExpenseTrackingPage,
   BudgetsPage,
   ExpensesReportsPage,
+  ExpenseCategoriesPage,
 } from "../../pages/expenses";
 
 test.describe("Expenses Navigation", () => {
@@ -24,6 +25,7 @@ test.describe("Expenses Navigation", () => {
     await expect(page.getByRole("tab", { name: "Track" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Budgets" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Reports" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Categories" })).toBeVisible();
   });
 
   test("should navigate to Track page", async ({ page }) => {
@@ -52,6 +54,15 @@ test.describe("Expenses Navigation", () => {
 
     const reports = new ExpensesReportsPage(page);
     await reports.expectPageLoaded();
+  });
+
+  test("should navigate to Categories page", async ({ page }) => {
+    await page.goto("/dashboard/expenses/categories");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const categories = new ExpenseCategoriesPage(page);
+    await categories.expectPageLoaded();
   });
 
   test("should show correct active tab indicator", async ({ page }) => {

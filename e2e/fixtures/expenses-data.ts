@@ -589,3 +589,89 @@ export function getBudgetUtilization(category: string): BudgetTestData | undefin
 export function getOverBudgetCategories(): BudgetTestData[] {
   return budgetData.filter(b => b.isOverBudget);
 }
+
+// ============================================
+// Expense Rules Test Data
+// ============================================
+
+export interface ExpenseRuleTestData {
+  name: string;
+  isActive: boolean;
+  priority: number;
+  conditions: Array<{
+    field: 'merchant' | 'description' | 'amount' | 'paymentMethod';
+    operator: 'equals' | 'contains' | 'startsWith' | 'greaterThan' | 'lessThan';
+    value: string | number;
+  }>;
+  targetCategory: string;
+  targetSubcategory?: string;
+}
+
+export const expenseRulesData: ExpenseRuleTestData[] = [
+  {
+    name: "Swiggy Food Orders",
+    isActive: true,
+    priority: 1,
+    conditions: [
+      { field: "merchant", operator: "contains", value: "Swiggy" },
+    ],
+    targetCategory: "Dining Out",
+    targetSubcategory: "Food Delivery",
+  },
+  {
+    name: "Zomato Food Orders",
+    isActive: true,
+    priority: 2,
+    conditions: [
+      { field: "merchant", operator: "contains", value: "Zomato" },
+    ],
+    targetCategory: "Dining Out",
+    targetSubcategory: "Food Delivery",
+  },
+  {
+    name: "Amazon Shopping",
+    isActive: true,
+    priority: 3,
+    conditions: [
+      { field: "merchant", operator: "contains", value: "Amazon" },
+    ],
+    targetCategory: "Shopping",
+  },
+  {
+    name: "Uber/Ola Rides",
+    isActive: true,
+    priority: 4,
+    conditions: [
+      { field: "description", operator: "contains", value: "Uber" },
+    ],
+    targetCategory: "Transportation",
+    targetSubcategory: "Cab/Auto",
+  },
+  {
+    name: "High Value Purchases",
+    isActive: true,
+    priority: 10,
+    conditions: [
+      { field: "amount", operator: "greaterThan", value: 10000 },
+    ],
+    targetCategory: "Shopping",
+  },
+  {
+    name: "Petrol Expenses",
+    isActive: true,
+    priority: 5,
+    conditions: [
+      { field: "description", operator: "contains", value: "Petrol" },
+    ],
+    targetCategory: "Transportation",
+    targetSubcategory: "Fuel",
+  },
+];
+
+export function getActiveRules(): ExpenseRuleTestData[] {
+  return expenseRulesData.filter(r => r.isActive);
+}
+
+export function getRulesByCategory(category: string): ExpenseRuleTestData[] {
+  return expenseRulesData.filter(r => r.targetCategory === category);
+}
