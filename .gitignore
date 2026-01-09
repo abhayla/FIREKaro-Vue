@@ -18,6 +18,7 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 .idea
+.history/
 *.suo
 *.ntvs*
 *.njsproj
@@ -45,11 +46,30 @@ coverage
 nul
 Thumbs.db
 desktop.ini
+
+# Linux backup files
+*~
+
+# Auth (E2E tests)
 e2e/.auth/
 
 # Playwright MCP
 .playwright-mcp/
 
+# Build artifacts
+stats.html
+
+# Cache
+.cache/
+
+# Backup files
+*.bak
+
+# Certificates
+*.pem
+
+# Debug
+.clinic/
+
 # Misc
 Notes
-e2e/test-results/
