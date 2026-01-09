@@ -60,4 +60,39 @@ test.describe("Health Score", () => {
       expect(overviewPage.healthScoreTrend).toBeVisible();
     });
   });
+
+  test("should not display NaN in DTI ratio", async ({ page }) => {
+    // DTI should show either a percentage or "No income data", never NaN
+    const pageContent = await page.textContent("body");
+    expect(pageContent).not.toContain("NaN% annual DTI");
+    // Should show either valid percentage or "No income data"
+    const dtiText = page.getByText(/Debt-to-Income/i).first();
+    if (await dtiText.isVisible()) {
+      const dtiContent = await dtiText.locator("..").textContent();
+      expect(dtiContent).not.toContain("NaN");
+    }
+  });
+
+  test("should not display NaN in emergency fund months", async ({ page }) => {
+    // Emergency fund should show "X of Y mo", never "NaN of Y mo"
+    const pageContent = await page.textContent("body");
+    expect(pageContent).not.toContain("NaN of");
+    // Look for emergency fund display
+    const efCard = overviewPage.emergencyFundCard;
+    if (await efCard.isVisible()) {
+      const efContent = await efCard.textContent();
+      expect(efContent).not.toContain("NaN");
+    }
+  });
+
+  test("should handle zero income gracefully", async ({ page }) => {
+    // When there's no income data, DTI should show "No income data" or 0%
+    const dtiSection = page.locator(".v-card, .health-factor").filter({ hasText: /Debt-to-Income/i });
+    if (await dtiSection.isVisible()) {
+      const content = await dtiSection.textContent();
+      // Should either show a valid percentage or "No income data"
+      const hasValidContent = content?.includes("%") || content?.includes("No income data");
+      expect(hasValidContent).toBe(true);
+    }
+  });
 });

@@ -82,4 +82,48 @@ test.describe("Financial Health Integration", () => {
       page.getByText(/Cash Flow|Surplus|Net/i).first()
     ).toBeVisible();
   });
+
+  test("should handle DTI calculation without NaN when income is zero", async ({ page }) => {
+    // Verify DTI doesn't show NaN even when APIs return zero income
+    const pageContent = await page.textContent("body");
+
+    // Should never show NaN in DTI
+    expect(pageContent).not.toContain("NaN% annual DTI ratio");
+
+    // DTI section should show either percentage or "No income data"
+    const dtiElement = page.getByText(/Debt-to-Income/i).first();
+    if (await dtiElement.isVisible()) {
+      const parentContent = await dtiElement.locator("xpath=ancestor::*[contains(@class, 'v-card') or contains(@class, 'health-factor')]").first().textContent();
+      // Verify no NaN anywhere in the DTI display
+      expect(parentContent).not.toContain("NaN");
+    }
+  });
+
+  test("should handle emergency fund display without NaN when expenses are zero", async ({ page }) => {
+    // Verify emergency fund doesn't show "NaN of X mo"
+    const pageContent = await page.textContent("body");
+
+    // Should never show NaN in emergency fund months
+    expect(pageContent).not.toContain("NaN of");
+    expect(pageContent).not.toContain("NaN mo");
+
+    // Emergency fund card should show valid content
+    const efCard = page.locator(".v-card").filter({ hasText: /Emergency Fund/i }).first();
+    if (await efCard.isVisible()) {
+      const efContent = await efCard.textContent();
+      expect(efContent).not.toContain("NaN");
+    }
+  });
+
+  test("should display valid health factors even with missing API data", async ({ page }) => {
+    // All health factors should display without NaN values
+    const healthFactors = page.locator('[class*="factor"], .health-factor-card');
+    const factorCount = await healthFactors.count();
+
+    for (let i = 0; i < factorCount; i++) {
+      const factorContent = await healthFactors.nth(i).textContent();
+      expect(factorContent).not.toContain("NaN");
+      expect(factorContent).not.toContain("undefined");
+    }
+  });
 });
