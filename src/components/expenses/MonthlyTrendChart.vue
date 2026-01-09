@@ -43,12 +43,13 @@ const props = defineProps<{
 
 // Chart data using theme colors
 const chartData = computed<ChartData<'line'>>(() => {
-  const labels = props.data.map((d) => d.month)
+  const safeData = props.data || []
+  const labels = safeData.map((d) => d.month)
 
   const datasets: ChartData<'line'>['datasets'] = [
     {
       label: 'Total',
-      data: props.data.map((d) => d.total),
+      data: safeData.map((d) => d.total),
       borderColor: chartColors.primary[0],
       backgroundColor: `${chartColors.primary[0]}1A`,
       tension: 0.3,
@@ -62,7 +63,7 @@ const chartData = computed<ChartData<'line'>>(() => {
     datasets.push(
       {
         label: 'Needs',
-        data: props.data.map((d) => d.needs ?? 0),
+        data: safeData.map((d) => d.needs ?? 0),
         borderColor: chartColors.incomeExpense.savings,
         backgroundColor: 'transparent',
         tension: 0.3,
@@ -71,7 +72,7 @@ const chartData = computed<ChartData<'line'>>(() => {
       },
       {
         label: 'Wants',
-        data: props.data.map((d) => d.wants ?? 0),
+        data: safeData.map((d) => d.wants ?? 0),
         borderColor: chartColors.primary[4], // Purple
         backgroundColor: 'transparent',
         tension: 0.3,
@@ -80,7 +81,7 @@ const chartData = computed<ChartData<'line'>>(() => {
       },
       {
         label: 'Savings',
-        data: props.data.map((d) => d.savings ?? 0),
+        data: safeData.map((d) => d.savings ?? 0),
         borderColor: chartColors.incomeExpense.crossover,
         backgroundColor: 'transparent',
         tension: 0.3,
@@ -169,19 +170,19 @@ const chartOptions = computed(() => ({
 
 // Summary stats
 const averageMonthly = computed(() => {
-  if (props.data.length === 0) return 0
+  if (!props.data || props.data.length === 0) return 0
   return props.data.reduce((sum, d) => sum + d.total, 0) / props.data.length
 })
 
 const trend = computed(() => {
-  if (props.data.length < 2) return 0
+  if (!props.data || props.data.length < 2) return 0
   const first = props.data[0].total
   const last = props.data[props.data.length - 1].total
   return first > 0 ? ((last - first) / first) * 100 : 0
 })
 
 // Has data
-const hasData = computed(() => props.data.length > 0)
+const hasData = computed(() => props.data && props.data.length > 0)
 </script>
 
 <template>

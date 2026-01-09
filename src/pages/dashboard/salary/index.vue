@@ -9,6 +9,7 @@ import EmployerCard from "@/components/salary/EmployerCard.vue";
 import SalaryMonthlyGrid from "@/components/salary/SalaryMonthlyGrid.vue";
 import SalaryChart from "@/components/salary/SalaryChart.vue";
 import SalaryComparisonCard from "@/components/salary/SalaryComparisonCard.vue";
+import SalaryComponentManager from "@/components/salary/SalaryComponentManager.vue";
 import {
   useSalaryHistory,
   useSalarySummary,
@@ -40,6 +41,9 @@ const { summaries: employerSummaries, isLoading: employersLoading } = useEmploye
 // Selected employer for grid view
 const selectedIncomeSourceId = ref<string | undefined>(undefined);
 const showGrid = ref(false);
+
+// Component manager dialog
+const showComponentManager = ref(false);
 
 // Grid data for selected employer
 const { gridData, isLoading: gridLoading } = useEmployerSalaryGrid(selectedIncomeSourceId);
@@ -137,8 +141,15 @@ const handleCellClick = (payload: { componentCode: string; monthIndex: number; v
 
     <FamilyToggle class="mb-6" />
 
-    <!-- FY Selector -->
-    <div class="d-flex justify-end mb-4">
+    <!-- FY Selector + Settings -->
+    <div class="d-flex justify-end align-center ga-2 mb-4">
+      <v-btn
+        icon="mdi-cog"
+        variant="text"
+        size="small"
+        title="Manage Salary Components"
+        @click="showComponentManager = true"
+      />
       <FinancialYearSelector
         v-model="selectedFinancialYear"
         :dense="true"
@@ -298,11 +309,11 @@ const handleCellClick = (payload: { componentCode: string; monthIndex: number; v
             <v-btn
               block
               variant="tonal"
-              color="success"
-              prepend-icon="mdi-file-excel"
-              disabled
+              color="secondary"
+              prepend-icon="mdi-cog"
+              @click="showComponentManager = true"
             >
-              Import Excel
+              Manage Components
             </v-btn>
           </v-col>
           <v-col cols="12" sm="6" md="3">
@@ -319,5 +330,8 @@ const handleCellClick = (payload: { componentCode: string; monthIndex: number; v
         </v-row>
       </v-card-text>
     </v-card>
+
+    <!-- Salary Component Manager Dialog -->
+    <SalaryComponentManager v-model="showComponentManager" />
   </div>
 </template>

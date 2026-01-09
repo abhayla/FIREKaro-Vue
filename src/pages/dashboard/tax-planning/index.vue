@@ -244,7 +244,7 @@ const taxSavings = computed(() => comparison.value?.savingsAmount || 0);
                 </v-list>
               </v-col>
               <v-col
-                v-if="itrRecommendation.ineligibilityReasons.length"
+                v-if="itrRecommendation?.ineligibilityReasons?.length"
                 cols="12"
                 md="6"
               >

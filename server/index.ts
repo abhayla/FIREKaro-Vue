@@ -8,6 +8,7 @@ import { auth } from './lib/auth'
 import salaryHistoryRoutes from './routes/salary-history'
 import incomeSourcesRoutes from './routes/income-sources'
 import salaryRoutes from './routes/salary'
+import salaryComponentsRoutes from './routes/salary-components'
 
 const app = new Hono()
 
@@ -35,6 +36,7 @@ app.on(['GET', 'POST'], '/api/auth/**', (c) => {
 app.route('/api/salary', salaryRoutes)
 app.route('/api/salary-history', salaryHistoryRoutes)
 app.route('/api/income-sources', incomeSourcesRoutes)
+app.route('/api/salary-components', salaryComponentsRoutes)
 
 // 404 handler
 app.notFound((c) => {

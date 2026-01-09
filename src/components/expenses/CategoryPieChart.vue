@@ -52,8 +52,8 @@ const chartOptions = computed(() => ({
       callbacks: {
         label: (context: { raw: unknown; label: string; dataset: { data: number[] } }) => {
           const value = context.raw as number
-          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0)
-          const percentage = ((value / total) * 100).toFixed(1)
+          const total = context.dataset.data?.reduce((a: number, b: number) => a + b, 0) ?? 0
+          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
           return `${context.label}: ${formatINRForChart(value)} (${percentage}%)`
         },
       },
@@ -62,10 +62,10 @@ const chartOptions = computed(() => ({
 }))
 
 // Total
-const total = computed(() => Object.values(props.data).reduce((a, b) => a + b, 0))
+const total = computed(() => Object.values(props.data || {}).reduce((a, b) => a + b, 0))
 
 // Has data
-const hasData = computed(() => Object.keys(props.data).length > 0 && total.value > 0)
+const hasData = computed(() => Object.keys(props.data || {}).length > 0 && total.value > 0)
 </script>
 
 <template>

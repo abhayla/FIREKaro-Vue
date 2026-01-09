@@ -212,10 +212,10 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
               <span class="text-body-2 text-medium-emphasis">Equity %</span>
             </div>
             <div class="text-h5 font-weight-bold">
-              {{ portfolioData.allocation.equity.toFixed(1) }}%
+              {{ (portfolioData.allocation?.equity ?? 0).toFixed(1) }}%
             </div>
             <div class="text-caption text-medium-emphasis">
-              Debt: {{ portfolioData.allocation.debt.toFixed(1) }}%
+              Debt: {{ (portfolioData.allocation?.debt ?? 0).toFixed(1) }}%
             </div>
           </v-card>
         </v-col>
@@ -229,9 +229,9 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
             <div>
               <div class="text-body-2 text-medium-emphasis">Dividend Yield</div>
               <div class="d-flex align-center">
-                <span class="text-h6 font-weight-bold">{{ yields.dividendYield.toFixed(2) }}%</span>
+                <span class="text-h6 font-weight-bold">{{ (yields?.dividendYield ?? 0).toFixed(2) }}%</span>
                 <span class="text-caption text-medium-emphasis ml-2">
-                  ({{ formatINRCompact(yields.totalAnnualDividends) }}/year)
+                  ({{ formatINRCompact(yields?.totalAnnualDividends ?? 0) }}/year)
                 </span>
               </div>
             </div>
@@ -242,21 +242,21 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
             <div>
               <div class="text-body-2 text-medium-emphasis">Rental Yield</div>
               <div class="d-flex align-center">
-                <span class="text-h6 font-weight-bold">{{ yields.rentalYield.toFixed(2) }}%</span>
+                <span class="text-h6 font-weight-bold">{{ (yields?.rentalYield ?? 0).toFixed(2) }}%</span>
                 <span class="text-caption text-medium-emphasis ml-2">
-                  ({{ formatINRCompact(yields.totalAnnualRent) }}/year)
+                  ({{ formatINRCompact(yields?.totalAnnualRent ?? 0) }}/year)
                 </span>
               </div>
             </div>
           </div>
           <v-spacer />
           <v-chip
-            v-if="yields.dividendYield > 0 || yields.rentalYield > 0"
+            v-if="(yields?.dividendYield ?? 0) > 0 || (yields?.rentalYield ?? 0) > 0"
             color="success"
             variant="tonal"
           >
             <v-icon icon="mdi-leaf" size="small" class="mr-1" />
-            Passive Income: {{ formatINRCompact(yields.totalAnnualDividends + yields.totalAnnualRent) }}/year
+            Passive Income: {{ formatINRCompact((yields?.totalAnnualDividends ?? 0) + (yields?.totalAnnualRent ?? 0)) }}/year
           </v-chip>
         </v-card-text>
       </v-card>
@@ -330,7 +330,7 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
                         class="text-caption"
                         :class="holding.currentValue >= holding.investedAmount ? 'text-success' : 'text-error'"
                       >
-                        {{ formatPercentage(((holding.currentValue - holding.investedAmount) / holding.investedAmount) * 100) }}
+                        {{ formatPercentage(holding.investedAmount > 0 ? ((holding.currentValue - holding.investedAmount) / holding.investedAmount) * 100 : 0) }}
                       </div>
                     </div>
                   </template>
@@ -376,7 +376,7 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
                 class="text-caption"
                 :class="category.value >= category.invested ? 'text-success' : 'text-error'"
               >
-                {{ formatPercentage(((category.value - category.invested) / category.invested) * 100) }}
+                {{ formatPercentage(category.invested > 0 ? ((category.value - category.invested) / category.invested) * 100 : 0) }}
               </div>
               <v-chip v-if="category.count > 0" size="x-small" class="mt-2" variant="tonal">
                 {{ category.count }} holdings

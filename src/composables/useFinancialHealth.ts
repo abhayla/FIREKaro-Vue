@@ -195,14 +195,57 @@ export const formatINR = (amount: number, compact = false): string => {
   }).format(amount)
 }
 
+// Default data for when API is not available
+const DEFAULT_NETWORTH: NetWorthData = {
+  totalAssets: 0,
+  totalLiabilities: 0,
+  netWorth: 0,
+  monthlyChange: 0,
+  yearlyChange: 0,
+  monthlyChangePercent: 0,
+  yearlyChangePercent: 0,
+  assetBreakdown: [],
+  liabilityBreakdown: [],
+  history: []
+}
+
+const DEFAULT_CASHFLOW: CashFlowData = {
+  totalIncome: 0,
+  totalExpenses: 0,
+  netCashFlow: 0,
+  savingsRate: 0,
+  incomeBreakdown: [],
+  expenseBreakdown: [],
+  monthlyTrend: []
+}
+
+const DEFAULT_EMERGENCY_FUND: EmergencyFundData = {
+  currentAmount: 0,
+  targetAmount: 0,
+  targetMonths: 6,
+  monthlyExpenses: 0,
+  percentComplete: 0,
+  status: 'critical',
+  breakdown: [],
+  recommendations: ['Set up an emergency fund covering 6 months of expenses']
+}
+
 // Net Worth Composables
 export function useNetWorth() {
   return useQuery({
     queryKey: ['financial-health', 'networth'],
     queryFn: async (): Promise<NetWorthData> => {
-      const res = await fetch('/api/financial-health/networth')
-      if (!res.ok) throw new Error('Failed to fetch net worth')
-      return res.json()
+      try {
+        const res = await fetch('/api/financial-health/networth')
+        if (!res.ok) {
+          console.warn('Net worth API not available, using defaults')
+          return DEFAULT_NETWORTH
+        }
+        return res.json()
+      } catch (error) {
+        console.warn('Failed to fetch net worth, using defaults:', error)
+        return DEFAULT_NETWORTH
+      }
     }
   })
 }
@@ -212,12 +255,20 @@ export function useCashFlow(month?: Ref<string | undefined>) {
   return useQuery({
     queryKey: ['financial-health', 'cash-flow', month?.value],
     queryFn: async (): Promise<CashFlowData> => {
-      const url = month?.value
-        ? `/api/financial-health/cash-flow?month=${month.value}`
-        : '/api/financial-health/cash-flow'
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('Failed to fetch cash flow')
-      return res.json()
+      try {
+        const url = month?.value
+          ? `/api/financial-health/cash-flow?month=${month.value}`
+          : '/api/financial-health/cash-flow'
+        const res = await fetch(url)
+        if (!res.ok) {
+          console.warn('Cash flow API not available, using defaults')
+          return DEFAULT_CASHFLOW
+        }
+        return res.json()
+      } catch (error) {
+        console.warn('Failed to fetch cash flow, using defaults:', error)
+        return DEFAULT_CASHFLOW
+      }
     }
   })
 }
@@ -227,9 +278,17 @@ export function useBankAccounts() {
   return useQuery({
     queryKey: ['banking', 'accounts'],
     queryFn: async (): Promise<BankAccount[]> => {
-      const res = await fetch('/api/banking/accounts')
-      if (!res.ok) throw new Error('Failed to fetch bank accounts')
-      return res.json()
+      try {
+        const res = await fetch('/api/banking/accounts')
+        if (!res.ok) {
+          console.warn('Bank accounts API not available, using empty list')
+          return []
+        }
+        return res.json()
+      } catch (error) {
+        console.warn('Failed to fetch bank accounts, using empty list:', error)
+        return []
+      }
     }
   })
 }
@@ -296,11 +355,29 @@ export function useEmergencyFund() {
   return useQuery({
     queryKey: ['financial-health', 'emergency-fund'],
     queryFn: async (): Promise<EmergencyFundData> => {
-      const res = await fetch('/api/banking/emergency-fund')
-      if (!res.ok) throw new Error('Failed to fetch emergency fund')
-      return res.json()
+      try {
+        const res = await fetch('/api/banking/emergency-fund')
+        if (!res.ok) {
+          console.warn('Emergency fund API not available, using defaults')
+          return DEFAULT_EMERGENCY_FUND
+        }
+        return res.json()
+      } catch (error) {
+        console.warn('Failed to fetch emergency fund, using defaults:', error)
+        return DEFAULT_EMERGENCY_FUND
+      }
     }
   })
+}
+
+// Default health score for when APIs are not available
+const DEFAULT_HEALTH_SCORE: FinancialHealthScore = {
+  overallScore: 0,
+  status: 'needs_improvement',
+  factors: [],
+  trend: 'stable',
+  lastMonthScore: 0,
+  alerts: [{ type: 'info', message: 'Add your financial data to see your health score' }]
 }
 
 // Financial Health Score Composable
@@ -308,32 +385,34 @@ export function useFinancialHealthScore() {
   return useQuery({
     queryKey: ['financial-health', 'score'],
     queryFn: async (): Promise<FinancialHealthScore> => {
-      // This combines data from multiple endpoints
-      const [netWorthRes, cashFlowRes, emergencyFundRes] = await Promise.all([
-        fetch('/api/financial-health/networth'),
-        fetch('/api/financial-health/cash-flow'),
-        fetch('/api/banking/emergency-fund')
-      ])
+      try {
+        // This combines data from multiple endpoints
+        const [netWorthRes, cashFlowRes, emergencyFundRes] = await Promise.all([
+          fetch('/api/financial-health/networth'),
+          fetch('/api/financial-health/cash-flow'),
+          fetch('/api/banking/emergency-fund')
+        ])
 
-      if (!netWorthRes.ok || !cashFlowRes.ok || !emergencyFundRes.ok) {
-        throw new Error('Failed to fetch financial health data')
-      }
+        // Use defaults for any failed requests
+        const netWorth = netWorthRes.ok ? await netWorthRes.json() : DEFAULT_NETWORTH
+        const cashFlow = cashFlowRes.ok ? await cashFlowRes.json() : DEFAULT_CASHFLOW
+        const emergencyFund = emergencyFundRes.ok ? await emergencyFundRes.json() : DEFAULT_EMERGENCY_FUND
 
-      const netWorth = await netWorthRes.json()
-      const cashFlow = await cashFlowRes.json()
-      const emergencyFund = await emergencyFundRes.json()
+        // Calculate scores
+        const factors = calculateHealthFactors(netWorth, cashFlow, emergencyFund)
+        const overallScore = factors.reduce((sum, f) => sum + f.score, 0)
 
-      // Calculate scores
-      const factors = calculateHealthFactors(netWorth, cashFlow, emergencyFund)
-      const overallScore = factors.reduce((sum, f) => sum + f.score, 0)
-
-      return {
-        overallScore,
-        status: getScoreStatus(overallScore),
-        factors,
-        trend: netWorth.monthlyChange >= 0 ? 'improving' : 'declining',
-        lastMonthScore: overallScore - (Math.random() * 10 - 5), // Placeholder
-        alerts: generateAlerts(factors, emergencyFund, cashFlow)
+        return {
+          overallScore,
+          status: getScoreStatus(overallScore),
+          factors,
+          trend: netWorth.monthlyChange >= 0 ? 'improving' : 'declining',
+          lastMonthScore: overallScore - (Math.random() * 10 - 5), // Placeholder
+          alerts: generateAlerts(factors, emergencyFund, cashFlow)
+        }
+      } catch (error) {
+        console.warn('Failed to calculate financial health score:', error)
+        return DEFAULT_HEALTH_SCORE
       }
     }
   })
@@ -525,9 +604,17 @@ export function useNetWorthMilestones() {
   return useQuery({
     queryKey: ['financial-health', 'milestones'],
     queryFn: async (): Promise<NetWorthMilestone[]> => {
-      const res = await fetch('/api/financial-health/milestones')
-      if (!res.ok) throw new Error('Failed to fetch milestones')
-      return res.json()
+      try {
+        const res = await fetch('/api/financial-health/milestones')
+        if (!res.ok) {
+          console.warn('Milestones API not available, using empty list')
+          return []
+        }
+        return res.json()
+      } catch (error) {
+        console.warn('Failed to fetch milestones, using empty list:', error)
+        return []
+      }
     }
   })
 }
@@ -661,24 +748,36 @@ export interface PassiveIncomeSummary {
   monthlyTrend: Array<{ month: string; amount: number }>
 }
 
+// Default passive income summary
+const DEFAULT_PASSIVE_INCOME: PassiveIncomeSummary = {
+  totalMonthly: 0,
+  totalAnnual: 0,
+  sources: [],
+  expensesCoverage: 0,
+  monthlyTrend: []
+}
+
 export function usePassiveIncomeSummary() {
   return useQuery({
     queryKey: ['financial-health', 'passive-income'],
     queryFn: async (): Promise<PassiveIncomeSummary> => {
-      // Fetch passive income data from various sources
-      const [rentalRes, otherIncomeRes, cashFlowRes] = await Promise.all([
-        fetch('/api/rental-income'),
-        fetch('/api/other-income'),
-        fetch('/api/financial-health/cash-flow')
-      ])
+      try {
+        // Fetch passive income data from various sources
+        const [rentalRes, otherIncomeRes, cashFlowRes] = await Promise.all([
+          fetch('/api/rental-income'),
+          fetch('/api/other-income'),
+          fetch('/api/financial-health/cash-flow')
+        ])
 
-      if (!rentalRes.ok || !otherIncomeRes.ok) {
-        throw new Error('Failed to fetch passive income data')
-      }
+        // If both main APIs fail, return defaults
+        if (!rentalRes.ok && !otherIncomeRes.ok) {
+          console.warn('Passive income APIs not available, using defaults')
+          return DEFAULT_PASSIVE_INCOME
+        }
 
-      const rentalIncome = await rentalRes.json()
-      const otherIncome = await otherIncomeRes.json()
-      const cashFlow = cashFlowRes.ok ? await cashFlowRes.json() : null
+        const rentalIncome = rentalRes.ok ? await rentalRes.json() : []
+        const otherIncome = otherIncomeRes.ok ? await otherIncomeRes.json() : []
+        const cashFlow = cashFlowRes.ok ? await cashFlowRes.json() : null
 
       const sources: PassiveIncomeSource[] = []
 
@@ -759,6 +858,10 @@ export function usePassiveIncomeSummary() {
         sources,
         expensesCoverage,
         monthlyTrend
+      }
+      } catch (error) {
+        console.warn('Failed to fetch passive income data:', error)
+        return DEFAULT_PASSIVE_INCOME
       }
     }
   })
