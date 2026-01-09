@@ -928,3 +928,262 @@ export function useSIPHistory() {
     }
   })
 }
+
+// ESOP Types
+export interface ESOPGrant {
+  id: string
+  grantType: 'ESOP' | 'RSU' | 'RSA' | 'SAR' | 'PHANTOM'
+  grantDate: string
+  grantNumber?: string
+  companyName: string
+  companySymbol?: string
+  totalUnits: number
+  grantPrice: number
+  fairMarketValue: number
+  currentFMV?: number
+  vestingScheduleType: 'CLIFF' | 'GRADED' | 'MILESTONE' | 'HYBRID'
+  vestingStartDate: string
+  cliffMonths: number
+  totalVestingMonths: number
+  vestingFrequency: number
+  status: 'ACTIVE' | 'PARTIALLY_VESTED' | 'FULLY_VESTED' | 'EXERCISED' | 'EXPIRED' | 'CANCELLED' | 'FORFEITED'
+  vestedUnits: number
+  exercisedUnits: number
+  exercisableUnits: number
+  unvestedUnits: number
+  forfeitedUnits: number
+  expiryDate?: string
+  perquisiteValue?: number
+  taxPaid: number
+  isListedCompany: boolean
+  isStartup: boolean
+  planName?: string
+  notes?: string
+  vestingEvents?: ESOPVestingEvent[]
+}
+
+export interface ESOPVestingEvent {
+  id: string
+  vestingDate: string
+  unitsVested: number
+  vestingPercentage: number
+  fmvAtVesting: number
+  exercisePrice: number
+  perquisiteValue: number
+  isExercised: boolean
+  exerciseDate?: string
+  unitsExercised?: number
+  salePrice?: number
+  status: 'PENDING' | 'VESTED' | 'EXERCISED' | 'EXPIRED' | 'FORFEITED'
+}
+
+export interface ESOPSummary {
+  totalGrants: number
+  activeGrants: number
+  totalUnits: number
+  vestedUnits: number
+  exercisedUnits: number
+  exercisableUnits: number
+  unvestedUnits: number
+  totalCurrentValue: number
+  vestedValue: number
+  exercisableValue: number
+  unvestedValue: number
+  totalPerquisiteValue: number
+  totalTaxPaid: number
+  companies: string[]
+}
+
+// ESOP Composables
+export function useESOPGrants() {
+  const uiStore = useUiStore()
+
+  return useQuery({
+    queryKey: computed(() => ['esop', 'grants', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<{ grants: ESOPGrant[]; summary: ESOPSummary }> => {
+      const res = await fetch(`/api/esop${buildQueryParams()}`)
+      if (!res.ok) {
+        // Return mock data for demo
+        return {
+          grants: [],
+          summary: {
+            totalGrants: 0,
+            activeGrants: 0,
+            totalUnits: 0,
+            vestedUnits: 0,
+            exercisedUnits: 0,
+            exercisableUnits: 0,
+            unvestedUnits: 0,
+            totalCurrentValue: 0,
+            vestedValue: 0,
+            exercisableValue: 0,
+            unvestedValue: 0,
+            totalPerquisiteValue: 0,
+            totalTaxPaid: 0,
+            companies: []
+          }
+        }
+      }
+      return res.json().then(r => r.data)
+    }
+  })
+}
+
+export function useESOPSummary() {
+  return useQuery({
+    queryKey: ['esop', 'summary'],
+    queryFn: async (): Promise<ESOPSummary> => {
+      const res = await fetch('/api/esop/summary')
+      if (!res.ok) {
+        return {
+          totalGrants: 0,
+          activeGrants: 0,
+          totalUnits: 0,
+          vestedUnits: 0,
+          exercisedUnits: 0,
+          exercisableUnits: 0,
+          unvestedUnits: 0,
+          totalCurrentValue: 0,
+          vestedValue: 0,
+          exercisableValue: 0,
+          unvestedValue: 0,
+          totalPerquisiteValue: 0,
+          totalTaxPaid: 0,
+          companies: []
+        }
+      }
+      return res.json().then(r => r.data)
+    }
+  })
+}
+
+export function useESOPGrant(grantId: string) {
+  return useQuery({
+    queryKey: ['esop', 'grant', grantId],
+    queryFn: async () => {
+      const res = await fetch(`/api/esop/${grantId}`)
+      if (!res.ok) throw new Error('Failed to fetch ESOP grant')
+      return res.json().then(r => r.data)
+    },
+    enabled: !!grantId
+  })
+}
+
+export function useCreateESOPGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: Partial<ESOPGrant>) => {
+      const res = await fetch('/api/esop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      if (!res.ok) throw new Error('Failed to create ESOP grant')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['esop'] })
+    }
+  })
+}
+
+export function useUpdateESOPGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ESOPGrant> }) => {
+      const res = await fetch(`/api/esop/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      if (!res.ok) throw new Error('Failed to update ESOP grant')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['esop'] })
+    }
+  })
+}
+
+export function useDeleteESOPGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/esop/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete ESOP grant')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['esop'] })
+    }
+  })
+}
+
+export function useVestESOPGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ grantId, vestingEventId, fmvAtVesting, tdsDeducted }: {
+      grantId: string
+      vestingEventId: string
+      fmvAtVesting?: number
+      tdsDeducted?: number
+    }) => {
+      const res = await fetch(`/api/esop/${grantId}/vest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vestingEventId, fmvAtVesting, tdsDeducted })
+      })
+      if (!res.ok) throw new Error('Failed to process vesting')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['esop'] })
+    }
+  })
+}
+
+export function useExerciseESOPGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ grantId, units, salePrice }: {
+      grantId: string
+      units: number
+      salePrice?: number
+    }) => {
+      const res = await fetch(`/api/esop/${grantId}/exercise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ units, salePrice })
+      })
+      if (!res.ok) throw new Error('Failed to exercise options')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['esop'] })
+    }
+  })
+}
+
+export function useUpdateESOPFMV() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ grantId, currentFMV }: { grantId: string; currentFMV: number }) => {
+      const res = await fetch(`/api/esop/${grantId}/fmv`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentFMV })
+      })
+      if (!res.ok) throw new Error('Failed to update FMV')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['esop'] })
+    }
+  })
+}

@@ -158,6 +158,11 @@ const router = createRouter({
           component: () => import("@/pages/dashboard/investments/nps.vue"),
         },
         {
+          path: "investments/esop",
+          name: "investments-esop",
+          component: () => import("@/pages/dashboard/investments/esop.vue"),
+        },
+        {
           path: "investments/property",
           name: "investments-property",
           component: () => import("@/pages/dashboard/investments/property.vue"),
