@@ -78,6 +78,32 @@ export interface OtherIncomeTestData {
   eligible80TTB?: boolean;
 }
 
+export interface InterestIncomeTestData {
+  id?: string;
+  sourceType: 'fd' | 'rd' | 'savings' | 'p2p' | 'bonds' | 'nsc' | 'scss';
+  institutionName: string;
+  accountNumber?: string;
+  financialYear: string;
+  principalAmount?: number;
+  interestRate?: number;
+  interestEarned: number;
+  tdsDeducted: number;
+  maturityDate?: string;
+  is80TTAEligible?: boolean;
+  is80TTBEligible?: boolean;
+}
+
+export interface DividendIncomeTestData {
+  id?: string;
+  sourceType: 'stock' | 'mutual_fund';
+  companyOrFundName: string;
+  symbol?: string;
+  financialYear: string;
+  dividendAmount: number;
+  dividendDate: string;
+  tdsDeducted: number;
+}
+
 // ============================================
 // Business Income Data (FY 2025-26)
 // ============================================
@@ -192,6 +218,119 @@ export const capitalGainsData: CapitalGainTestData[] = [
     expectedTaxableGain: 80000,
     expectedTaxRate: 12.5,
     expectedTax: 10000,
+  },
+];
+
+// ============================================
+// Interest Income Data (FY 2025-26)
+// ============================================
+
+export const interestIncomeData: InterestIncomeTestData[] = [
+  {
+    sourceType: 'fd',
+    institutionName: "HDFC Bank",
+    accountNumber: "FD123456789",
+    financialYear: "2025-26",
+    principalAmount: 1000000,
+    interestRate: 7.5,
+    interestEarned: 75000,
+    tdsDeducted: 7500,
+    maturityDate: "2026-03-15",
+    is80TTAEligible: false,
+  },
+  {
+    sourceType: 'savings',
+    institutionName: "ICICI Bank Savings",
+    accountNumber: "SAV987654321",
+    financialYear: "2025-26",
+    principalAmount: 500000,
+    interestRate: 3.5,
+    interestEarned: 15000,
+    tdsDeducted: 0,
+    is80TTAEligible: true, // Eligible for 80TTA deduction up to Rs. 10,000
+  },
+  {
+    sourceType: 'rd',
+    institutionName: "SBI Recurring Deposit",
+    accountNumber: "RD456789123",
+    financialYear: "2025-26",
+    principalAmount: 240000,
+    interestRate: 6.5,
+    interestEarned: 12000,
+    tdsDeducted: 1200,
+    maturityDate: "2027-06-01",
+    is80TTAEligible: false,
+  },
+  {
+    sourceType: 'p2p',
+    institutionName: "Faircent P2P",
+    financialYear: "2025-26",
+    principalAmount: 300000,
+    interestRate: 12,
+    interestEarned: 30000,
+    tdsDeducted: 3000,
+    is80TTAEligible: false,
+  },
+  {
+    sourceType: 'nsc',
+    institutionName: "NSC - Post Office",
+    financialYear: "2025-26",
+    principalAmount: 150000,
+    interestRate: 7.7,
+    interestEarned: 11550,
+    tdsDeducted: 0,
+    maturityDate: "2030-01-10",
+    is80TTAEligible: false,
+  },
+];
+
+// ============================================
+// Dividend Income Data (FY 2025-26)
+// ============================================
+
+export const dividendIncomeData: DividendIncomeTestData[] = [
+  {
+    sourceType: 'stock',
+    companyOrFundName: "HDFC Bank Ltd",
+    symbol: "HDFCBANK",
+    financialYear: "2025-26",
+    dividendAmount: 8500,
+    dividendDate: "2025-06-15",
+    tdsDeducted: 850,
+  },
+  {
+    sourceType: 'stock',
+    companyOrFundName: "Infosys Ltd",
+    symbol: "INFY",
+    financialYear: "2025-26",
+    dividendAmount: 12000,
+    dividendDate: "2025-07-20",
+    tdsDeducted: 1200,
+  },
+  {
+    sourceType: 'stock',
+    companyOrFundName: "Tata Consultancy Services",
+    symbol: "TCS",
+    financialYear: "2025-26",
+    dividendAmount: 6500,
+    dividendDate: "2025-08-10",
+    tdsDeducted: 650,
+  },
+  {
+    sourceType: 'mutual_fund',
+    companyOrFundName: "HDFC Equity Fund - Dividend",
+    financialYear: "2025-26",
+    dividendAmount: 5000,
+    dividendDate: "2025-09-05",
+    tdsDeducted: 500,
+  },
+  {
+    sourceType: 'mutual_fund',
+    companyOrFundName: "ICICI Pru Value Discovery Fund",
+    financialYear: "2025-26",
+    dividendAmount: 3500,
+    dividendDate: "2025-10-15",
+    tdsDeducted: 350,
   },
 ];
 
@@ -342,3 +481,38 @@ export function getInterestIncomeBreakdown() {
     p2p: interest.filter(i => i.subcategory === 'p2p').reduce((s, i) => s + i.grossAmount, 0),
   };
 }
+
+export function getInterestIncomeByType(sourceType: InterestIncomeTestData['sourceType']) {
+  return interestIncomeData.filter(i => i.sourceType === sourceType);
+}
+
+export function getDividendIncomeByType(sourceType: DividendIncomeTestData['sourceType']) {
+  return dividendIncomeData.filter(d => d.sourceType === sourceType);
+}
+
+export const interestIncomeSummary = {
+  financialYear: "2025-26",
+  count: interestIncomeData.length,
+  totalInterestEarned: interestIncomeData.reduce((sum, i) => sum + i.interestEarned, 0),
+  totalTdsDeducted: interestIncomeData.reduce((sum, i) => sum + i.tdsDeducted, 0),
+  fdTotal: interestIncomeData.filter(i => i.sourceType === 'fd').reduce((s, i) => s + i.interestEarned, 0),
+  rdTotal: interestIncomeData.filter(i => i.sourceType === 'rd').reduce((s, i) => s + i.interestEarned, 0),
+  savingsTotal: interestIncomeData.filter(i => i.sourceType === 'savings').reduce((s, i) => s + i.interestEarned, 0),
+  p2pTotal: interestIncomeData.filter(i => i.sourceType === 'p2p').reduce((s, i) => s + i.interestEarned, 0),
+  eligible80TTA: interestIncomeData
+    .filter(i => i.is80TTAEligible)
+    .reduce((sum, i) => sum + Math.min(i.interestEarned, 10000), 0),
+};
+
+export const dividendIncomeSummary = {
+  financialYear: "2025-26",
+  count: dividendIncomeData.length,
+  totalDividends: dividendIncomeData.reduce((sum, d) => sum + d.dividendAmount, 0),
+  totalTdsDeducted: dividendIncomeData.reduce((sum, d) => sum + d.tdsDeducted, 0),
+  stockDividends: dividendIncomeData
+    .filter(d => d.sourceType === 'stock')
+    .reduce((s, d) => s + d.dividendAmount, 0),
+  mfDividends: dividendIncomeData
+    .filter(d => d.sourceType === 'mutual_fund')
+    .reduce((s, d) => s + d.dividendAmount, 0),
+};
