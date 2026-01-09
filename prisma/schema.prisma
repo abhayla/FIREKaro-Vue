@@ -1,0 +1,854 @@
+// FIREKaro-Vue Prisma Schema
+// Core models extracted from FIREKaro for Salary, Investments, Liabilities, Financial Health
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// AUTHENTICATION MODELS (Better Auth compatible)
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Auth relations
+  accounts      Account[]
+  sessions      Session[]
+
+  // Profile
+  profile       Profile?
+
+  // Family
+  familyMembers FamilyMember[]
+
+  // Salary relations
+  incomeSources              IncomeSource[]
+  monthlySalaries            MonthlySalary[]
+  salaryComponentDefinitions SalaryComponentDefinition[]
+
+  // Investment relations
+  investments            Investment[]
+  investmentTransactions InvestmentTransaction[]
+  investmentGoals        InvestmentGoal[]
+  epfAccount             EPFAccount?
+  npsAccounts            NPSAccount[]
+  portfolio              Portfolio[]
+
+  // Liabilities relations
+  loans          Loan[]
+  loanPayments   LoanPayment[]
+  debtPayoffPlans DebtPayoffPlan[]
+
+  // Financial Health relations
+  netWorth               NetWorth[]
+  monthlySnapshots       MonthlyFinancialSnapshot[]
+  bankAccounts           BankAccount[]
+  emergencyFund          EmergencyFund?
+  financialGoals         FinancialGoal[]
+
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  accountId         String
+  providerId        String
+  accessToken       String?
+  refreshToken      String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope             String?
+  idToken           String?
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// ============================================================================
+// USER PROFILE
+// ============================================================================
+
+model Profile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  dateOfBirth         DateTime?
+  occupation          String?
+  city                String?
+  targetRetirementAge Int?
+  currentAge          Int?
+  monthlyExpenses     Float     @default(0)
+  monthlyIncome       Float     @default(0)
+  currentSavings      Float     @default(0)
+  riskTolerance       String?
+  investmentStyle     String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// FAMILY MEMBERS
+// ============================================================================
+
+enum FamilyRelationship {
+  SELF
+  SPOUSE
+  FATHER
+  MOTHER
+  SON
+  DAUGHTER
+  FATHER_IN_LAW
+  MOTHER_IN_LAW
+  BROTHER
+  SISTER
+  GRANDFATHER
+  GRANDMOTHER
+  OTHER
+}
+
+model FamilyMember {
+  id           String             @id @default(cuid())
+  userId       String
+  relationship FamilyRelationship
+  name         String
+  dateOfBirth  DateTime?
+  gender       String?
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================================================
+// SALARY & INCOME MODELS
+// ============================================================================
+
+enum IncomeSourceType {
+  SALARY
+  BUSINESS
+  PROFESSION
+  HOUSE_PROPERTY
+  CAPITAL_GAINS
+  OTHER_SOURCES
+}
+
+enum IncomeSourceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// Dynamic Salary Component Enums
+enum SalaryComponentType {
+  EARNING
+  DEDUCTION
+  EMPLOYER_CONTRIBUTION
+}
+
+enum SyncTargetType {
+  EPF
+  VPF
+  NPS_EMPLOYEE
+  NPS_EMPLOYER
+  SUPERANNUATION
+  PENSION_FUND
+  NONE
+}
+
+enum SyncDirection {
+  FROM_SALARY        // Salary is source of truth
+  TO_SALARY          // Other section is source
+  BIDIRECTIONAL      // Both ways (with conflict resolution)
+  MANUAL             // No auto-sync
+}
+
+enum SyncStatus {
+  PENDING            // Not yet synced
+  SYNCED             // Successfully synced to target
+  CONFLICT           // Conflict detected, needs resolution
+  SKIPPED            // User chose not to sync
+}
+
+model IncomeSource {
+  id            String             @id @default(cuid())
+  userId        String
+  sourceType    IncomeSourceType
+  sourceName    String
+  description   String?
+  financialYear String             @default("2024-25")
+  status        IncomeSourceStatus @default(ACTIVE)
+  isPrimary     Boolean            @default(false)
+  displayOrder  Int                @default(0)
+  grossIncome   Float              @default(0)
+  deductions    Float              @default(0)
+  taxableIncome Float              @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monthlySalaries  MonthlySalary[]
+  salaryStructures SalaryStructure[]
+
+  @@index([userId, financialYear])
+  @@index([userId, sourceType])
+}
+
+model MonthlySalary {
+  id             String  @id @default(cuid())
+  userId         String
+  financialYear  String
+  month          Int     // 1-12 (1=April, 12=March)
+  year           Int     // Calendar year
+  incomeSourceId String?
+  employerName   String?
+  designation    String?
+  paidDays       Int     @default(30)
+
+  // Earnings
+  basicSalary          Float @default(0)
+  dearnessAllowance    Float @default(0)
+  houseRentAllowance   Float @default(0)
+  conveyanceAllowance  Float @default(0)
+  medicalAllowance     Float @default(0)
+  leaveTravelAllowance Float @default(0)
+  childrenEducation    Float @default(0)
+  carAllowance         Float @default(0)
+  incentives           Float @default(0)
+  miscellaneous        Float @default(0)
+  otherEarnings        Json?
+
+  // Deductions
+  professionalTax Float @default(0)
+  employeePF      Float @default(0)
+  voluntaryPF     Float @default(0)
+  incomeTax       Float @default(0)
+  otherTaxes      Float @default(0)
+  superannuation  Float @default(0)
+  npsContribution Float @default(0)
+  otherDeductions Json?
+
+  // Employer Contributions
+  pensionFund             Float @default(0)
+  employerPF              Float @default(0)
+  otherEmployerDeductions Float @default(0)
+
+  // Computed Totals
+  grossSalary     Float @default(0)
+  totalDeductions Float @default(0)
+  netSalary       Float @default(0)
+
+  // Sync Tracking
+  syncStatus   String?   @default("PENDING")
+  lastSyncedAt DateTime?
+  syncedToEpf  Boolean   @default(false)
+  syncedToNps  Boolean   @default(false)
+  syncError    String?
+
+  // Metadata
+  isVerified Boolean  @default(false)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  incomeSource IncomeSource? @relation(fields: [incomeSourceId], references: [id])
+  componentEntries SalaryComponentEntry[]
+
+  @@unique([userId, financialYear, month, incomeSourceId])
+  @@index([userId, financialYear])
+  @@index([incomeSourceId])
+  @@index([syncStatus])
+}
+
+// Salary Component Definition - Master table for dynamic components
+model SalaryComponentDefinition {
+  id              String              @id @default(cuid())
+  code            String              // "BASIC", "HRA", "VPF"
+  name            String              // "Basic Salary"
+  componentType   SalaryComponentType // EARNING, DEDUCTION, EMPLOYER_CONTRIBUTION
+  category        String?             // "Fixed", "Variable", "Statutory"
+
+  // Tax Treatment
+  isTaxable       Boolean             @default(true)
+  taxSection      String?             // "80C", "10(13A)", "80CCD(1B)"
+  isExemptUpTo    Float?              // Exemption limit
+
+  // Cross-Section Sync
+  syncTarget      SyncTargetType      @default(NONE)
+  syncDirection   SyncDirection       @default(FROM_SALARY)
+
+  // Expandable Component Config
+  isExpandable    Boolean             @default(false)
+  parentCode      String?             // For sub-components (e.g., "OTHER_DED" for VPF)
+
+  // Configuration
+  isSystem        Boolean             @default(false)
+  isActive        Boolean             @default(true)
+  displayOrder    Int                 @default(0)
+  userId          String?             // null = system-wide
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  user            User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries         SalaryComponentEntry[]
+
+  @@unique([code, userId])
+  @@index([componentType])
+  @@index([userId])
+  @@index([isSystem])
+}
+
+// Salary Component Entry - Per-month per-component values
+model SalaryComponentEntry {
+  id                      String                    @id @default(cuid())
+  monthlySalaryId         String
+  componentDefinitionId   String
+  amount                  Float                     @default(0)
+  remarks                 String?
+
+  // Sync Status
+  syncedAt                DateTime?
+  syncStatus              SyncStatus                @default(PENDING)
+  syncError               String?
+
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+
+  monthlySalary           MonthlySalary             @relation(fields: [monthlySalaryId], references: [id], onDelete: Cascade)
+  componentDefinition     SalaryComponentDefinition @relation(fields: [componentDefinitionId], references: [id])
+
+  @@unique([monthlySalaryId, componentDefinitionId])
+  @@index([monthlySalaryId])
+  @@index([componentDefinitionId])
+  @@index([syncStatus])
+}
+
+// Salary Structure - For mid-year salary changes (promotion, raise)
+model SalaryStructure {
+  id               String   @id @default(cuid())
+  incomeSourceId   String
+  structureName    String   // "Initial", "Post-Promotion Sep 2024"
+  effectiveFrom    DateTime // When this structure became active
+  effectiveTo      DateTime? // When this structure ended (null = current)
+
+  // Template amounts for auto-fill
+  templateData     Json     // { "BASIC": 150000, "HRA": 60000, ... }
+
+  // Metadata
+  reason           String?  // "Promotion", "Annual Increment"
+  changePercent    Float?   // Percentage change from previous structure
+  isActive         Boolean  @default(true)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  incomeSource     IncomeSource @relation(fields: [incomeSourceId], references: [id], onDelete: Cascade)
+
+  @@index([incomeSourceId])
+  @@index([effectiveFrom])
+}
+
+// ============================================================================
+// INVESTMENT MODELS
+// ============================================================================
+
+model Investment {
+  id          String  @id @default(cuid())
+  userId      String
+  name        String
+  type        String  // MUTUAL_FUND, STOCK, BOND, FD, RD, SIP, etc.
+  category    String  // EQUITY, DEBT, HYBRID, etc.
+  subcategory String?
+  symbol      String?
+  isin        String?
+  platform    String?
+  folioNumber String?
+
+  // Current status
+  totalInvested Float @default(0)
+  currentValue  Float @default(0)
+  totalUnits    Float @default(0)
+  averagePrice  Float @default(0)
+
+  // Performance
+  absoluteReturn        Float  @default(0)
+  absoluteReturnPercent Float  @default(0)
+  xirr                  Float?
+  cagr                  Float?
+
+  // SIP details
+  isSIP       Boolean   @default(false)
+  sipAmount   Float?
+  sipDate     Int?
+  nextSIPDate DateTime?
+
+  // Tax
+  isELSS       Boolean @default(false)
+  isTaxSaving  Boolean @default(false)
+  lockInPeriod Int?
+  maturityDate DateTime?
+
+  // Status
+  isActive            Boolean   @default(true)
+  firstInvestmentDate DateTime?
+  lastTransactionDate DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions InvestmentTransaction[]
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([isActive])
+}
+
+model InvestmentTransaction {
+  id              String   @id @default(cuid())
+  userId          String
+  investmentId    String
+  transactionType String   // BUY, SELL, SIP, DIVIDEND, etc.
+  transactionDate DateTime
+  units           Float    @default(0)
+  price           Float    @default(0)
+  amount          Float
+  totalCharges    Float    @default(0)
+  netAmount       Float
+  platform        String?
+  orderId         String?
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, transactionDate])
+  @@index([investmentId])
+}
+
+model InvestmentGoal {
+  id                String   @id @default(cuid())
+  userId            String
+  goalName          String
+  targetAmount      Float
+  targetDate        DateTime
+  monthlyInvestment Float
+  investmentType    String   @default("HYBRID")
+  riskProfile       String   @default("MODERATE")
+  currentAmount     Float    @default(0)
+  progressPercent   Float    @default(0)
+  category          String   @default("PERSONAL")
+  priority          String   @default("MEDIUM")
+  isActive          Boolean  @default(true)
+  isAchieved        Boolean  @default(false)
+  achievedAt        DateTime?
+  expectedReturn    Float    @default(12.0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+}
+
+// EPF Account
+model EPFAccount {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  uan                  String?
+  establishmentCode    String?
+  accountNumber        String?
+  currentBalance       Float    @default(0)
+  employeeShare        Float    @default(0)
+  employerShare        Float    @default(0)
+  pensionFund          Float    @default(0)
+  basicSalary          Float    @default(0)
+  employeeContribution Float    @default(0)
+  employerEPF          Float    @default(0)
+  employerEPS          Float    @default(0)
+  vpfContribution      Float    @default(0)
+  interestRate         Float    @default(0.0825)
+  lastUpdated          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions EPFTransaction[]
+
+  @@index([userId])
+}
+
+model EPFTransaction {
+  id              String   @id @default(cuid())
+  epfAccountId    String
+  transactionType String
+  amount          Float
+  balance         Float
+  description     String?
+  transactionDate DateTime
+  createdAt       DateTime @default(now())
+
+  epfAccount EPFAccount @relation(fields: [epfAccountId], references: [id], onDelete: Cascade)
+
+  @@index([epfAccountId, transactionDate])
+}
+
+// NPS Account
+model NPSAccount {
+  id                       String   @id @default(cuid())
+  userId                   String
+  pran                     String?
+  subscriberName           String?
+  tierType                 String   // Tier I or Tier II
+  currentCorpus            Float    @default(0)
+  equityAllocation         Float    @default(50)
+  corporateDebtAllocation  Float    @default(30)
+  governmentBondAllocation Float    @default(20)
+  monthlyContribution      Float    @default(0)
+  employerContribution     Float    @default(0)
+  riskProfile              String   @default("MODERATE")
+  lastUpdated              DateTime @default(now())
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions NPSTransaction[]
+
+  @@unique([userId, tierType])
+  @@index([userId])
+}
+
+model NPSTransaction {
+  id              String   @id @default(cuid())
+  npsAccountId    String
+  transactionType String
+  amount          Float
+  corpus          Float
+  description     String?
+  transactionDate DateTime
+  createdAt       DateTime @default(now())
+
+  npsAccount NPSAccount @relation(fields: [npsAccountId], references: [id], onDelete: Cascade)
+
+  @@index([npsAccountId, transactionDate])
+}
+
+model Portfolio {
+  id           String    @id @default(cuid())
+  userId       String
+  name         String
+  type         String
+  symbol       String?
+  quantity     Float
+  buyPrice     Float
+  currentPrice Float?
+  value        Float?
+  purchaseDate DateTime?
+  platform     String?
+  currency     String    @default("INR")
+  sector       String?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================================================
+// LIABILITIES MODELS
+// ============================================================================
+
+enum LoanType {
+  HOME_LOAN
+  PERSONAL_LOAN
+  CAR_LOAN
+  CREDIT_CARD
+  EDUCATION_LOAN
+  BUSINESS_LOAN
+  GOLD_LOAN
+  LOAN_AGAINST_PROPERTY
+  LOAN_AGAINST_SECURITIES
+  OTHER
+}
+
+enum LoanStatus {
+  ACTIVE
+  CLOSED
+  DEFAULTED
+  FORECLOSED
+}
+
+enum PaymentFrequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model Loan {
+  id                String           @id @default(cuid())
+  userId            String
+  loanName          String
+  loanType          LoanType
+  lender            String
+  loanAccountNumber String?
+  principalAmount   Float
+  outstandingAmount Float
+  interestRate      Float
+  emiAmount         Float
+  tenure            Int
+  remainingTenure   Int
+  loanStartDate     DateTime
+  emiStartDate      DateTime
+  maturityDate      DateTime
+  paymentFrequency  PaymentFrequency @default(MONTHLY)
+  nextEmiDate       DateTime?
+  lastPaymentDate   DateTime?
+  status            LoanStatus       @default(ACTIVE)
+  collateralValue   Float?
+  processingFee     Float?
+  prepaymentCharges Float?
+  taxBenefitSection String?
+  maxTaxBenefit     Float?
+  purpose           String?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments LoanPayment[]
+
+  @@index([userId, status])
+  @@index([loanType])
+  @@index([nextEmiDate])
+}
+
+model LoanPayment {
+  id                String   @id @default(cuid())
+  userId            String
+  loanId            String
+  paymentDate       DateTime
+  emiNumber         Int?
+  principalPaid     Float
+  interestPaid      Float
+  totalPaid         Float
+  outstandingAfter  Float
+  paymentMode       String?
+  transactionId     String?
+  isLateFee         Boolean  @default(false)
+  lateFeeAmount     Float    @default(0)
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId, paymentDate])
+  @@index([userId])
+}
+
+model DebtPayoffPlan {
+  id                  String    @id @default(cuid())
+  userId              String
+  planName            String
+  strategy            String    // AVALANCHE, SNOWBALL, CUSTOM
+  totalDebt           Float
+  targetPayoffDate    DateTime?
+  monthlyBudget       Float
+  totalPaid           Float     @default(0)
+  remainingDebt       Float     @default(0)
+  interestSaved       Float     @default(0)
+  projectedPayoffDate DateTime?
+  includedLoans       String[]
+  includedCreditCards String[]
+  payoffOrder         Json?
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================================================
+// FINANCIAL HEALTH MODELS
+// ============================================================================
+
+model NetWorth {
+  id          String   @id @default(cuid())
+  userId      String
+  liquid      Float    @default(0)
+  equity      Float    @default(0)
+  fixed       Float    @default(0)
+  property    Float    @default(0)
+  other       Float    @default(0)
+  liabilities Float    @default(0)
+  totalAssets Float    @default(0)
+  netWorth    Float    @default(0)
+  recordedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}
+
+model MonthlyFinancialSnapshot {
+  id            String @id @default(cuid())
+  userId        String
+  financialYear String
+  month         Int
+  year          Int
+
+  // Income
+  totalIncome       Float @default(0)
+  salaryIncome      Float @default(0)
+  businessIncome    Float @default(0)
+  rentalIncome      Float @default(0)
+  investmentIncome  Float @default(0)
+  otherIncome       Float @default(0)
+
+  // Expenses
+  totalExpenses         Float @default(0)
+  essentialExpenses     Float @default(0)
+  discretionaryExpenses Float @default(0)
+  emiPayments           Float @default(0)
+  insurancePremiums     Float @default(0)
+  investments           Float @default(0)
+
+  // Net Worth
+  totalAssets      Float @default(0)
+  totalLiabilities Float @default(0)
+  netWorth         Float @default(0)
+
+  // Savings
+  monthlySavings Float   @default(0)
+  savingsRate    Float   @default(0)
+  isActual       Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, financialYear, month])
+  @@index([userId, financialYear])
+}
+
+model BankAccount {
+  id             String    @id @default(cuid())
+  userId         String
+  accountName    String
+  bankName       String
+  accountNumber  String
+  accountType    String    // SAVINGS, CURRENT, SALARY, FD, RD
+  currentBalance Float     @default(0)
+  interestRate   Float?
+  maturityDate   DateTime?
+  maturityAmount Float?
+  ifscCode       String?
+  branchName     String?
+  isActive       Boolean   @default(true)
+  isPrimary      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([accountType])
+}
+
+model EmergencyFund {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  targetMonths         Int      @default(6)
+  monthlyExpenses      Float    @default(0)
+  targetAmount         Float    @default(0)
+  currentAmount        Float    @default(0)
+  percentageComplete   Float    @default(0)
+  savingsAccountAmount Float    @default(0)
+  liquidFundAmount     Float    @default(0)
+  fdAmount             Float    @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FinancialGoal {
+  id                  String    @id @default(cuid())
+  userId              String
+  goalName            String
+  goalType            String    // RETIREMENT, EDUCATION, HOUSE, etc.
+  description         String?
+  targetAmount        Float
+  targetDate          DateTime
+  currentAmount       Float     @default(0)
+  monthlyContribution Float     @default(0)
+  expectedReturn      Float     @default(12.0)
+  priority            String    @default("MEDIUM")
+  status              String    @default("IN_PROGRESS")
+  linkedInvestments   String[]
+  linkedSIPs          String[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
