@@ -451,14 +451,15 @@ function calculateHealthFactors(
   })
 
   // 3. Debt-to-Income Ratio (25 points)
-  const dtiRatio = netWorth.totalLiabilities / (cashFlow.totalIncome * 12)
+  const annualIncome = cashFlow.totalIncome * 12
+  const dtiRatio = annualIncome > 0 ? netWorth.totalLiabilities / annualIncome : 0
   const dtiScore = calculateDTIScore(dtiRatio)
   factors.push({
     name: 'Debt-to-Income',
     score: dtiScore,
     maxScore: 25,
     status: getFactorStatus(dtiScore, 25),
-    description: `${(dtiRatio * 100).toFixed(1)}% annual DTI ratio`,
+    description: annualIncome > 0 ? `${(dtiRatio * 100).toFixed(1)}% annual DTI ratio` : 'No income data',
     recommendation: dtiScore < 20 ? 'Consider paying down high-interest debt' : undefined
   })
 

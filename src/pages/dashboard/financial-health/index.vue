@@ -118,7 +118,7 @@ const quickLinks = [
                   {{ emergencyFund ? emergencyFund.percentComplete + '%' : '---' }}
                 </div>
                 <div class="text-caption text-medium-emphasis">
-                  {{ emergencyFund ? `${Math.floor(emergencyFund.currentAmount / emergencyFund.monthlyExpenses)} of ${emergencyFund.targetMonths} mo` : '---' }}
+                  {{ emergencyFund && emergencyFund.monthlyExpenses > 0 ? `${Math.floor(emergencyFund.currentAmount / emergencyFund.monthlyExpenses)} of ${emergencyFund.targetMonths} mo` : `0 of ${emergencyFund?.targetMonths || 6} mo` }}
                 </div>
               </v-card>
             </v-col>
