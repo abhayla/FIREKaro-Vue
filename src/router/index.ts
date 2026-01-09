@@ -305,6 +305,43 @@ const router = createRouter({
         },
       ],
     },
+    // Legacy URL Redirects
+    {
+      path: "/portfolio",
+      redirect: "/dashboard/investments",
+    },
+    {
+      path: "/esop",
+      redirect: "/dashboard/investments/esop",
+    },
+    {
+      path: "/property",
+      redirect: "/dashboard/investments/property",
+    },
+    {
+      path: "/retirement",
+      redirect: "/dashboard/investments/epf-ppf",
+    },
+    {
+      path: "/epf",
+      redirect: "/dashboard/investments/epf-ppf",
+    },
+    {
+      path: "/ppf",
+      redirect: "/dashboard/investments/epf-ppf",
+    },
+    {
+      path: "/nps",
+      redirect: "/dashboard/investments/nps",
+    },
+    {
+      path: "/stocks",
+      redirect: "/dashboard/investments/stocks",
+    },
+    {
+      path: "/mutual-funds",
+      redirect: "/dashboard/investments/mutual-funds",
+    },
   ],
 });
 
