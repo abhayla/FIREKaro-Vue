@@ -11,8 +11,8 @@ import {
   useDeleteCreditCard,
   formatINR,
   formatINRCompact,
-  type CreditCard,
-  type CreditCardStatement
+  calculateMinimumDue,
+  type CreditCard
 } from '@/composables/useLiabilities'
 
 const tabs = [
@@ -39,87 +39,19 @@ const selectedCardForStatements = ref<CreditCard | null>(null)
 const showPaymentDialog = ref(false)
 const selectedCardForPayment = ref<CreditCard | null>(null)
 
-// Mock data for demo
-const mockCreditCards: CreditCard[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    cardName: 'HDFC Regalia',
-    bankName: 'HDFC Bank',
-    cardNumber: '****5678',
-    cardType: 'VISA',
-    creditLimit: 500000,
-    availableLimit: 175000,
-    currentOutstanding: 325000,
-    utilizationPercent: 65,
-    billingCycleDate: 15,
-    paymentDueDate: 5,
-    rewardPointsBalance: 12500,
-    interestRateAPR: 42,
-    annualFee: 2500,
-    isActive: true,
-    minimumDue: 16250,
-    nextDueDate: '2026-02-05'
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    cardName: 'SBI SimplyCLICK',
-    bankName: 'SBI Card',
-    cardNumber: '****1234',
-    cardType: 'MASTERCARD',
-    creditLimit: 300000,
-    availableLimit: 220000,
-    currentOutstanding: 80000,
-    utilizationPercent: 27,
-    billingCycleDate: 20,
-    paymentDueDate: 10,
-    rewardPointsBalance: 5200,
-    interestRateAPR: 39.6,
-    annualFee: 499,
-    isActive: true,
-    minimumDue: 4000,
-    nextDueDate: '2026-02-10'
-  },
-  {
-    id: '3',
-    userId: 'user1',
-    cardName: 'ICICI Amazon Pay',
-    bankName: 'ICICI Bank',
-    cardNumber: '****9012',
-    cardType: 'VISA',
-    creditLimit: 200000,
-    availableLimit: 185000,
-    currentOutstanding: 15000,
-    utilizationPercent: 7.5,
-    billingCycleDate: 25,
-    paymentDueDate: 15,
-    rewardPointsBalance: 2100,
-    interestRateAPR: 40.8,
-    annualFee: 0,
-    isActive: true,
-    minimumDue: 750,
-    nextDueDate: '2026-02-15'
-  }
-]
-
-// Mock statements
-const mockStatements: CreditCardStatement[] = [
-  { id: '1', creditCardId: '1', statementDate: '2025-12-15', statementAmount: 42500, minimumDue: 8500, dueDate: '2026-01-05', isPaid: true, paidAmount: 42500, paidDate: '2026-01-03' },
-  { id: '2', creditCardId: '1', statementDate: '2025-11-15', statementAmount: 38200, minimumDue: 7640, dueDate: '2025-12-05', isPaid: true, paidAmount: 38200, paidDate: '2025-12-02' },
-  { id: '3', creditCardId: '1', statementDate: '2025-10-15', statementAmount: 35800, minimumDue: 7160, dueDate: '2025-11-05', isPaid: true, paidAmount: 35800, paidDate: '2025-11-04' },
-]
-
-// Use mock data if API returns empty
-const cardsList = computed(() => creditCards.value?.length ? creditCards.value : mockCreditCards)
+// Use API data directly (no mock data)
+const cardsList = computed(() => creditCards.value || [])
 
 // Summary calculations
 const summary = computed(() => {
-  const totalLimit = cardsList.value.reduce((sum, c) => sum + c.creditLimit, 0)
-  const totalOutstanding = cardsList.value.reduce((sum, c) => sum + c.currentOutstanding, 0)
-  const totalAvailable = cardsList.value.reduce((sum, c) => sum + c.availableLimit, 0)
-  const totalMinDue = cardsList.value.reduce((sum, c) => sum + c.minimumDue, 0)
-  const totalRewards = cardsList.value.reduce((sum, c) => sum + c.rewardPointsBalance, 0)
+  const totalLimit = cardsList.value.reduce((sum, c) => sum + (c.creditLimit ?? 0), 0)
+  const totalOutstanding = cardsList.value.reduce((sum, c) => sum + (c.currentOutstanding ?? 0), 0)
+  const totalAvailable = cardsList.value.reduce((sum, c) => sum + (c.availableLimit ?? 0), 0)
+  // Calculate minimum due for each card (5% of outstanding or ₹200, whichever is higher)
+  const totalMinDue = cardsList.value.reduce((sum, c) => {
+    return sum + calculateMinimumDue(c.currentOutstanding ?? 0)
+  }, 0)
+  const totalRewards = cardsList.value.reduce((sum, c) => sum + (c.rewardPointsBalance ?? 0), 0)
 
   return {
     totalLimit,
@@ -413,7 +345,7 @@ const submitPayment = async () => {
           <v-btn icon="mdi-close" variant="text" @click="showStatements = false" />
         </v-card-title>
         <v-card-text>
-          <v-table density="compact">
+          <v-table v-if="selectedCardForStatements.statements?.length" density="compact">
             <thead>
               <tr>
                 <th>Statement Date</th>
@@ -424,7 +356,7 @@ const submitPayment = async () => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="stmt in mockStatements" :key="stmt.id">
+              <tr v-for="stmt in selectedCardForStatements.statements" :key="stmt.id">
                 <td>{{ new Date(stmt.statementDate).toLocaleDateString('en-IN') }}</td>
                 <td class="text-right">{{ formatINR(stmt.statementAmount) }}</td>
                 <td class="text-right">{{ formatINR(stmt.minimumDue) }}</td>
@@ -437,6 +369,9 @@ const submitPayment = async () => {
               </tr>
             </tbody>
           </v-table>
+          <div v-else class="text-center py-4 text-medium-emphasis">
+            No statements found for this card.
+          </div>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -464,9 +399,9 @@ const submitPayment = async () => {
             <v-chip
               size="small"
               variant="outlined"
-              @click="paymentAmount = selectedCardForPayment.minimumDue"
+              @click="paymentAmount = calculateMinimumDue(selectedCardForPayment.currentOutstanding)"
             >
-              Min Due: {{ formatINR(selectedCardForPayment.minimumDue) }}
+              Min Due: {{ formatINR(calculateMinimumDue(selectedCardForPayment.currentOutstanding)) }}
             </v-chip>
             <v-chip
               size="small"

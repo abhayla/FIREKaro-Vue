@@ -1,0 +1,414 @@
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import SectionHeader from "@/components/shared/SectionHeader.vue";
+import FamilyToggle from "@/components/shared/FamilyToggle.vue";
+import ScenarioCard from "@/components/tax/ScenarioCard.vue";
+import ScenarioEditor from "@/components/tax/ScenarioEditor.vue";
+import ScenarioComparison from "@/components/tax/ScenarioComparison.vue";
+import SmartSuggestions from "@/components/tax/SmartSuggestions.vue";
+import {
+  useTaxScenarios,
+  useSmartSuggestions,
+  useCreateScenario,
+  useUpdateScenario,
+  useDeleteScenario,
+  useCreateBaseline,
+  formatINR,
+} from "@/composables/useTax";
+import { useFinancialYear } from "@/composables/useSalary";
+
+const tabs = [
+  { title: "Overview", route: "/dashboard/tax-planning" },
+  { title: "Calculator", route: "/dashboard/tax-planning/calculator" },
+  { title: "Deductions", route: "/dashboard/tax-planning/deductions" },
+  { title: "Advance Tax", route: "/dashboard/tax-planning/advance-tax" },
+  { title: "Scenarios", route: "/dashboard/tax-planning/scenarios" },
+  { title: "Reports", route: "/dashboard/tax-planning/reports" },
+];
+
+const { selectedFinancialYear, financialYearOptions } = useFinancialYear();
+
+// Data queries
+const { data: scenarios, isLoading: scenariosLoading, refetch } = useTaxScenarios();
+const { data: suggestions, isLoading: suggestionsLoading } = useSmartSuggestions();
+
+// Mutations
+const createScenario = useCreateScenario();
+const updateScenario = useUpdateScenario();
+const deleteScenario = useDeleteScenario();
+const createBaseline = useCreateBaseline();
+
+// UI state
+const showEditor = ref(false);
+const editingScenario = ref<any>(null);
+const showComparison = ref(false);
+const selectedForComparison = ref<string[]>([]);
+const deleteDialog = ref(false);
+const scenarioToDelete = ref<string | null>(null);
+
+// Computed values
+const hasBaseline = computed(() => {
+  return scenarios.value?.some((s: any) => s.isBaseline) ?? false;
+});
+
+const baseline = computed(() => {
+  return scenarios.value?.find((s: any) => s.isBaseline) ?? null;
+});
+
+const customScenarios = computed(() => {
+  return scenarios.value?.filter((s: any) => !s.isBaseline) ?? [];
+});
+
+const scenariosCount = computed(() => scenarios.value?.length ?? 0);
+const maxScenarios = 10;
+
+const canAddMore = computed(() => scenariosCount.value < maxScenarios);
+
+const scenariosForComparison = computed(() => {
+  return scenarios.value?.filter((s: any) =>
+    selectedForComparison.value.includes(s.id)
+  ) ?? [];
+});
+
+// Create baseline from current data
+async function handleCreateBaseline() {
+  try {
+    await createBaseline.mutateAsync(selectedFinancialYear.value);
+  } catch (error) {
+    console.error("Failed to create baseline:", error);
+  }
+}
+
+// Open editor for new scenario
+function openNewScenario() {
+  editingScenario.value = null;
+  showEditor.value = true;
+}
+
+// Open editor for existing scenario
+function editScenarioHandler(scenario: any) {
+  editingScenario.value = scenario;
+  showEditor.value = true;
+}
+
+// Save scenario (create or update)
+async function handleSaveScenario(data: any) {
+  try {
+    if (editingScenario.value?.id) {
+      await updateScenario.mutateAsync({
+        id: editingScenario.value.id,
+        data,
+      });
+    } else {
+      await createScenario.mutateAsync({
+        ...data,
+        financialYear: selectedFinancialYear.value,
+      });
+    }
+    showEditor.value = false;
+    editingScenario.value = null;
+  } catch (error) {
+    console.error("Failed to save scenario:", error);
+  }
+}
+
+// Delete scenario
+function confirmDelete(scenarioId: string) {
+  scenarioToDelete.value = scenarioId;
+  deleteDialog.value = true;
+}
+
+async function handleDeleteScenario() {
+  if (!scenarioToDelete.value) return;
+
+  try {
+    await deleteScenario.mutateAsync(scenarioToDelete.value);
+    deleteDialog.value = false;
+    scenarioToDelete.value = null;
+    // Remove from comparison if selected
+    selectedForComparison.value = selectedForComparison.value.filter(
+      (id) => id !== scenarioToDelete.value
+    );
+  } catch (error) {
+    console.error("Failed to delete scenario:", error);
+  }
+}
+
+// Toggle scenario selection for comparison
+function toggleComparison(scenarioId: string) {
+  const index = selectedForComparison.value.indexOf(scenarioId);
+  if (index === -1) {
+    if (selectedForComparison.value.length < 3) {
+      selectedForComparison.value.push(scenarioId);
+    }
+  } else {
+    selectedForComparison.value.splice(index, 1);
+  }
+}
+
+// Create scenario from suggestion
+async function handleApplySuggestion(suggestion: any) {
+  try {
+    await createScenario.mutateAsync({
+      financialYear: selectedFinancialYear.value,
+      name: suggestion.name,
+      description: suggestion.description,
+      selectedRegime: suggestion.selectedRegime || "NEW",
+      incomeAdjustments: suggestion.incomeAdjustments || {},
+      deductionAdjustments: suggestion.deductionAdjustments || {},
+      isAutoGenerated: true,
+      suggestionReason: suggestion.reason,
+      optimizationCategory: suggestion.category,
+    });
+  } catch (error) {
+    console.error("Failed to apply suggestion:", error);
+  }
+}
+</script>
+
+<template>
+  <div>
+    <SectionHeader
+      title="Tax Planning"
+      subtitle="What-If Scenario Analysis"
+      icon="mdi-compare"
+      :tabs="tabs"
+    />
+
+    <!-- Controls Row -->
+    <v-row class="mb-6" align="center">
+      <v-col cols="12" sm="6" md="4">
+        <v-select
+          v-model="selectedFinancialYear"
+          :items="financialYearOptions"
+          label="Financial Year"
+          variant="outlined"
+          density="compact"
+          hide-details
+          prepend-inner-icon="mdi-calendar"
+        />
+      </v-col>
+      <v-col cols="12" sm="6" md="4">
+        <FamilyToggle />
+      </v-col>
+      <v-col cols="12" md="4" class="text-md-end">
+        <v-btn
+          v-if="selectedForComparison.length >= 2"
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-compare"
+          class="mr-2"
+          @click="showComparison = true"
+        >
+          Compare ({{ selectedForComparison.length }})
+        </v-btn>
+        <v-btn
+          v-if="canAddMore"
+          color="primary"
+          prepend-icon="mdi-plus"
+          :disabled="!hasBaseline"
+          @click="openNewScenario"
+        >
+          New Scenario
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- No Baseline State -->
+    <v-card v-if="!hasBaseline && !scenariosLoading" class="mb-6">
+      <v-card-text class="text-center py-12">
+        <v-icon icon="mdi-file-document-outline" size="64" color="grey-lighten-1" class="mb-4" />
+        <h3 class="text-h6 mb-2">No Baseline Scenario</h3>
+        <p class="text-body-2 text-medium-emphasis mb-4">
+          Create a baseline scenario from your current tax data to start comparing what-if scenarios.
+        </p>
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-plus"
+          :loading="createBaseline.isPending.value"
+          @click="handleCreateBaseline"
+        >
+          Create Baseline
+        </v-btn>
+      </v-card-text>
+    </v-card>
+
+    <!-- Loading State -->
+    <v-skeleton-loader v-else-if="scenariosLoading" type="card, card, card" />
+
+    <!-- Main Content -->
+    <template v-else-if="hasBaseline">
+      <!-- Baseline Card -->
+      <v-card class="mb-6 border-primary" variant="outlined">
+        <v-card-title class="d-flex align-center">
+          <v-chip color="primary" size="small" class="mr-2">
+            <v-icon start size="small">mdi-anchor</v-icon>
+            BASELINE
+          </v-chip>
+          Current Tax Position
+          <v-spacer />
+          <v-btn
+            variant="text"
+            size="small"
+            prepend-icon="mdi-refresh"
+            :loading="createBaseline.isPending.value"
+            @click="handleCreateBaseline"
+          >
+            Refresh
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text>
+          <v-row>
+            <v-col cols="6" sm="3">
+              <div class="text-caption text-medium-emphasis">Regime</div>
+              <v-chip
+                :color="baseline?.selectedRegime === 'NEW' ? 'primary' : 'secondary'"
+                size="small"
+              >
+                {{ baseline?.selectedRegime === 'NEW' ? 'New Regime' : 'Old Regime' }}
+              </v-chip>
+            </v-col>
+            <v-col cols="6" sm="3">
+              <div class="text-caption text-medium-emphasis">Gross Income</div>
+              <div class="text-body-1 font-weight-medium text-currency">
+                {{ formatINR(baseline?.totalGrossIncome ?? 0) }}
+              </div>
+            </v-col>
+            <v-col cols="6" sm="3">
+              <div class="text-caption text-medium-emphasis">Deductions</div>
+              <div class="text-body-1 font-weight-medium text-currency text-negative">
+                -{{ formatINR(baseline?.totalDeductions ?? 0) }}
+              </div>
+            </v-col>
+            <v-col cols="6" sm="3">
+              <div class="text-caption text-medium-emphasis">Tax Liability</div>
+              <div class="text-body-1 font-weight-bold text-currency text-error">
+                {{ formatINR(baseline?.totalTaxLiability ?? 0) }}
+              </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+
+      <!-- Smart Suggestions -->
+      <SmartSuggestions
+        :suggestions="suggestions ?? []"
+        :loading="suggestionsLoading"
+        :disabled="!canAddMore"
+        class="mb-6"
+        @apply="handleApplySuggestion"
+      />
+
+      <!-- Scenarios Grid -->
+      <div class="mb-4 d-flex align-center">
+        <div class="text-h6">
+          Your Scenarios
+          <v-chip size="x-small" class="ml-2">
+            {{ customScenarios.length }} / {{ maxScenarios - 1 }}
+          </v-chip>
+        </div>
+        <v-spacer />
+        <div v-if="selectedForComparison.length > 0" class="text-caption text-medium-emphasis">
+          {{ selectedForComparison.length }} selected for comparison (max 3)
+        </div>
+      </div>
+
+      <v-row v-if="customScenarios.length > 0">
+        <v-col
+          v-for="scenario in customScenarios"
+          :key="scenario.id"
+          cols="12"
+          sm="6"
+          lg="4"
+        >
+          <ScenarioCard
+            :scenario="scenario"
+            :baseline="baseline"
+            :selected="selectedForComparison.includes(scenario.id)"
+            @edit="editScenarioHandler(scenario)"
+            @delete="confirmDelete(scenario.id)"
+            @toggle-compare="toggleComparison(scenario.id)"
+          />
+        </v-col>
+      </v-row>
+
+      <v-card v-else variant="outlined" class="text-center py-8">
+        <v-icon icon="mdi-file-document-multiple-outline" size="48" color="grey-lighten-1" class="mb-2" />
+        <div class="text-body-2 text-medium-emphasis">
+          No custom scenarios yet. Create one or apply a smart suggestion above.
+        </div>
+      </v-card>
+
+      <!-- Educational Info -->
+      <v-card variant="outlined" class="mt-6">
+        <v-card-title class="text-subtitle-1">
+          <v-icon class="mr-2">mdi-information</v-icon>
+          About What-If Scenarios
+        </v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12" md="6">
+              <div class="text-subtitle-2 mb-2">What Can You Do?</div>
+              <ul class="text-body-2 text-medium-emphasis">
+                <li>Compare up to 10 different tax scenarios</li>
+                <li>Adjust income and deductions to see impact on tax</li>
+                <li>Switch between Old and New tax regimes</li>
+                <li>Use smart suggestions for common optimizations</li>
+              </ul>
+            </v-col>
+            <v-col cols="12" md="6">
+              <div class="text-subtitle-2 mb-2">Popular Optimizations</div>
+              <ul class="text-body-2 text-medium-emphasis">
+                <li><strong>80C:</strong> Maximize to Rs.1.5L (PPF, ELSS, etc.)</li>
+                <li><strong>80CCD(1B):</strong> Add Rs.50K NPS contribution</li>
+                <li><strong>80D:</strong> Health insurance for self/parents</li>
+                <li><strong>Regime Switch:</strong> Compare both regimes</li>
+              </ul>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </template>
+
+    <!-- Scenario Editor Dialog -->
+    <ScenarioEditor
+      v-model="showEditor"
+      :scenario="editingScenario"
+      :baseline="baseline"
+      :loading="createScenario.isPending.value || updateScenario.isPending.value"
+      @save="handleSaveScenario"
+      @cancel="showEditor = false; editingScenario = null"
+    />
+
+    <!-- Comparison Dialog -->
+    <ScenarioComparison
+      v-model="showComparison"
+      :scenarios="scenariosForComparison"
+      :baseline="baseline"
+      @close="showComparison = false"
+    />
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="deleteDialog" max-width="400">
+      <v-card>
+        <v-card-title>Delete Scenario?</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete this scenario? This action cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            :loading="deleteScenario.isPending.value"
+            @click="handleDeleteScenario"
+          >
+            Delete
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
+</template>

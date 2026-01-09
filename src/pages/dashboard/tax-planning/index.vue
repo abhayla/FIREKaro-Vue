@@ -17,6 +17,8 @@ const tabs = [
   { title: "Overview", route: "/dashboard/tax-planning" },
   { title: "Calculator", route: "/dashboard/tax-planning/calculator" },
   { title: "Deductions", route: "/dashboard/tax-planning/deductions" },
+  { title: "Advance Tax", route: "/dashboard/tax-planning/advance-tax" },
+  { title: "Scenarios", route: "/dashboard/tax-planning/scenarios" },
   { title: "Reports", route: "/dashboard/tax-planning/reports" },
 ];
 
@@ -160,6 +162,22 @@ const taxSavings = computed(() => comparison.value?.savingsAmount || 0);
                 to="/dashboard/tax-planning/deductions"
               >
                 Manage Deductions
+              </v-btn>
+              <v-btn
+                color="warning"
+                variant="tonal"
+                prepend-icon="mdi-calendar-clock"
+                to="/dashboard/tax-planning/advance-tax"
+              >
+                Advance Tax
+              </v-btn>
+              <v-btn
+                color="info"
+                variant="tonal"
+                prepend-icon="mdi-compare"
+                to="/dashboard/tax-planning/scenarios"
+              >
+                What-If Scenarios
               </v-btn>
               <v-btn
                 variant="tonal"

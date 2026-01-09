@@ -11,8 +11,7 @@ import {
   comparePayoffStrategies,
   formatINR,
   formatINRCompact,
-  type Loan,
-  type CreditCard,
+  calculateMinimumDue,
   type DebtPayoffStrategy as StrategyType
 } from '@/composables/useLiabilities'
 
@@ -29,48 +28,9 @@ const { data: loans, isLoading: loansLoading } = useLoans()
 const { data: creditCards, isLoading: cardsLoading } = useCreditCards()
 const { data: strategies, isLoading: strategiesLoading } = useDebtPayoffStrategies()
 
-// Mock data
-const mockLoans: Loan[] = [
-  {
-    id: '1', userId: 'user1', loanType: 'home', lenderName: 'HDFC Bank Home Loan',
-    principalAmount: 5000000, outstandingPrincipal: 3200000, interestRate: 8.5,
-    tenure: 240, emiAmount: 43391, emiDate: 5, startDate: '2020-06-01', endDate: '2040-05-31',
-    totalInterestPaid: 850000, totalPrincipalPaid: 1800000, prepaymentsMade: 200000, isActive: true
-  },
-  {
-    id: '2', userId: 'user1', loanType: 'car', lenderName: 'ICICI Bank Car Loan',
-    principalAmount: 800000, outstandingPrincipal: 450000, interestRate: 9.5,
-    tenure: 60, emiAmount: 16765, emiDate: 15, startDate: '2022-03-01', endDate: '2027-02-28',
-    totalInterestPaid: 120000, totalPrincipalPaid: 350000, prepaymentsMade: 0, isActive: true
-  },
-  {
-    id: '3', userId: 'user1', loanType: 'personal', lenderName: 'Axis Bank Personal Loan',
-    principalAmount: 300000, outstandingPrincipal: 180000, interestRate: 14,
-    tenure: 36, emiAmount: 10248, emiDate: 10, startDate: '2024-01-01', endDate: '2027-01-01',
-    totalInterestPaid: 48000, totalPrincipalPaid: 120000, prepaymentsMade: 0, isActive: true
-  }
-]
-
-const mockCreditCards: CreditCard[] = [
-  {
-    id: '1', userId: 'user1', cardName: 'HDFC Credit Card', bankName: 'HDFC Bank',
-    cardNumber: '****5678', cardType: 'VISA', creditLimit: 500000, availableLimit: 175000,
-    currentOutstanding: 325000, utilizationPercent: 65, billingCycleDate: 15, paymentDueDate: 5,
-    rewardPointsBalance: 12500, interestRateAPR: 42, annualFee: 2500, isActive: true,
-    minimumDue: 16250, nextDueDate: '2026-02-05'
-  },
-  {
-    id: '2', userId: 'user1', cardName: 'SBI Credit Card', bankName: 'SBI Card',
-    cardNumber: '****1234', cardType: 'MASTERCARD', creditLimit: 300000, availableLimit: 220000,
-    currentOutstanding: 80000, utilizationPercent: 27, billingCycleDate: 20, paymentDueDate: 10,
-    rewardPointsBalance: 5200, interestRateAPR: 39.6, annualFee: 499, isActive: true,
-    minimumDue: 4000, nextDueDate: '2026-02-10'
-  }
-]
-
-// Use mock data
-const loansList = computed(() => loans.value?.length ? loans.value : mockLoans)
-const cardsList = computed(() => creditCards.value?.length ? creditCards.value : mockCreditCards)
+// Use API data directly (no mock data)
+const loansList = computed(() => loans.value || [])
+const cardsList = computed(() => creditCards.value || [])
 
 // Extra payment amount
 const extraPayment = ref(10000)
@@ -81,19 +41,19 @@ const allDebts = computed(() => {
 
   loansList.value.forEach(loan => {
     debts.push({
-      name: loan.lenderName,
-      balance: loan.outstandingPrincipal,
-      interestRate: loan.interestRate,
-      minPayment: loan.emiAmount
+      name: loan.loanName || loan.lender,
+      balance: loan.outstandingAmount ?? 0,
+      interestRate: loan.interestRate ?? 0,
+      minPayment: loan.emiAmount ?? 0
     })
   })
 
   cardsList.value.forEach(card => {
     debts.push({
       name: card.cardName,
-      balance: card.currentOutstanding,
-      interestRate: card.interestRateAPR,
-      minPayment: card.minimumDue
+      balance: card.currentOutstanding ?? 0,
+      interestRate: card.interestRateAPR ?? 0,
+      minPayment: calculateMinimumDue(card.currentOutstanding ?? 0)
     })
   })
 

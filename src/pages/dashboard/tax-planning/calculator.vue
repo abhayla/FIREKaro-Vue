@@ -23,6 +23,8 @@ const tabs = [
   { title: "Overview", route: "/dashboard/tax-planning" },
   { title: "Calculator", route: "/dashboard/tax-planning/calculator" },
   { title: "Deductions", route: "/dashboard/tax-planning/deductions" },
+  { title: "Advance Tax", route: "/dashboard/tax-planning/advance-tax" },
+  { title: "Scenarios", route: "/dashboard/tax-planning/scenarios" },
   { title: "Reports", route: "/dashboard/tax-planning/reports" },
 ];
 

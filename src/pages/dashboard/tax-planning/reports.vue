@@ -41,6 +41,8 @@ const tabs = [
   { title: "Overview", route: "/dashboard/tax-planning" },
   { title: "Calculator", route: "/dashboard/tax-planning/calculator" },
   { title: "Deductions", route: "/dashboard/tax-planning/deductions" },
+  { title: "Advance Tax", route: "/dashboard/tax-planning/advance-tax" },
+  { title: "Scenarios", route: "/dashboard/tax-planning/scenarios" },
   { title: "Reports", route: "/dashboard/tax-planning/reports" },
 ];
 
@@ -187,9 +189,20 @@ const deductionUtilizationChartData = computed(() => {
 });
 
 // Advance Tax Schedule
+interface AdvanceTaxScheduleItem {
+  quarter: number;
+  quarterName?: string;
+  dueDate: string;
+  cumulativePercentage: number;
+  cumulativeAmountDue: number;
+  amountPaid: number;
+  shortfall: number;
+  status: string;
+}
+
 const advanceTaxSchedule = computed(() => {
   if (!advanceTax.value?.schedules) return [];
-  return advanceTax.value.schedules.map((s) => ({
+  return advanceTax.value.schedules.map((s: AdvanceTaxScheduleItem) => ({
     ...s,
     statusColor:
       s.status === "PAID"
@@ -249,14 +262,115 @@ const reportCards = computed(() => {
 });
 
 // Export functions
-function exportToPDF() {
-  // TODO: Implement PDF export
-  alert("PDF export coming soon!");
+const exportLoading = ref(false);
+
+async function exportToPDF() {
+  exportLoading.value = true;
+  try {
+    const res = await fetch("/api/tax-planning/reports/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        financialYear: selectedFinancialYear.value,
+        format: "pdf",
+        includeScenarios: true,
+        includeAdvanceTax: true,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Export failed");
+
+    const { data } = await res.json();
+
+    // Use jsPDF for client-side PDF generation
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(18);
+    doc.text(`Tax Report - FY ${selectedFinancialYear.value}`, 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 28);
+
+    // Tax Summary
+    if (data.taxSummary) {
+      doc.setFontSize(14);
+      doc.text("Tax Summary", 14, 40);
+
+      autoTable(doc, {
+        startY: 45,
+        head: [["Parameter", "Value"]],
+        body: [
+          ["Selected Regime", data.taxSummary.selectedRegime],
+          ["Total Gross Income", formatINR(data.taxSummary.totalGrossIncome)],
+          ["Total Deductions", formatINR(data.taxSummary.totalDeductions)],
+          ["Taxable Income", formatINR(data.taxSummary.taxableIncome)],
+          ["Total Tax Liability", formatINR(data.taxSummary.totalTaxLiability)],
+        ],
+      });
+    }
+
+    // Save PDF
+    doc.save(`tax-report-${selectedFinancialYear.value}.pdf`);
+  } catch (error) {
+    console.error("PDF export failed:", error);
+    alert("Failed to generate PDF. Please try again.");
+  } finally {
+    exportLoading.value = false;
+  }
 }
 
-function exportToExcel() {
-  // TODO: Implement Excel export
-  alert("Excel export coming soon!");
+async function exportToExcel() {
+  exportLoading.value = true;
+  try {
+    const res = await fetch("/api/tax-planning/reports/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        financialYear: selectedFinancialYear.value,
+        format: "excel",
+        includeScenarios: true,
+        includeAdvanceTax: true,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Export failed");
+
+    const { sheets } = await res.json();
+
+    // Use xlsx for client-side Excel generation
+    const XLSX = await import("xlsx");
+
+    const workbook = XLSX.utils.book_new();
+
+    // Summary sheet
+    if (sheets.summary?.length) {
+      const ws = XLSX.utils.aoa_to_sheet(sheets.summary);
+      XLSX.utils.book_append_sheet(workbook, ws, "Summary");
+    }
+
+    // Scenarios sheet
+    if (sheets.scenarios?.length > 1) {
+      const ws = XLSX.utils.aoa_to_sheet(sheets.scenarios);
+      XLSX.utils.book_append_sheet(workbook, ws, "Scenarios");
+    }
+
+    // Advance Tax sheet
+    if (sheets.advanceTax?.length > 1) {
+      const ws = XLSX.utils.aoa_to_sheet(sheets.advanceTax);
+      XLSX.utils.book_append_sheet(workbook, ws, "Advance Tax");
+    }
+
+    // Save Excel
+    XLSX.writeFile(workbook, `tax-report-${selectedFinancialYear.value}.xlsx`);
+  } catch (error) {
+    console.error("Excel export failed:", error);
+    alert("Failed to generate Excel file. Please try again.");
+  } finally {
+    exportLoading.value = false;
+  }
 }
 </script>
 
@@ -284,10 +398,18 @@ function exportToExcel() {
       </v-col>
       <v-col cols="12" sm="6" md="4">
         <v-btn-group variant="outlined" density="compact">
-          <v-btn prepend-icon="mdi-file-pdf-box" @click="exportToPDF">
+          <v-btn
+            prepend-icon="mdi-file-pdf-box"
+            :loading="exportLoading"
+            @click="exportToPDF"
+          >
             PDF
           </v-btn>
-          <v-btn prepend-icon="mdi-file-excel" @click="exportToExcel">
+          <v-btn
+            prepend-icon="mdi-file-excel"
+            :loading="exportLoading"
+            @click="exportToExcel"
+          >
             Excel
           </v-btn>
         </v-btn-group>

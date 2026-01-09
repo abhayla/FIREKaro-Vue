@@ -45,13 +45,15 @@ const cardSchema = toTypedSchema(
   })
 )
 
+type CardType = 'VISA' | 'MASTERCARD' | 'RUPAY' | 'AMEX'
+
 const { handleSubmit, resetForm, values, setValues } = useForm({
   validationSchema: cardSchema,
   initialValues: {
     cardName: '',
     bankName: '',
     cardNumber: '',
-    cardType: 'VISA' as CreditCard['cardType'],
+    cardType: 'VISA' as CardType,
     creditLimit: 100000,
     currentOutstanding: 0,
     billingCycleDate: 15,
@@ -67,18 +69,25 @@ watch(
   () => props.card,
   (newCard) => {
     if (newCard) {
+      // Convert cardExpiryDate from ISO to YYYY-MM format for month input
+      let expiryDateFormatted = ''
+      if (newCard.cardExpiryDate) {
+        const date = new Date(newCard.cardExpiryDate)
+        expiryDateFormatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      }
+
       setValues({
         cardName: newCard.cardName,
         bankName: newCard.bankName,
         cardNumber: newCard.cardNumber.slice(-4),
-        cardType: newCard.cardType,
+        cardType: newCard.cardType as CardType,
         creditLimit: newCard.creditLimit,
         currentOutstanding: newCard.currentOutstanding,
         billingCycleDate: newCard.billingCycleDate,
         paymentDueDate: newCard.paymentDueDate,
-        interestRateAPR: newCard.interestRateAPR,
+        interestRateAPR: newCard.interestRateAPR ?? 42,
         annualFee: newCard.annualFee,
-        cardExpiryDate: newCard.cardExpiryDate || ''
+        cardExpiryDate: expiryDateFormatted
       })
     } else {
       resetForm()
@@ -98,15 +107,23 @@ const availableLimit = computed(() => {
 })
 
 const onSubmit = handleSubmit((formValues) => {
+  // Only include fields that exist in the backend schema
   const cardData: Partial<CreditCard> = {
-    ...formValues,
+    cardName: formValues.cardName,
+    bankName: formValues.bankName,
     cardNumber: `****${formValues.cardNumber.slice(-4)}`,
+    cardType: formValues.cardType,
+    creditLimit: formValues.creditLimit,
     availableLimit: availableLimit.value,
-    utilizationPercent: utilization.value,
-    minimumDue: Math.max(200, Math.round((formValues.currentOutstanding || 0) * 0.05)),
-    rewardPointsBalance: props.isEditing ? props.card?.rewardPointsBalance : 0,
+    currentOutstanding: formValues.currentOutstanding,
+    billingCycleDate: formValues.billingCycleDate,
+    paymentDueDate: formValues.paymentDueDate,
+    interestRateAPR: formValues.interestRateAPR,
+    annualFee: formValues.annualFee,
+    rewardPointsBalance: props.isEditing ? props.card?.rewardPointsBalance ?? 0 : 0,
     isActive: true,
-    nextDueDate: getNextDueDate(formValues.paymentDueDate)
+    // Convert month input to ISO date string if provided
+    cardExpiryDate: formValues.cardExpiryDate ? `${formValues.cardExpiryDate}-01` : null
   }
 
   if (props.isEditing && props.card) {
@@ -116,15 +133,6 @@ const onSubmit = handleSubmit((formValues) => {
   emit('save', cardData)
   dialog.value = false
 })
-
-function getNextDueDate(dueDay: number): string {
-  const today = new Date()
-  let nextDue = new Date(today.getFullYear(), today.getMonth(), dueDay)
-  if (nextDue <= today) {
-    nextDue.setMonth(nextDue.getMonth() + 1)
-  }
-  return nextDue.toISOString().split('T')[0]
-}
 
 const handleClose = () => {
   resetForm()

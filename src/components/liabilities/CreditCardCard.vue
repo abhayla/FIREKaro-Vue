@@ -4,7 +4,9 @@ import {
   type CreditCard,
   formatINR,
   formatINRCompact,
-  calculateCreditUtilization
+  calculateCreditUtilization,
+  calculateMinimumDue,
+  getNextDueDate
 } from '@/composables/useLiabilities'
 
 const props = defineProps<{
@@ -15,13 +17,28 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit', card: CreditCard): void
   (e: 'delete', id: string): void
-  (e: 'recordPayment', card: CreditCard): void
-  (e: 'viewStatements', card: CreditCard): void
+  (e: 'record-payment', card: CreditCard): void
+  (e: 'view-statements', card: CreditCard): void
 }>()
+
+// Calculate utilization percentage from outstanding and limit
+const utilizationPercent = computed(() => {
+  return calculateCreditUtilization(props.card.currentOutstanding ?? 0, props.card.creditLimit ?? 1)
+})
+
+// Calculate minimum due (5% of outstanding or ₹200, whichever is higher)
+const minimumDue = computed(() => {
+  return calculateMinimumDue(props.card.currentOutstanding ?? 0)
+})
+
+// Calculate next due date from payment due day
+const nextDueDate = computed(() => {
+  return getNextDueDate(props.card)
+})
 
 // Utilization color based on percentage
 const utilizationColor = computed(() => {
-  const util = props.card.utilizationPercent
+  const util = utilizationPercent.value
   if (util <= 30) return 'success'
   if (util <= 50) return 'primary'
   if (util <= 70) return 'warning'
@@ -31,7 +48,7 @@ const utilizationColor = computed(() => {
 // Days until due date
 const daysUntilDue = computed(() => {
   const today = new Date()
-  const dueDate = new Date(props.card.nextDueDate)
+  const dueDate = new Date(nextDueDate.value)
   const diff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
   return diff
 })
@@ -103,11 +120,11 @@ const cardGradient = computed(() => {
         <div class="d-flex justify-space-between text-body-2 mb-1">
           <span>Credit Utilization</span>
           <span :class="`text-${utilizationColor}`" class="font-weight-bold">
-            {{ card.utilizationPercent }}%
+            {{ utilizationPercent }}%
           </span>
         </div>
         <v-progress-linear
-          :model-value="card.utilizationPercent"
+          :model-value="utilizationPercent"
           :color="utilizationColor"
           height="10"
           rounded
@@ -130,7 +147,7 @@ const cardGradient = computed(() => {
         </v-col>
         <v-col cols="4">
           <div class="text-caption text-medium-emphasis">Min Due</div>
-          <div class="text-subtitle-2 font-weight-bold text-warning">{{ formatINRCompact(card.minimumDue) }}</div>
+          <div class="text-subtitle-2 font-weight-bold text-warning">{{ formatINRCompact(minimumDue) }}</div>
         </v-col>
       </v-row>
 
@@ -145,7 +162,7 @@ const cardGradient = computed(() => {
         <div class="d-flex justify-space-between align-center">
           <span>
             <v-icon icon="mdi-calendar-alert" size="small" class="mr-1" />
-            Payment Due: {{ new Date(card.nextDueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) }}
+            Payment Due: {{ new Date(nextDueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) }}
           </span>
           <v-chip :color="dueStatus.color" size="x-small">
             {{ dueStatus.text }}
@@ -177,7 +194,7 @@ const cardGradient = computed(() => {
         size="small"
         color="primary"
         prepend-icon="mdi-cash-plus"
-        @click="emit('recordPayment', card)"
+        @click="emit('record-payment', card)"
       >
         Pay
       </v-btn>
@@ -185,7 +202,7 @@ const cardGradient = computed(() => {
         variant="text"
         size="small"
         prepend-icon="mdi-file-document"
-        @click="emit('viewStatements', card)"
+        @click="emit('view-statements', card)"
       >
         Statements
       </v-btn>

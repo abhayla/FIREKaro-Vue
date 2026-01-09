@@ -17,7 +17,7 @@ import {
   lineChartOptions,
   formatINRForChart
 } from '@/utils/chartTheme'
-import { type Loan, type CreditCard, formatINR, formatINRCompact } from '@/composables/useLiabilities'
+import { type Loan, type CreditCard, formatINR, formatINRCompact, calculateMinimumDue } from '@/composables/useLiabilities'
 
 ChartJS.register(
   CategoryScale,
@@ -40,8 +40,8 @@ const months = computed(() => props.projectionMonths || 60)
 
 // Calculate total current debt
 const totalDebt = computed(() => {
-  const loanDebt = props.loans.reduce((sum, l) => sum + l.outstandingPrincipal, 0)
-  const ccDebt = props.creditCards.reduce((sum, c) => sum + c.currentOutstanding, 0)
+  const loanDebt = props.loans.reduce((sum, l) => sum + (l.outstandingAmount ?? 0), 0)
+  const ccDebt = props.creditCards.reduce((sum, c) => sum + (c.currentOutstanding ?? 0), 0)
   return loanDebt + ccDebt
 })
 
@@ -73,8 +73,8 @@ const projectionData = computed(() => {
 
 // Calculate monthly payment
 function calculateTotalMonthlyPayment(): number {
-  const loanEmi = props.loans.reduce((sum, l) => sum + l.emiAmount, 0)
-  const ccPayment = props.creditCards.reduce((sum, c) => sum + c.minimumDue, 0)
+  const loanEmi = props.loans.reduce((sum, l) => sum + (l.emiAmount ?? 0), 0)
+  const ccPayment = props.creditCards.reduce((sum, c) => sum + calculateMinimumDue(c.currentOutstanding ?? 0), 0)
   return loanEmi + ccPayment
 }
 
@@ -85,10 +85,12 @@ function calculateAverageInterestRate(): number {
 
   let weightedRate = 0
   props.loans.forEach(l => {
-    weightedRate += l.interestRate * (l.outstandingPrincipal / totalDebtAmount)
+    const outstanding = l.outstandingAmount ?? 0
+    weightedRate += (l.interestRate ?? 0) * (outstanding / totalDebtAmount)
   })
   props.creditCards.forEach(c => {
-    weightedRate += c.interestRateAPR * (c.currentOutstanding / totalDebtAmount)
+    const outstanding = c.currentOutstanding ?? 0
+    weightedRate += (c.interestRateAPR ?? 0) * (outstanding / totalDebtAmount)
   })
 
   return weightedRate

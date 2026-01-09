@@ -3,6 +3,8 @@ import {
   TaxPlanningOverviewPage,
   TaxCalculatorPage,
   TaxDeductionsPage,
+  AdvanceTaxPage,
+  ScenariosPage,
 } from "../../pages/tax-planning";
 
 test.describe("Tax Planning Navigation", () => {
@@ -24,6 +26,8 @@ test.describe("Tax Planning Navigation", () => {
     await expect(overview.overviewTab).toBeVisible();
     await expect(overview.calculatorTab).toBeVisible();
     await expect(overview.deductionsTab).toBeVisible();
+    await expect(overview.advanceTaxTab).toBeVisible();
+    await expect(overview.scenariosTab).toBeVisible();
     await expect(overview.reportsTab).toBeVisible();
   });
 
@@ -68,5 +72,23 @@ test.describe("Tax Planning Navigation", () => {
     const calculatorTab = page.getByRole("tab", { name: /Calculator/i });
     await expect(calculatorTab).toHaveAttribute("aria-selected", "true");
     await expect(overviewTab).toHaveAttribute("aria-selected", "false");
+  });
+
+  test("should navigate to Advance Tax tab", async ({ page }) => {
+    await page.goto("/dashboard/tax-planning/advance-tax");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const advanceTaxPage = new AdvanceTaxPage(page);
+    await advanceTaxPage.expectPageLoaded();
+  });
+
+  test("should navigate to Scenarios tab", async ({ page }) => {
+    await page.goto("/dashboard/tax-planning/scenarios");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const scenariosPage = new ScenariosPage(page);
+    await scenariosPage.expectPageLoaded();
   });
 });

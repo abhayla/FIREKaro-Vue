@@ -2,60 +2,67 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current Status (Updated: January 9, 2026)
-
-**All 4 development streams have been merged to master.** The application is functional but has several critical issues:
-
-### Critical Issues to Fix
-| Section | Issue | Priority |
-|---------|-------|----------|
-| Expenses | JS Error: `reduce is not a function` | P0 |
-| Investments | JS Error: `toFixed on undefined` | P0 |
-| Tax Planning | JS Error: `length on undefined` | P0 |
-| Financial Health | API 404 errors | P0 |
-| FIRE & Goals | "Time to FIRE" shows NaN | P1 |
-
-### Working Sections
-- Salary (all tabs functional)
-- Liabilities (well-styled)
-- FIRE & Goals (mostly working, except NaN issue)
-
-### Reference
-- See `docs/STYLING-AUDIT-REPORT.md` for full audit findings
-- See `NEXT-SESSION-PROMPT.md` for detailed continuation context
-
----
-
 ## Project Overview
 
-FIREKaro is a comprehensive Indian financial planning SPA built with Vue 3 + Vite + Vuetify 3. It helps users track income, expenses, investments, liabilities, and plan for FIRE (Financial Independence, Retire Early).
+FIREKaro is an Indian financial planning SPA built with Vue 3 + Vite + Vuetify 3. It helps users track income, expenses, investments, liabilities, and plan for FIRE (Financial Independence, Retire Early).
+
+## Clarification Workflow
+
+For ambiguous or underspecified tasks, ask clarifying questions before proceeding. Do NOT apply this to clear, straightforward requests.
+
+### When to Clarify
+Ask questions when you lack confidence about:
+- **Scope**: What exactly needs to change or be built
+- **Affected files**: Which files/components will be modified
+- **Expected outcome**: What the end result should look like or do
+
+Guiding principle: Be confident enough to complete the task without making assumptions about user intent.
+
+### How to Clarify
+1. **Estimate**: State the expected number of questions upfront (e.g., "I have 3 questions")
+2. **Progressive**: Ask one question at a time, starting with the most critical
+3. **Options**: Provide 2-4 concrete options for each question (reduces cognitive load)
+   - Always include your recommendation with rationale
+   - User can always provide a custom answer beyond the listed options
+4. **Research**: Before recommending, search the internet for best practices and standards
+5. **Adapt**: After each answer, check relevant code/docs, then reassess remaining questions
+
+### Question Format
+```
+**Question N of M:**
+[Clear, specific question]
+
+**Options:**
+- A) Option one
+- B) Option two
+- C) Option three (if needed)
+
+**My Recommendation:** Option [X] - [reason based on best practices/standards]
+```
+
+### Limits
+- **Soft limit**: Aim for 3 questions maximum; prioritize the most important uncertainties
+- **User override**: Respect phrases like "just proceed", "use your judgment", or "skip questions" to bypass clarification
+
+### Skip Clarification For
+- Simple, unambiguous tasks (typo fixes, single-line changes)
+- Tasks with explicit, detailed instructions
+- When the user says to proceed or use judgment
 
 ## Architecture
 
-- **Frontend**: Vue 3 SPA (port 5173)
-- **Backend**: Hono + Prisma + Better Auth (port 3000) - in `server/` folder
-- **Database**: PostgreSQL with Prisma ORM (`firekaro_vue` database)
+- **Frontend**: Vue 3 SPA (port 5173) - proxies `/api/*` to backend
+- **Backend**: Hono + Prisma + Better Auth (port 3000) in `server/` folder
+- **Database**: PostgreSQL with Prisma ORM
 - **Auth**: Better Auth (session-based, email/password)
 - **State**: Pinia stores (`user.ts`, `ui.ts`) + TanStack Vue Query for server state
 - **Styling**: Vuetify 3 with ProjectionLab-inspired theme (light/dark)
-- **Forms**: VeeValidate + Zod schemas for validation
+- **Forms**: VeeValidate + Zod schemas
 - **API Types**: OpenAPI spec (`@hono/zod-openapi`) + `openapi-typescript` for type generation
-- **Dev Mode**: Auth is bypassed when no authenticated session (see `router/index.ts`)
+- **Dev Mode**: Auth bypass enabled when `DEV_BYPASS_AUTH=true` or when backend auth check fails (returns mock user)
 
-### Important: This is NOT the Next.js Project
-
-This project (`FIREKaro-Vue`) has its own Hono backend in the `server/` folder.
-Do NOT reference the old Next.js project (`FIREKaro/`) for API development.
-
-| Aspect | Old Project (FIREKaro) | Current Project (FIREKaro-Vue) |
-|--------|------------------------|--------------------------------|
-| Frontend | Next.js (React) | Vue 3 + Vite + Vuetify 3 |
-| Backend | Next.js API Routes | Hono + Prisma |
-| Auth | NextAuth | Better Auth |
-| Location | `D:\Abhay\VibeCoding\FIREKaro` | `D:\Abhay\VibeCoding\FIREKaro-Vue` |
-| Status | Legacy (reference only) | **Active development** |
-
-> **Note**: Historical docs (`docs/Parallel-Implementation-Guide.md`) may reference Next.js. These are kept for reference but do not reflect the current architecture.
+### Dashboard Sections (9 total)
+`salary` | `non-salary-income` | `tax-planning` | `expenses` | `investments` | `liabilities` | `protection` | `financial-health` | `fire-goals`
 
 ## Commands
 
@@ -89,80 +96,73 @@ npm run test:unit -- --grep "test name pattern"
 # Run single E2E test
 npm run test:e2e -- e2e/tests/salary/01-navigation.spec.ts
 npm run test:e2e -- --grep "test description"
-
-# API Type Generation
-npm run generate:api-types  # Generate TypeScript types from OpenAPI spec
 ```
 
 ## Code Organization
 
 ```
-src/                       # Frontend (Vue 3)
-├── composables/           # Vue Query hooks (use generated types)
-├── components/            # Feature-specific components organized by section
-├── generated/             # Auto-generated API types (DO NOT EDIT)
-│   └── api-types.d.ts     # TypeScript types from OpenAPI spec
+src/
+├── composables/           # Vue Query hooks (useSalary, useExpenses, useInvestments, etc.)
+├── components/            # Feature-specific components by section
 ├── pages/dashboard/       # 9 sections with ~50 total pages
-├── stores/                # Pinia stores (user session, UI state)
+├── stores/                # Pinia stores (user.ts, ui.ts)
 ├── plugins/               # Vuetify theme, Vue Query config
 ├── types/                 # Frontend-only TypeScript interfaces
 └── utils/                 # Chart theme, formatters
 
-server/                    # Backend (Hono) - ACTIVE DEVELOPMENT
-├── index.ts               # Hono app entry point
-├── openapi/               # Generated OpenAPI spec
-│   └── spec.yaml          # API contract (source of truth)
-├── lib/
-│   ├── prisma.ts          # Prisma client singleton
-│   └── auth.ts            # Better Auth configuration
-├── middleware/
-│   └── auth.ts            # Auth middleware (session validation)
-├── routes/                # API routes with @hono/zod-openapi
-│   ├── salary.ts          # GET /api/salary/current
-│   ├── salary-history.ts  # CRUD + sync for salary records
-│   └── income-sources.ts  # Multi-employer support
-└── services/
-    └── sync.service.ts    # EPF/NPS sync logic
+server/
+├── index.ts               # Hono app entry point (registers all routes)
+├── lib/                   # prisma.ts, auth.ts
+├── middleware/            # Auth middleware (session validation)
+├── routes/                # 20+ route files (CRUD per domain)
+└── services/              # Business logic (sync.service.ts)
 
-prisma/
-└── schema.prisma          # Database models (~30 core models)
-
-scripts/
-└── generate-api-types.ts  # OpenAPI → TypeScript generation
+prisma/schema.prisma       # Database models (~30 core models)
+e2e/                       # Playwright tests (Page Object Model pattern)
 ```
 
-## UI/API Layer Separation
+### Backend Routes
+Routes are organized by domain. Each file in `server/routes/` exports a Hono app:
+- **Salary**: `salary.ts`, `salary-history.ts`, `salary-components.ts`, `income-sources.ts`
+- **Investments**: `investments.ts`, `epf.ts`, `ppf.ts`, `nps.ts`, `esop.ts`, `investment-reports.ts`
+- **Non-Salary Income**: `business-income.ts`, `rental-income.ts`, `capital-gains.ts`, `interest-income.ts`, `dividend-income.ts`, `other-income.ts`
+- **Expenses**: `expenses.ts`, `budgets.ts`, `expenses-ai.ts`, `expense-rules.ts`
+- **Other**: `alerts.ts`
 
-This project follows **OpenAPI-first** design for clean separation between frontend and backend.
-
-### Type Generation Workflow
-
-```bash
-# 1. Backend defines routes with @hono/zod-openapi (Zod schemas → OpenAPI)
-# 2. OpenAPI spec is auto-generated to server/openapi/spec.yaml
-# 3. Run type generation
-npm run generate:api-types
-
-# 4. Frontend imports generated types
-import type { SalaryHistoryRecord } from '@/generated/api-types'
-```
-
-### Best Practices
-
-1. **Never duplicate types** - Always import from `@/generated/api-types`
-2. **Backend owns the contract** - API changes start in `server/routes/`
-3. **Regenerate on changes** - Run `npm run generate:api-types` after API changes
-4. **Type-safe composables** - Use generated types in Vue Query hooks
-
+### Backend Route Pattern (Hono + Zod)
 ```typescript
-// Good: Use generated types
-import type { SalaryHistoryRecord } from '@/generated/api-types'
-export function useSalaryHistory() {
-  return useQuery<SalaryHistoryRecord[]>({ ... })
-}
+// server/routes/expenses.ts - Standard CRUD route structure
+import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
+import { prisma } from '../lib/prisma'
+import { authMiddleware } from '../middleware/auth'
 
-// Bad: Don't duplicate types in composables
-interface SalaryHistoryRecord { ... } // DON'T DO THIS
+const app = new Hono()
+app.use('*', authMiddleware)  // All routes require auth
+
+const inputSchema = z.object({
+  amount: z.number().positive(),
+  description: z.string().min(1),
+  // ... other fields
+})
+
+// GET / - List with filters
+app.get('/', async (c) => {
+  const userId = c.get('userId')  // From auth middleware
+  const items = await prisma.expense.findMany({ where: { userId } })
+  return c.json(items)
+})
+
+// POST / - Create
+app.post('/', zValidator('json', inputSchema), async (c) => {
+  const userId = c.get('userId')
+  const data = c.req.valid('json')
+  const item = await prisma.expense.create({ data: { ...data, userId } })
+  return c.json(item, 201)
+})
+
+export default app
 ```
 
 ## Key Patterns
@@ -175,14 +175,19 @@ export function useLoans() {
   return useQuery({
     queryKey: computed(() => ['loans', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
     queryFn: async () => {
-      const res = await fetch(`/api/loans${buildQueryParams()}`)
+      const params = new URLSearchParams()
+      if (uiStore.isFamilyView) params.set('familyView', 'true')
+      if (uiStore.selectedFamilyMemberId) params.set('memberId', uiStore.selectedFamilyMemberId)
+      const queryString = params.toString() ? `?${params.toString()}` : ''
+
+      const res = await fetch(`/api/loans${queryString}`)
       if (!res.ok) throw new Error('Failed to fetch')
       return res.json()
     }
   })
 }
 
-// Mutations with cache invalidation (invalidate related queries)
+// Mutations should invalidate both direct queries AND summary/overview queries
 export function useCreateLoan() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -193,37 +198,77 @@ export function useCreateLoan() {
     }
   })
 }
-// Pattern: Mutations should invalidate both direct queries AND summary/overview queries
+```
+
+### Defensive Coding (Critical)
+Many backend APIs are not yet implemented. Use these patterns to prevent runtime errors:
+
+```typescript
+// Always use optional chaining and nullish coalescing
+const total = props.data?.reduce((a, b) => a + b, 0) ?? 0
+const percent = `${(allocation?.equity ?? 0).toFixed(1)}%`
+
+// Template guards
+v-if="data?.items?.length"
+
+// Handle NaN in computed properties
+const yearsToFIRE = computed(() => {
+  const years = calculateYears()
+  return isNaN(years) || !isFinite(years) ? null : years
+})
+
+// Mock data fallback in composables when API returns 404
+if (!res.ok) {
+  return { defaultValue: 0, items: [] } // Return safe defaults
+}
+```
+
+### Form Validation (VeeValidate + Zod)
+```typescript
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { z } from 'zod'
+
+const schema = z.object({
+  amount: z.coerce.number().positive('Amount must be positive'),
+  date: z.string().min(1, 'Date is required'),
+})
+
+const { handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(schema),
+})
+
+const onSubmit = handleSubmit(async (values) => {
+  await mutation.mutateAsync(values)
+})
 ```
 
 ### INR Currency Formatting
 ```typescript
-// Standard formatting
-const formatINR = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0
-  }).format(amount)
-// 150000 → "₹1,50,000"
-
-// Compact formatting (lakhs/crores)
-formatINRCompact(10000000)  // "1.00 Cr"
-formatINRCompact(500000)    // "5.00 L"
-formatINRCompact(5000)      // "5.0K"
+// Standard formatting - use utils/formatters.ts
+formatINR(150000)         // "₹1,50,000"
+formatINRCompact(10000000) // "1.00 Cr"
+formatINRCompact(500000)   // "5.00 L"
 ```
 
 ### Component Styling
 - Use Vuetify components (`v-card`, `v-btn`, `v-data-table`)
 - Currency values: `class="text-currency"` (monospace font)
-- Charts: Import from `@/utils/chartTheme` for consistent colors and options
+- Charts: Import from `@/utils/chartTheme` for consistent colors
 - Icons: Material Design Icons (`mdi-*` prefix)
 - Theme colors: `primary`, `secondary`, `success`, `warning`, `error`, `fire-orange`, `fire-green`
-- Form fields use `variant="outlined" density="comfortable"` by default (configured in Vuetify plugin)
+
+### Financial Year Handling
+Indian financial year runs April-March. Use these utilities from `useSalary.ts`:
+```typescript
+getCurrentFinancialYear()           // "2025-26" (based on current date)
+getFYMonthIndex(4, 2025, "2025-26") // 0 (April = index 0)
+getCalendarMonthYear(0, "2025-26")  // { month: 4, year: 2025 }
+```
 
 ### E2E Testing (Playwright)
-Tests use Page Object Model pattern. Structure:
-- `e2e/pages/` - Page objects per section (extend `BasePage`)
+Tests use Page Object Model pattern:
+- `e2e/pages/base.page.ts` - Base class with common Vuetify helpers
 - `e2e/tests/` - Test specs organized by section
 - `e2e/fixtures/` - Test data per section
 - `e2e/global-setup.ts` - Auth setup (stores session in `e2e/.auth/user.json`)
@@ -231,59 +276,69 @@ Tests use Page Object Model pattern. Structure:
 Playwright auto-starts the dev server before tests. Tests run in headed Chrome by default.
 
 ```typescript
-// e2e/pages/salary/overview.page.ts
-export class SalaryOverviewPage extends BasePage {
-  async navigate() { await this.page.goto('/dashboard/salary') }
-  async clickAddSalary() { /* ... */ }
-}
+// Common BasePage helpers available in all page objects
+await page.navigateToDashboardSection('salary')
+await page.selectFinancialYear('2025-26')
+await page.clickSaveButton()
+await page.expectSuccessMessage('Saved')
+```
 
-// e2e/tests/salary/01-navigation.spec.ts
-test('can navigate to salary page', async ({ page }) => {
-  const salaryPage = new SalaryOverviewPage(page)
-  await salaryPage.navigate()
+### Unit Testing (Vitest)
+Unit tests are colocated with source files as `*.spec.ts`. Use for pure functions:
+```typescript
+// src/composables/useInvestments.spec.ts
+import { describe, it, expect } from 'vitest'
+import { calculatePPFMaturity, formatINR } from './useInvestments'
+
+describe('PPF Maturity Calculator', () => {
+  it('should calculate maturity with max contributions', () => {
+    const result = calculatePPFMaturity({
+      currentBalance: 0,
+      yearlyDeposit: 150000,
+      yearsRemaining: 15,
+      interestRate: 7.1
+    })
+    expect(result.maturityValue).toBeGreaterThan(4000000)
+  })
 })
 ```
 
-## Dashboard Sections
+## Routing
 
-| Section | Route | Composable |
-|---------|-------|------------|
-| Salary | `/dashboard/salary/*` | `useSalary.ts` |
-| Non-Salary Income | `/dashboard/non-salary-income/*` | `useIncome.ts` |
-| Tax Planning | `/dashboard/tax-planning/*` | `useTax.ts` |
-| Expenses | `/dashboard/expenses/*` | `useExpenses.ts` |
-| Investments | `/dashboard/investments/*` | `useInvestments.ts` |
-| Liabilities | `/dashboard/liabilities/*` | `useLiabilities.ts` |
-| Protection | `/dashboard/protection/*` | `useProtection.ts` |
-| Financial Health | `/dashboard/financial-health/*` | `useFinancialHealth.ts` |
-| FIRE & Goals | `/dashboard/fire-goals/*` | `useFIRE.ts` |
+Vue Router with file-based routing in `src/pages/`. Dashboard pages follow the pattern:
+```
+/dashboard/{section}/{page}
+```
 
-## API Endpoints (Backend)
+Legacy URL redirects should be added in `src/router/index.ts` when moving pages.
 
-### Authentication (Better Auth)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/sign-up/email` | Register with email/password |
-| POST | `/api/auth/sign-in/email` | Sign in with email/password |
-| POST | `/api/auth/sign-out` | Sign out (clear session) |
-| GET | `/api/auth/get-session` | Get current session |
+## Type Sharing Pattern
 
-### Salary (Implemented)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/salary/current` | Get current salary breakdown |
-| GET | `/api/salary-history` | List salary history (FY filter) |
-| POST | `/api/salary-history` | Add salary record |
-| PUT | `/api/salary-history/:id` | Update salary record |
-| DELETE | `/api/salary-history/:id` | Delete salary record |
-| POST | `/api/salary-history/:id/sync` | Sync to EPF/NPS accounts |
-| DELETE | `/api/salary-history/:id/sync` | Reset sync status |
-| GET | `/api/income-sources` | List employers |
-| POST | `/api/income-sources` | Create employer |
+Currently, types are defined manually on both frontend and backend:
+- Backend: Zod schemas in `server/routes/` validate requests
+- Frontend: TypeScript interfaces in `src/types/` mirror backend shapes
+
+For new features, define Zod schemas in routes and create matching frontend types. Eventually, this will be automated via OpenAPI generation.
+
+## Environment Setup
+
+Required environment variables in `.env`:
+```
+DATABASE_URL="postgresql://..."
+BETTER_AUTH_SECRET="..."
+```
+
+First-time setup:
+```bash
+npm install
+npm run db:generate
+npm run db:push      # or db:migrate for production
+npm run dev
+```
 
 ## Indian Financial Context
 
-### Retirement Instruments
+### Key Instruments
 - **EPF**: Employee Provident Fund (8.25% interest, employer-matched)
 - **PPF**: Public Provident Fund (7.1%, 15-year lock-in, ₹1.5L/year max)
 - **NPS**: National Pension System (market-linked, 80CCD benefits)
@@ -294,10 +349,6 @@ test('can navigate to salary page', async ({ page }) => {
 - Section 80D: Health insurance premiums
 - Section 24: ₹2L home loan interest
 
-### Debt Payoff Strategies
-- **Snowball**: Smallest balance first
-- **Avalanche**: Highest interest first
-
 ## Commit Convention
 
 ```bash
@@ -306,6 +357,14 @@ git commit -m "fix(section): description"
 # Examples: feat(investments), fix(liabilities), feat(tax)
 ```
 
+## Session Continuity
+
+For detailed session context and current task status, see `NEXT-SESSION-PROMPT.md`. This file tracks recent changes, working/broken sections, and immediate priorities.
+
 ## Documentation
 
-See `docs/` folder for detailed implementation plans per section.
+See `docs/` folder for detailed implementation plans per section:
+- `Salary-Section-Plan.md`, `Non-Salary-Income-Plan.md`, `Tax-Planning-Section-Plan.md`
+- `Expenses-Section-Plan.md`, `Investments-Section-Plan.md`, `Liabilities-Section-Plan.md`
+- `Protection-Section-Plan.md`
+- `STYLING-GUIDE.md` - UI patterns and Vuetify conventions

@@ -7,3 +7,6 @@ export { TaxPlanningOverviewPage } from "./overview.page";
 export { RegimeComparisonPage } from "./regime-comparison.page";
 export { TaxCalculatorPage } from "./calculator.page";
 export { TaxDeductionsPage } from "./deductions.page";
+export { AdvanceTaxPage } from "./advance-tax.page";
+export { ScenariosPage } from "./scenarios.page";
+export { ReportsPage } from "./reports.page";

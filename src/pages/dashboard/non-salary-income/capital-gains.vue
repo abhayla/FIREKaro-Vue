@@ -4,6 +4,7 @@ import SectionHeader from "@/components/shared/SectionHeader.vue";
 import CapitalGainsCalculator from "@/components/income/CapitalGainsCalculator.vue";
 import PropertyLTCGCalculator from "@/components/income/PropertyLTCGCalculator.vue";
 import Section54Dashboard from "@/components/income/Section54Dashboard.vue";
+import BrokerCSVImport from "@/components/income/BrokerCSVImport.vue";
 import {
   useCapitalGains,
   useAddCapitalGain,
@@ -46,7 +47,7 @@ const deleteDialog = ref(false);
 const deletingId = ref<string | null>(null);
 
 // Tools tab
-const activeToolTab = ref("ltcg");
+const activeToolTab = ref("import");
 
 // Table headers
 const headers = [
@@ -138,6 +139,35 @@ function formatDate(dateStr: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+// Handle CSV import
+interface ImportedGain {
+  assetName: string;
+  symbol: string;
+  purchaseDate: string;
+  purchasePrice: number;
+  saleDate: string;
+  salePrice: number;
+  holdingPeriodMonths: number;
+  gainType: "STCG" | "LTCG";
+  gain: number;
+}
+
+async function handleCSVImport(gains: ImportedGain[]) {
+  for (const gain of gains) {
+    await addMutation.mutateAsync({
+      assetType: "equity",
+      assetName: gain.assetName,
+      financialYear: selectedFinancialYear.value,
+      purchaseDate: gain.purchaseDate,
+      purchasePrice: gain.purchasePrice,
+      saleDate: gain.saleDate,
+      salePrice: gain.salePrice,
+      purchaseExpenses: 0,
+      saleExpenses: 0,
+    });
+  }
 }
 </script>
 
@@ -259,11 +289,24 @@ function formatDate(dateStr: string) {
             </v-expansion-panel-title>
             <v-expansion-panel-text>
               <v-tabs v-model="activeToolTab" color="primary" class="mb-4">
-                <v-tab value="ltcg">Property LTCG Calculator</v-tab>
-                <v-tab value="exemptions">Section 54/54F Tracker</v-tab>
+                <v-tab value="import">
+                  <v-icon start>mdi-file-upload</v-icon>
+                  Import from Broker
+                </v-tab>
+                <v-tab value="ltcg">
+                  <v-icon start>mdi-calculator</v-icon>
+                  Property LTCG Calculator
+                </v-tab>
+                <v-tab value="exemptions">
+                  <v-icon start>mdi-shield-home</v-icon>
+                  Section 54/54F Tracker
+                </v-tab>
               </v-tabs>
 
               <v-tabs-window v-model="activeToolTab">
+                <v-tabs-window-item value="import">
+                  <BrokerCSVImport @import="handleCSVImport" />
+                </v-tabs-window-item>
                 <v-tabs-window-item value="ltcg">
                   <PropertyLTCGCalculator />
                 </v-tabs-window-item>

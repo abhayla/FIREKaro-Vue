@@ -14,7 +14,8 @@ import {
   formatINRCompact,
   getLoanTypeLabel,
   calculatePrepaymentImpact,
-  type Loan
+  type Loan,
+  type LoanType
 } from '@/composables/useLiabilities'
 
 const tabs = [
@@ -38,7 +39,7 @@ const showDeleteConfirm = ref(false)
 const deletingId = ref<string | null>(null)
 const showAmortization = ref(false)
 const selectedLoanForSchedule = ref<Loan | null>(null)
-const typeFilter = ref<string | null>(null)
+const typeFilter = ref<LoanType | null>(null)
 
 // Prepayment dialog state
 const showPrepayDialog = ref(false)
@@ -46,71 +47,8 @@ const selectedLoanForPrepay = ref<Loan | null>(null)
 const prepaymentAmount = ref(0)
 const prepaymentOption = ref<'emi' | 'tenure'>('tenure')
 
-// Mock data for demo
-const mockLoans: Loan[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    loanType: 'home',
-    lenderName: 'HDFC Bank',
-    accountNumber: 'HDFC123456',
-    principalAmount: 5000000,
-    outstandingPrincipal: 3200000,
-    interestRate: 8.5,
-    tenure: 240,
-    emiAmount: 43391,
-    emiDate: 5,
-    startDate: '2020-06-01',
-    endDate: '2040-05-31',
-    totalInterestPaid: 850000,
-    totalPrincipalPaid: 1800000,
-    prepaymentsMade: 200000,
-    isActive: true,
-    section80C: 150000,
-    section24: 200000
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    loanType: 'car',
-    lenderName: 'ICICI Bank',
-    accountNumber: 'ICICI789012',
-    principalAmount: 800000,
-    outstandingPrincipal: 450000,
-    interestRate: 9.5,
-    tenure: 60,
-    emiAmount: 16765,
-    emiDate: 15,
-    startDate: '2022-03-01',
-    endDate: '2027-02-28',
-    totalInterestPaid: 120000,
-    totalPrincipalPaid: 350000,
-    prepaymentsMade: 0,
-    isActive: true
-  },
-  {
-    id: '3',
-    userId: 'user1',
-    loanType: 'personal',
-    lenderName: 'Axis Bank',
-    accountNumber: 'AXIS456789',
-    principalAmount: 300000,
-    outstandingPrincipal: 180000,
-    interestRate: 14,
-    tenure: 36,
-    emiAmount: 10248,
-    emiDate: 10,
-    startDate: '2024-01-01',
-    endDate: '2027-01-01',
-    totalInterestPaid: 48000,
-    totalPrincipalPaid: 120000,
-    prepaymentsMade: 0,
-    isActive: true
-  }
-]
-
-// Use mock data if API returns empty
-const loansList = computed(() => loans.value?.length ? loans.value : mockLoans)
+// Use API data directly (no mock data)
+const loansList = computed(() => loans.value || [])
 
 // Filter loans
 const filteredLoans = computed(() => {
@@ -121,28 +59,30 @@ const filteredLoans = computed(() => {
 // Available loan types
 const loanTypes = computed(() => {
   const types = new Set(loansList.value.map(l => l.loanType))
-  return Array.from(types)
+  return Array.from(types) as LoanType[]
 })
 
-// Summary calculations
+// Summary calculations - use backend field names
 const summary = computed(() => ({
-  totalOutstanding: loansList.value.reduce((sum, l) => sum + l.outstandingPrincipal, 0),
-  totalEmi: loansList.value.reduce((sum, l) => sum + l.emiAmount, 0),
-  totalPrincipalPaid: loansList.value.reduce((sum, l) => sum + l.totalPrincipalPaid, 0),
-  totalInterestPaid: loansList.value.reduce((sum, l) => sum + l.totalInterestPaid, 0),
+  totalOutstanding: loansList.value.reduce((sum, l) => sum + (l.outstandingAmount ?? 0), 0),
+  totalEmi: loansList.value.reduce((sum, l) => sum + (l.emiAmount ?? 0), 0),
   loanCount: loansList.value.length,
-  activeCount: loansList.value.filter(l => l.isActive).length
+  activeCount: loansList.value.filter(l => l.status === 'ACTIVE').length
 }))
 
 // Handlers
 const handleSaveLoan = async (data: Partial<Loan>) => {
-  if (editingLoan.value) {
-    await updateLoan.mutateAsync({ ...data, id: editingLoan.value.id } as Loan & { id: string })
-  } else {
-    await createLoan.mutateAsync(data)
+  try {
+    if (editingLoan.value) {
+      await updateLoan.mutateAsync({ ...data, id: editingLoan.value.id } as Loan & { id: string })
+    } else {
+      await createLoan.mutateAsync(data)
+    }
+    showAddDialog.value = false
+    editingLoan.value = null
+  } catch (err) {
+    console.error('Failed to save loan:', err)
   }
-  showAddDialog.value = false
-  editingLoan.value = null
 }
 
 const handleEdit = (loan: Loan) => {
@@ -157,7 +97,11 @@ const handleDelete = (id: string) => {
 
 const confirmDelete = async () => {
   if (deletingId.value) {
-    await deleteLoan.mutateAsync(deletingId.value)
+    try {
+      await deleteLoan.mutateAsync(deletingId.value)
+    } catch (err) {
+      console.error('Failed to delete loan:', err)
+    }
   }
   showDeleteConfirm.value = false
   deletingId.value = null
@@ -175,27 +119,19 @@ const handlePrepay = (loan: Loan) => {
   showPrepayDialog.value = true
 }
 
-// Calculate remaining tenure in months
-const getRemainingTenure = (loan: Loan): number => {
-  const endDate = new Date(loan.endDate)
-  const now = new Date()
-  const monthsDiff = (endDate.getFullYear() - now.getFullYear()) * 12 + (endDate.getMonth() - now.getMonth())
-  return Math.max(0, monthsDiff)
-}
-
-// Prepayment impact calculation
+// Prepayment impact calculation - use backend field names
 const prepaymentImpact = computed(() => {
   if (!selectedLoanForPrepay.value || prepaymentAmount.value <= 0) {
     return null
   }
 
   const loan = selectedLoanForPrepay.value
-  const remainingTenure = getRemainingTenure(loan)
+  const remainingTenure = loan.remainingTenure ?? 0
 
   if (remainingTenure <= 0) return null
 
   return calculatePrepaymentImpact(
-    loan.outstandingPrincipal,
+    loan.outstandingAmount,
     loan.interestRate,
     remainingTenure,
     prepaymentAmount.value,
@@ -212,31 +148,33 @@ const confirmPrepay = async () => {
   if (!impact) return
 
   try {
-    const updatedLoan: Loan = {
-      ...loan,
-      outstandingPrincipal: loan.outstandingPrincipal - prepaymentAmount.value,
-      prepaymentsMade: (loan.prepaymentsMade || 0) + prepaymentAmount.value
+    const updateData: Partial<Loan> & { id: string } = {
+      id: loan.id,
+      outstandingAmount: loan.outstandingAmount - prepaymentAmount.value,
     }
 
     // If reducing EMI, update the EMI amount
     if (prepaymentOption.value === 'emi' && impact.newEmi) {
-      updatedLoan.emiAmount = impact.newEmi
+      updateData.emiAmount = impact.newEmi
     }
 
-    // If reducing tenure, update the end date
+    // If reducing tenure, update the remaining tenure
     if (prepaymentOption.value === 'tenure' && impact.monthsSaved > 0) {
-      const currentEndDate = new Date(loan.endDate)
-      currentEndDate.setMonth(currentEndDate.getMonth() - impact.monthsSaved)
-      updatedLoan.endDate = currentEndDate.toISOString().split('T')[0]
+      updateData.remainingTenure = Math.max(0, loan.remainingTenure - impact.monthsSaved)
     }
 
-    await updateLoan.mutateAsync(updatedLoan)
+    await updateLoan.mutateAsync(updateData as Loan & { id: string })
     showPrepayDialog.value = false
     selectedLoanForPrepay.value = null
     prepaymentAmount.value = 0
   } catch (err) {
     console.error('Failed to process prepayment:', err)
   }
+}
+
+const handleCloseDialog = () => {
+  showAddDialog.value = false
+  editingLoan.value = null
 }
 </script>
 
@@ -275,19 +213,19 @@ const confirmPrepay = async () => {
       <v-col cols="12" sm="6" md="3">
         <v-card class="pa-4">
           <div class="d-flex align-center mb-2">
-            <v-icon icon="mdi-check-circle" color="success" size="24" class="mr-2" />
-            <span class="text-body-2">Principal Paid</span>
+            <v-icon icon="mdi-counter" color="info" size="24" class="mr-2" />
+            <span class="text-body-2">Total Loans</span>
           </div>
-          <div class="text-h5 font-weight-bold text-success">{{ formatINRCompact(summary.totalPrincipalPaid) }}</div>
+          <div class="text-h5 font-weight-bold">{{ summary.loanCount }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <v-card class="pa-4">
           <div class="d-flex align-center mb-2">
-            <v-icon icon="mdi-percent" color="warning" size="24" class="mr-2" />
-            <span class="text-body-2">Interest Paid</span>
+            <v-icon icon="mdi-check-circle" color="success" size="24" class="mr-2" />
+            <span class="text-body-2">Active Loans</span>
           </div>
-          <div class="text-h5 font-weight-bold text-warning">{{ formatINRCompact(summary.totalInterestPaid) }}</div>
+          <div class="text-h5 font-weight-bold text-success">{{ summary.activeCount }}</div>
         </v-card>
       </v-col>
     </v-row>
@@ -311,11 +249,11 @@ const confirmPrepay = async () => {
           variant="outlined"
           density="compact"
           hide-details
-          style="max-width: 180px"
+          style="max-width: 220px"
         />
 
         <!-- Type Chips -->
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
           <v-chip
             v-for="type in loanTypes"
             :key="type"
@@ -338,12 +276,12 @@ const confirmPrepay = async () => {
     </template>
 
     <!-- Error State -->
-    <v-alert v-else-if="error" type="info" variant="tonal" class="mb-6">
-      Showing demo data. Add your loans to track EMIs and prepayments.
+    <v-alert v-else-if="error" type="error" variant="tonal" class="mb-6">
+      Failed to load loans. Please try again later.
     </v-alert>
 
     <!-- Loans Grid -->
-    <v-row v-if="filteredLoans.length > 0">
+    <v-row v-else-if="filteredLoans.length > 0">
       <v-col
         v-for="loan in filteredLoans"
         :key="loan.id"
@@ -416,6 +354,7 @@ const confirmPrepay = async () => {
       :loan="editingLoan"
       :is-editing="!!editingLoan"
       @save="handleSaveLoan"
+      @close="handleCloseDialog"
     />
 
     <!-- Delete Confirmation Dialog -->
@@ -440,7 +379,7 @@ const confirmPrepay = async () => {
     <v-dialog v-model="showAmortization" max-width="900" scrollable>
       <v-card v-if="selectedLoanForSchedule">
         <v-card-title class="d-flex align-center">
-          {{ selectedLoanForSchedule.lenderName }} - Amortization Schedule
+          {{ selectedLoanForSchedule.loanName }} - Amortization Schedule
           <v-spacer />
           <v-btn icon="mdi-close" variant="text" @click="showAmortization = false" />
         </v-card-title>
@@ -460,8 +399,8 @@ const confirmPrepay = async () => {
 
         <v-card-text>
           <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-            <strong>{{ selectedLoanForPrepay.lenderName }}</strong><br />
-            Outstanding: {{ formatINR(selectedLoanForPrepay.outstandingPrincipal) }} |
+            <strong>{{ selectedLoanForPrepay.loanName }}</strong> ({{ selectedLoanForPrepay.lender }})<br />
+            Outstanding: {{ formatINR(selectedLoanForPrepay.outstandingAmount) }} |
             EMI: {{ formatINR(selectedLoanForPrepay.emiAmount) }} |
             Rate: {{ selectedLoanForPrepay.interestRate }}%
           </v-alert>
@@ -473,10 +412,10 @@ const confirmPrepay = async () => {
             prefix="₹"
             variant="outlined"
             density="comfortable"
-            :max="selectedLoanForPrepay.outstandingPrincipal"
+            :max="selectedLoanForPrepay.outstandingAmount"
             :rules="[
               (v: number) => v > 0 || 'Amount must be greater than 0',
-              (v: number) => v <= selectedLoanForPrepay!.outstandingPrincipal || 'Cannot exceed outstanding balance'
+              (v: number) => v <= selectedLoanForPrepay!.outstandingAmount || 'Cannot exceed outstanding balance'
             ]"
             class="mb-4"
           />
@@ -521,7 +460,7 @@ const confirmPrepay = async () => {
                 <div class="d-flex justify-space-between">
                   <span class="text-medium-emphasis">New Outstanding:</span>
                   <span class="font-weight-medium">
-                    {{ formatINR(selectedLoanForPrepay.outstandingPrincipal - prepaymentAmount) }}
+                    {{ formatINR(selectedLoanForPrepay.outstandingAmount - prepaymentAmount) }}
                   </span>
                 </div>
                 <div v-if="prepaymentOption === 'tenure'" class="d-flex justify-space-between">
@@ -539,7 +478,7 @@ const confirmPrepay = async () => {
           <v-btn
             color="success"
             variant="flat"
-            :disabled="!prepaymentAmount || prepaymentAmount <= 0 || prepaymentAmount > selectedLoanForPrepay.outstandingPrincipal"
+            :disabled="!prepaymentAmount || prepaymentAmount <= 0 || prepaymentAmount > selectedLoanForPrepay.outstandingAmount"
             @click="confirmPrepay"
           >
             Confirm Prepayment

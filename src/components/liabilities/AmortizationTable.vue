@@ -22,7 +22,7 @@ const amortizationSchedule = computed(() => {
     props.loan.principalAmount,
     props.loan.interestRate,
     props.loan.tenure,
-    new Date(props.loan.startDate)
+    new Date(props.loan.emiStartDate)
   )
 })
 

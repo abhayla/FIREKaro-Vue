@@ -19,46 +19,47 @@ const emit = defineEmits<{
   (e: 'edit', loan: Loan): void
   (e: 'delete', id: string): void
   (e: 'prepay', loan: Loan): void
-  (e: 'viewSchedule', loan: Loan): void
+  (e: 'view-schedule', loan: Loan): void
 }>()
 
-// Calculate progress percentage
-const progressPercent = computed(() => {
-  const totalPaid = props.loan.totalPrincipalPaid + props.loan.totalInterestPaid
-  const totalAmount = props.loan.principalAmount + props.loan.totalInterestPaid +
-    (props.loan.outstandingPrincipal * (props.loan.interestRate / 100) * (getRemainingMonths() / 12))
-  return Math.min(100, Math.round((totalPaid / totalAmount) * 100))
+// Calculate principal paid
+const principalPaid = computed(() => {
+  return props.loan.principalAmount - props.loan.outstandingAmount
 })
 
-// Calculate remaining months
-function getRemainingMonths(): number {
-  const end = new Date(props.loan.endDate)
-  const now = new Date()
-  const months = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
-  return Math.max(0, months)
-}
+// Calculate progress percentage based on principal paid
+const progressPercent = computed(() => {
+  if (props.loan.principalAmount <= 0) return 0
+  return Math.min(100, Math.round((principalPaid.value / props.loan.principalAmount) * 100))
+})
 
-// Next EMI date
-const nextEmiDate = computed(() => {
-  const today = new Date()
-  const emiDay = props.loan.emiDate
-  let nextDate = new Date(today.getFullYear(), today.getMonth(), emiDay)
-  if (nextDate <= today) {
-    nextDate.setMonth(nextDate.getMonth() + 1)
-  }
-  return nextDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+// Is loan active
+const isActive = computed(() => props.loan.status === 'ACTIVE')
+
+// Remaining tenure from backend or calculate
+const remainingMonths = computed(() => props.loan.remainingTenure ?? 0)
+
+// Next EMI date display
+const nextEmiDateDisplay = computed(() => {
+  if (!props.loan.nextEmiDate) return null
+  return formatDate(props.loan.nextEmiDate)
 })
 
 // Days until next EMI
 const daysUntilEmi = computed(() => {
+  if (!props.loan.nextEmiDate) return null
   const today = new Date()
-  const emiDay = props.loan.emiDate
-  let nextDate = new Date(today.getFullYear(), today.getMonth(), emiDay)
-  if (nextDate <= today) {
-    nextDate.setMonth(nextDate.getMonth() + 1)
-  }
+  today.setHours(0, 0, 0, 0)
+  const nextDate = new Date(props.loan.nextEmiDate)
+  nextDate.setHours(0, 0, 0, 0)
   const diff = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
   return diff
+})
+
+// Tax benefit section display
+const taxBenefitLabel = computed(() => {
+  if (!props.loan.taxBenefitSection) return null
+  return props.loan.taxBenefitSection
 })
 </script>
 
@@ -70,18 +71,18 @@ const daysUntilEmi = computed(() => {
         <v-icon :icon="getLoanTypeIcon(loan.loanType)" color="white" />
       </v-avatar>
       <div class="flex-grow-1">
-        <div class="text-subtitle-1 font-weight-bold">{{ loan.lenderName }}</div>
+        <div class="text-subtitle-1 font-weight-bold">{{ loan.loanName }}</div>
         <div class="text-caption text-medium-emphasis">
-          {{ getLoanTypeLabel(loan.loanType) }}
-          <span v-if="loan.accountNumber"> - {{ loan.accountNumber }}</span>
+          {{ loan.lender }}
+          <span v-if="loan.loanAccountNumber"> - {{ loan.loanAccountNumber }}</span>
         </div>
       </div>
       <v-chip
-        :color="loan.isActive ? 'success' : 'grey'"
+        :color="isActive ? 'success' : 'grey'"
         size="small"
         variant="tonal"
       >
-        {{ loan.isActive ? 'Active' : 'Closed' }}
+        {{ isActive ? 'Active' : loan.status }}
       </v-chip>
     </v-card-title>
 
@@ -92,7 +93,7 @@ const daysUntilEmi = computed(() => {
       <div class="d-flex justify-space-between align-center mb-3">
         <div>
           <div class="text-caption text-medium-emphasis">Outstanding</div>
-          <div class="text-h5 font-weight-bold">{{ formatINRCompact(loan.outstandingPrincipal) }}</div>
+          <div class="text-h5 font-weight-bold">{{ formatINRCompact(loan.outstandingAmount) }}</div>
         </div>
         <div class="text-right">
           <div class="text-caption text-medium-emphasis">Original</div>
@@ -103,7 +104,7 @@ const daysUntilEmi = computed(() => {
       <!-- Progress Bar -->
       <div class="mb-3">
         <div class="d-flex justify-space-between text-caption mb-1">
-          <span>Paid: {{ formatINRCompact(loan.totalPrincipalPaid) }}</span>
+          <span>Paid: {{ formatINRCompact(principalPaid) }}</span>
           <span>{{ progressPercent }}% Complete</span>
         </div>
         <v-progress-linear
@@ -126,13 +127,13 @@ const daysUntilEmi = computed(() => {
         </v-col>
         <v-col cols="4">
           <div class="text-caption text-medium-emphasis">Remaining</div>
-          <div class="text-subtitle-2 font-weight-bold">{{ getRemainingMonths() }} mo</div>
+          <div class="text-subtitle-2 font-weight-bold">{{ remainingMonths }} mo</div>
         </v-col>
       </v-row>
 
       <!-- Next EMI Alert -->
       <v-alert
-        v-if="loan.isActive"
+        v-if="isActive && nextEmiDateDisplay && daysUntilEmi !== null"
         :color="daysUntilEmi <= 5 ? 'warning' : 'info'"
         variant="tonal"
         density="compact"
@@ -141,7 +142,7 @@ const daysUntilEmi = computed(() => {
         <div class="d-flex justify-space-between align-center">
           <span>
             <v-icon icon="mdi-calendar-clock" size="small" class="mr-1" />
-            Next EMI: {{ nextEmiDate }}
+            Next EMI: {{ nextEmiDateDisplay }}
           </span>
           <v-chip size="x-small" :color="daysUntilEmi <= 5 ? 'warning' : 'info'">
             {{ daysUntilEmi }} days
@@ -149,20 +150,20 @@ const daysUntilEmi = computed(() => {
         </div>
       </v-alert>
 
-      <!-- Tax Benefits (if applicable) -->
-      <div v-if="loan.section80C || loan.section24 || loan.section80E" class="mt-3">
-        <div class="text-caption text-medium-emphasis mb-1">Tax Benefits</div>
-        <div class="d-flex gap-2 flex-wrap">
-          <v-chip v-if="loan.section80C" size="small" color="success" variant="tonal">
-            80C: {{ formatINRCompact(loan.section80C) }}
-          </v-chip>
-          <v-chip v-if="loan.section24" size="small" color="primary" variant="tonal">
-            24(b): {{ formatINRCompact(loan.section24) }}
-          </v-chip>
-          <v-chip v-if="loan.section80E" size="small" color="teal" variant="tonal">
-            80E: {{ formatINRCompact(loan.section80E) }}
-          </v-chip>
+      <!-- Loan Details -->
+      <div class="mt-3 text-caption text-medium-emphasis">
+        <div class="d-flex justify-space-between">
+          <span>{{ getLoanTypeLabel(loan.loanType) }}</span>
+          <span>Maturity: {{ formatDate(loan.maturityDate) }}</span>
         </div>
+      </div>
+
+      <!-- Tax Benefits (if applicable) -->
+      <div v-if="taxBenefitLabel" class="mt-2">
+        <v-chip size="small" color="success" variant="tonal">
+          Tax: {{ taxBenefitLabel }}
+          <span v-if="loan.maxTaxBenefit"> (Max: {{ formatINRCompact(loan.maxTaxBenefit) }})</span>
+        </v-chip>
       </div>
     </v-card-text>
 
@@ -173,12 +174,12 @@ const daysUntilEmi = computed(() => {
         size="small"
         color="primary"
         prepend-icon="mdi-table"
-        @click="emit('viewSchedule', loan)"
+        @click="emit('view-schedule', loan)"
       >
         Schedule
       </v-btn>
       <v-btn
-        v-if="loan.isActive"
+        v-if="isActive"
         variant="text"
         size="small"
         color="success"

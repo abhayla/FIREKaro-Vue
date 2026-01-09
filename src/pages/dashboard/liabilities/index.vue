@@ -13,8 +13,8 @@ import {
   formatINR,
   formatINRCompact,
   formatDate,
-  type Loan,
-  type CreditCard
+  calculateMinimumDue,
+  getNextDueDate
 } from '@/composables/useLiabilities'
 
 const tabs = [
@@ -30,103 +30,16 @@ const { data: loans, isLoading: loansLoading } = useLoans()
 const { data: creditCards, isLoading: cardsLoading } = useCreditCards()
 const { data: overview, isLoading: overviewLoading } = useLiabilitiesOverview()
 
-// Mock data for demo
-const mockLoans: Loan[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    loanType: 'home',
-    lenderName: 'HDFC Bank',
-    accountNumber: 'HDFC123456',
-    principalAmount: 5000000,
-    outstandingPrincipal: 3200000,
-    interestRate: 8.5,
-    tenure: 240,
-    emiAmount: 43391,
-    emiDate: 5,
-    startDate: '2020-06-01',
-    endDate: '2040-05-31',
-    totalInterestPaid: 850000,
-    totalPrincipalPaid: 1800000,
-    prepaymentsMade: 200000,
-    isActive: true,
-    section80C: 150000,
-    section24: 200000
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    loanType: 'car',
-    lenderName: 'ICICI Bank',
-    accountNumber: 'ICICI789012',
-    principalAmount: 800000,
-    outstandingPrincipal: 450000,
-    interestRate: 9.5,
-    tenure: 60,
-    emiAmount: 16765,
-    emiDate: 15,
-    startDate: '2022-03-01',
-    endDate: '2027-02-28',
-    totalInterestPaid: 120000,
-    totalPrincipalPaid: 350000,
-    prepaymentsMade: 0,
-    isActive: true
-  }
-]
-
-const mockCreditCards: CreditCard[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    cardName: 'HDFC Regalia',
-    bankName: 'HDFC Bank',
-    cardNumber: '****5678',
-    cardType: 'VISA',
-    creditLimit: 500000,
-    availableLimit: 175000,
-    currentOutstanding: 325000,
-    utilizationPercent: 65,
-    billingCycleDate: 15,
-    paymentDueDate: 5,
-    rewardPointsBalance: 12500,
-    interestRateAPR: 42,
-    annualFee: 2500,
-    isActive: true,
-    minimumDue: 16250,
-    nextDueDate: '2026-02-05'
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    cardName: 'SBI SimplyCLICK',
-    bankName: 'SBI Card',
-    cardNumber: '****1234',
-    cardType: 'MASTERCARD',
-    creditLimit: 300000,
-    availableLimit: 220000,
-    currentOutstanding: 80000,
-    utilizationPercent: 27,
-    billingCycleDate: 20,
-    paymentDueDate: 10,
-    rewardPointsBalance: 5200,
-    interestRateAPR: 39.6,
-    annualFee: 499,
-    isActive: true,
-    minimumDue: 4000,
-    nextDueDate: '2026-02-10'
-  }
-]
-
-// Use mock data if API returns empty
-const loansList = computed(() => loans.value?.length ? loans.value : mockLoans)
-const cardsList = computed(() => creditCards.value?.length ? creditCards.value : mockCreditCards)
+// Use API data directly (no mock data)
+const loansList = computed(() => loans.value || [])
+const cardsList = computed(() => creditCards.value || [])
 
 // Summary calculations
 const summary = computed(() => {
-  const totalLoanDebt = loansList.value.reduce((sum, l) => sum + l.outstandingPrincipal, 0)
-  const totalCCDebt = cardsList.value.reduce((sum, c) => sum + c.currentOutstanding, 0)
-  const totalMonthlyEmi = loansList.value.reduce((sum, l) => sum + l.emiAmount, 0)
-  const totalMinDue = cardsList.value.reduce((sum, c) => sum + c.minimumDue, 0)
+  const totalLoanDebt = loansList.value.reduce((sum, l) => sum + (l.outstandingAmount ?? 0), 0)
+  const totalCCDebt = cardsList.value.reduce((sum, c) => sum + (c.currentOutstanding ?? 0), 0)
+  const totalMonthlyEmi = loansList.value.reduce((sum, l) => sum + (l.emiAmount ?? 0), 0)
+  const totalMinDue = cardsList.value.reduce((sum, c) => sum + calculateMinimumDue(c.currentOutstanding ?? 0), 0)
 
   return {
     totalDebt: totalLoanDebt + totalCCDebt,
@@ -146,27 +59,28 @@ const upcomingPayments = computed(() => {
   const payments: { name: string; amount: number; dueDate: string; type: 'loan' | 'cc'; daysUntil: number }[] = []
 
   loansList.value.forEach(loan => {
+    if (!loan.nextEmiDate) return
     const today = new Date()
-    let nextDue = new Date(today.getFullYear(), today.getMonth(), loan.emiDate)
-    if (nextDue <= today) nextDue.setMonth(nextDue.getMonth() + 1)
+    const nextDue = new Date(loan.nextEmiDate)
     const daysUntil = Math.ceil((nextDue.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     payments.push({
-      name: `${loan.lenderName} EMI`,
-      amount: loan.emiAmount,
-      dueDate: nextDue.toISOString().split('T')[0],
+      name: `${loan.lender} EMI`,
+      amount: loan.emiAmount ?? 0,
+      dueDate: loan.nextEmiDate,
       type: 'loan',
       daysUntil
     })
   })
 
   cardsList.value.forEach(card => {
-    const dueDate = new Date(card.nextDueDate)
+    const nextDueDate = getNextDueDate(card)
+    const dueDate = new Date(nextDueDate)
     const today = new Date()
     const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     payments.push({
       name: `${card.cardName} Due`,
-      amount: card.minimumDue,
-      dueDate: card.nextDueDate,
+      amount: calculateMinimumDue(card.currentOutstanding ?? 0),
+      dueDate: nextDueDate,
       type: 'cc',
       daysUntil
     })

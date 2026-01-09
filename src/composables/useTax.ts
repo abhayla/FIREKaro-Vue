@@ -479,8 +479,130 @@ export function useAdvanceTaxEstimate() {
       const res = await fetch(
         `/api/advance-tax?financialYear=${selectedFinancialYear.value}`,
       );
-      if (!res.ok) throw new Error("Failed to fetch advance tax estimate");
-      return res.json() as Promise<AdvanceTaxEstimate>;
+      if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error("Failed to fetch advance tax estimate");
+      }
+      const data = await res.json();
+      return data.estimates?.[0] ?? null;
+    },
+  });
+}
+
+/**
+ * Create advance tax estimate
+ */
+export function useCreateAdvanceTaxEstimate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      financialYear: string;
+      selectedRegime: string;
+    }) => {
+      const res = await fetch("/api/advance-tax", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create advance tax estimate");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "advance-tax"] });
+    },
+  });
+}
+
+/**
+ * Recalculate advance tax
+ */
+export function useRecalculateAdvanceTax() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (estimateId: string) => {
+      const res = await fetch(`/api/advance-tax/${estimateId}/calculate`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to recalculate advance tax");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "advance-tax"] });
+    },
+  });
+}
+
+/**
+ * Fetch advance tax payments
+ */
+export function useAdvanceTaxPayments() {
+  const { selectedFinancialYear } = useFinancialYear();
+  const { data: estimate } = useAdvanceTaxEstimate();
+
+  return useQuery({
+    queryKey: computed(() => ["tax", "advance-tax", "payments", estimate.value?.id]),
+    queryFn: async () => {
+      if (!estimate.value?.id) return [];
+      const res = await fetch(`/api/advance-tax/${estimate.value.id}/payments`);
+      if (!res.ok) throw new Error("Failed to fetch payments");
+      const data = await res.json();
+      return data.payments ?? [];
+    },
+    enabled: computed(() => !!estimate.value?.id),
+  });
+}
+
+/**
+ * Add advance tax payment
+ */
+export function useAddAdvanceTaxPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      estimateId: string;
+      paymentDate: string;
+      amount: number;
+      quarter: number;
+      challanSerialNumber: string;
+      bsrCode: string;
+      bankName?: string;
+      notes?: string;
+    }) => {
+      const { estimateId, ...paymentData } = data;
+      const res = await fetch(`/api/advance-tax/${estimateId}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentData),
+      });
+      if (!res.ok) throw new Error("Failed to add payment");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "advance-tax"] });
+    },
+  });
+}
+
+/**
+ * Delete advance tax payment
+ */
+export function useDeleteAdvanceTaxPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { estimateId: string; paymentId: string }) => {
+      const res = await fetch(
+        `/api/advance-tax/${data.estimateId}/payments/${data.paymentId}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) throw new Error("Failed to delete payment");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "advance-tax"] });
     },
   });
 }
@@ -497,8 +619,130 @@ export function useTaxScenarios() {
       const res = await fetch(
         `/api/tax-planning/scenarios?financialYear=${selectedFinancialYear.value}`,
       );
-      if (!res.ok) throw new Error("Failed to fetch scenarios");
-      return res.json() as Promise<TaxScenario[]>;
+      if (!res.ok) {
+        if (res.status === 404) return [];
+        throw new Error("Failed to fetch scenarios");
+      }
+      const data = await res.json();
+      return data.scenarios ?? [];
+    },
+  });
+}
+
+/**
+ * Fetch smart suggestions
+ */
+export function useSmartSuggestions() {
+  const { selectedFinancialYear } = useFinancialYear();
+
+  return useQuery({
+    queryKey: ["tax", "scenarios", "suggestions", selectedFinancialYear],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/tax-planning/scenarios/smart-suggestions?financialYear=${selectedFinancialYear.value}`,
+      );
+      if (!res.ok) {
+        if (res.status === 404) return [];
+        throw new Error("Failed to fetch suggestions");
+      }
+      const data = await res.json();
+      return data.suggestions ?? [];
+    },
+  });
+}
+
+/**
+ * Create tax scenario
+ */
+export function useCreateScenario() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      financialYear: string;
+      name: string;
+      description?: string;
+      selectedRegime: string;
+      incomeAdjustments?: Record<string, number>;
+      deductionAdjustments?: Record<string, number>;
+      isAutoGenerated?: boolean;
+      suggestionReason?: string;
+      optimizationCategory?: string;
+    }) => {
+      const res = await fetch("/api/tax-planning/scenarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create scenario");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "scenarios"] });
+    },
+  });
+}
+
+/**
+ * Update tax scenario
+ */
+export function useUpdateScenario() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await fetch(`/api/tax-planning/scenarios/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update scenario");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "scenarios"] });
+    },
+  });
+}
+
+/**
+ * Delete tax scenario
+ */
+export function useDeleteScenario() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/tax-planning/scenarios/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete scenario");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "scenarios"] });
+    },
+  });
+}
+
+/**
+ * Create baseline scenario from current data
+ */
+export function useCreateBaseline() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (financialYear: string) => {
+      const res = await fetch("/api/tax-planning/scenarios/baseline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ financialYear }),
+      });
+      if (!res.ok) throw new Error("Failed to create baseline");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tax", "scenarios"] });
     },
   });
 }

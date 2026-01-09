@@ -4,6 +4,8 @@ import {
   BusinessIncomePage,
   RentalIncomePage,
   CapitalGainsPage,
+  InterestIncomePage,
+  DividendIncomePage,
   OtherIncomePage,
   NonSalaryReportsPage,
 } from "../../pages/non-salary-income";
@@ -27,6 +29,8 @@ test.describe("Non-Salary Income Navigation", () => {
     await expect(page.getByRole("tab", { name: "Business" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Rental" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Capital Gains" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Interest" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Dividends" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Other" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Reports" })).toBeVisible();
   });
@@ -57,6 +61,24 @@ test.describe("Non-Salary Income Navigation", () => {
 
     const capitalGains = new CapitalGainsPage(page);
     await capitalGains.expectPageLoaded();
+  });
+
+  test("should navigate to Interest page", async ({ page }) => {
+    await page.goto("/dashboard/non-salary-income/interest");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const interest = new InterestIncomePage(page);
+    await interest.expectPageLoaded();
+  });
+
+  test("should navigate to Dividends page", async ({ page }) => {
+    await page.goto("/dashboard/non-salary-income/dividends");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const dividends = new DividendIncomePage(page);
+    await dividends.expectPageLoaded();
   });
 
   test("should navigate to Other page", async ({ page }) => {

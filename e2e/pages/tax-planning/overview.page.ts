@@ -33,6 +33,14 @@ export class TaxPlanningOverviewPage extends BasePage {
     return this.page.getByRole("tab", { name: /Deductions/i });
   }
 
+  get advanceTaxTab(): Locator {
+    return this.page.getByRole("tab", { name: /Advance Tax/i });
+  }
+
+  get scenariosTab(): Locator {
+    return this.page.getByRole("tab", { name: /Scenarios/i });
+  }
+
   get reportsTab(): Locator {
     return this.page.getByRole("tab", { name: /Reports/i });
   }

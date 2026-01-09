@@ -19,8 +19,7 @@ import {
   formatINR,
   formatINRCompact,
   getLoanTypeLabel,
-  type Loan,
-  type CreditCard
+  calculateMinimumDue
 } from '@/composables/useLiabilities'
 
 ChartJS.register(
@@ -45,49 +44,9 @@ const tabs = [
 const { data: loans, isLoading: loansLoading } = useLoans()
 const { data: creditCards, isLoading: cardsLoading } = useCreditCards()
 
-// Mock data
-const mockLoans: Loan[] = [
-  {
-    id: '1', userId: 'user1', loanType: 'home', lenderName: 'HDFC Bank',
-    principalAmount: 5000000, outstandingPrincipal: 3200000, interestRate: 8.5,
-    tenure: 240, emiAmount: 43391, emiDate: 5, startDate: '2020-06-01', endDate: '2040-05-31',
-    totalInterestPaid: 850000, totalPrincipalPaid: 1800000, prepaymentsMade: 200000, isActive: true,
-    section80C: 150000, section24: 200000
-  },
-  {
-    id: '2', userId: 'user1', loanType: 'car', lenderName: 'ICICI Bank',
-    principalAmount: 800000, outstandingPrincipal: 450000, interestRate: 9.5,
-    tenure: 60, emiAmount: 16765, emiDate: 15, startDate: '2022-03-01', endDate: '2027-02-28',
-    totalInterestPaid: 120000, totalPrincipalPaid: 350000, prepaymentsMade: 0, isActive: true
-  },
-  {
-    id: '3', userId: 'user1', loanType: 'personal', lenderName: 'Axis Bank',
-    principalAmount: 300000, outstandingPrincipal: 180000, interestRate: 14,
-    tenure: 36, emiAmount: 10248, emiDate: 10, startDate: '2024-01-01', endDate: '2027-01-01',
-    totalInterestPaid: 48000, totalPrincipalPaid: 120000, prepaymentsMade: 0, isActive: true
-  }
-]
-
-const mockCreditCards: CreditCard[] = [
-  {
-    id: '1', userId: 'user1', cardName: 'HDFC Regalia', bankName: 'HDFC Bank',
-    cardNumber: '****5678', cardType: 'VISA', creditLimit: 500000, availableLimit: 175000,
-    currentOutstanding: 325000, utilizationPercent: 65, billingCycleDate: 15, paymentDueDate: 5,
-    rewardPointsBalance: 12500, interestRateAPR: 42, annualFee: 2500, isActive: true,
-    minimumDue: 16250, nextDueDate: '2026-02-05'
-  },
-  {
-    id: '2', userId: 'user1', cardName: 'SBI SimplyCLICK', bankName: 'SBI Card',
-    cardNumber: '****1234', cardType: 'MASTERCARD', creditLimit: 300000, availableLimit: 220000,
-    currentOutstanding: 80000, utilizationPercent: 27, billingCycleDate: 20, paymentDueDate: 10,
-    rewardPointsBalance: 5200, interestRateAPR: 39.6, annualFee: 499, isActive: true,
-    minimumDue: 4000, nextDueDate: '2026-02-10'
-  }
-]
-
-// Use mock data
-const loansList = computed(() => loans.value?.length ? loans.value : mockLoans)
-const cardsList = computed(() => creditCards.value?.length ? creditCards.value : mockCreditCards)
+// Use API data directly (no mock data)
+const loansList = computed(() => loans.value || [])
+const cardsList = computed(() => creditCards.value || [])
 
 // Report type selection
 const reportType = ref<'summary' | 'payments' | 'interest' | 'tax'>('summary')
@@ -98,14 +57,26 @@ const dateRange = ref({
   end: new Date().toISOString().split('T')[0]
 })
 
+// Calculate principal paid from principal - outstanding
+const calculatePrincipalPaid = (principalAmount: number, outstandingAmount: number) => {
+  return Math.max(0, principalAmount - outstandingAmount)
+}
+
 // Summary calculations
 const summary = computed(() => {
-  const totalLoanDebt = loansList.value.reduce((sum, l) => sum + l.outstandingPrincipal, 0)
-  const totalCCDebt = cardsList.value.reduce((sum, c) => sum + c.currentOutstanding, 0)
-  const totalPrincipalPaid = loansList.value.reduce((sum, l) => sum + l.totalPrincipalPaid, 0)
-  const totalInterestPaid = loansList.value.reduce((sum, l) => sum + l.totalInterestPaid, 0)
-  const totalEMI = loansList.value.reduce((sum, l) => sum + l.emiAmount, 0)
-  const totalMinDue = cardsList.value.reduce((sum, c) => sum + c.minimumDue, 0)
+  const totalLoanDebt = loansList.value.reduce((sum, l) => sum + (l.outstandingAmount ?? 0), 0)
+  const totalCCDebt = cardsList.value.reduce((sum, c) => sum + (c.currentOutstanding ?? 0), 0)
+  const totalPrincipalPaid = loansList.value.reduce((sum, l) =>
+    sum + calculatePrincipalPaid(l.principalAmount ?? 0, l.outstandingAmount ?? 0), 0)
+  // Estimate interest paid (simplified - would need payment history for accuracy)
+  const totalInterestPaid = loansList.value.reduce((sum, l) => {
+    const monthsPaid = (l.tenure ?? 0) - (l.remainingTenure ?? 0)
+    const emiTotal = (l.emiAmount ?? 0) * monthsPaid
+    const principalPaid = calculatePrincipalPaid(l.principalAmount ?? 0, l.outstandingAmount ?? 0)
+    return sum + Math.max(0, emiTotal - principalPaid)
+  }, 0)
+  const totalEMI = loansList.value.reduce((sum, l) => sum + (l.emiAmount ?? 0), 0)
+  const totalMinDue = cardsList.value.reduce((sum, c) => sum + calculateMinimumDue(c.currentOutstanding ?? 0), 0)
 
   return {
     totalDebt: totalLoanDebt + totalCCDebt,
@@ -118,16 +89,32 @@ const summary = computed(() => {
   }
 })
 
-// Tax benefits calculation
+// Tax benefits calculation based on loan type
 const taxBenefits = computed(() => {
   let section80C = 0
   let section24 = 0
   let section80E = 0
 
   loansList.value.forEach(loan => {
-    if (loan.section80C) section80C += loan.section80C
-    if (loan.section24) section24 += loan.section24
-    if (loan.section80E) section80E += loan.section80E
+    // Check taxBenefitSection field from backend
+    const taxSection = loan.taxBenefitSection || ''
+    const maxBenefit = loan.maxTaxBenefit ?? 0
+
+    if (loan.loanType === 'HOME_LOAN') {
+      // Home loan gets 80C for principal and 24b for interest
+      const principalPaid = calculatePrincipalPaid(loan.principalAmount ?? 0, loan.outstandingAmount ?? 0)
+      section80C += Math.min(principalPaid, 150000)
+      // Interest estimation
+      const monthsPaid = (loan.tenure ?? 0) - (loan.remainingTenure ?? 0)
+      const estimatedInterest = Math.max(0, (loan.emiAmount ?? 0) * monthsPaid - principalPaid)
+      section24 += Math.min(estimatedInterest, 200000)
+    } else if (loan.loanType === 'EDUCATION_LOAN') {
+      // Education loan - full interest deductible under 80E
+      const monthsPaid = (loan.tenure ?? 0) - (loan.remainingTenure ?? 0)
+      const principalPaid = calculatePrincipalPaid(loan.principalAmount ?? 0, loan.outstandingAmount ?? 0)
+      const estimatedInterest = Math.max(0, (loan.emiAmount ?? 0) * monthsPaid - principalPaid)
+      section80E += estimatedInterest
+    }
   })
 
   return {
@@ -146,8 +133,8 @@ const debtBreakdownData = computed(() => ({
   ],
   datasets: [{
     data: [
-      ...loansList.value.map(l => l.outstandingPrincipal),
-      ...cardsList.value.map(c => c.currentOutstanding)
+      ...loansList.value.map(l => l.outstandingAmount ?? 0),
+      ...cardsList.value.map(c => c.currentOutstanding ?? 0)
     ],
     backgroundColor: [
       '#2196f3', '#4caf50', '#ff9800', '#f44336',
@@ -158,16 +145,16 @@ const debtBreakdownData = computed(() => ({
 
 // Monthly payment distribution
 const paymentDistributionData = computed(() => ({
-  labels: loansList.value.map(l => l.lenderName.split(' ')[0]),
+  labels: loansList.value.map(l => (l.lender || '').split(' ')[0] || 'Unknown'),
   datasets: [
     {
       label: 'Principal',
-      data: loansList.value.map(l => Math.round(l.emiAmount * 0.4)),
+      data: loansList.value.map(l => Math.round((l.emiAmount ?? 0) * 0.4)),
       backgroundColor: '#4caf50'
     },
     {
       label: 'Interest',
-      data: loansList.value.map(l => Math.round(l.emiAmount * 0.6)),
+      data: loansList.value.map(l => Math.round((l.emiAmount ?? 0) * 0.6)),
       backgroundColor: '#ff9800'
     }
   ]
@@ -219,32 +206,31 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
   let rows: (string | number)[][] = []
 
   if (reportType.value === 'summary') {
-    headers = ['Loan', 'Type', 'Original Amount', 'Outstanding', 'Interest Rate', 'EMI', 'Principal Paid', 'Interest Paid']
+    headers = ['Loan', 'Type', 'Original Amount', 'Outstanding', 'Interest Rate', 'EMI', 'Principal Paid']
     rows = loansList.value.map(l => [
-      l.lenderName,
+      l.loanName || l.lender,
       getLoanTypeLabel(l.loanType),
-      l.principalAmount,
-      l.outstandingPrincipal,
-      l.interestRate,
-      l.emiAmount,
-      l.totalPrincipalPaid,
-      l.totalInterestPaid
+      l.principalAmount ?? 0,
+      l.outstandingAmount ?? 0,
+      l.interestRate ?? 0,
+      l.emiAmount ?? 0,
+      calculatePrincipalPaid(l.principalAmount ?? 0, l.outstandingAmount ?? 0)
     ])
   } else if (reportType.value === 'payments') {
     headers = ['Date', 'Description', 'Amount', 'Status']
-    // Mock payment history data
-    rows = [
-      ['Jan 5, 2026', 'HDFC Bank Home Loan EMI', 43391, 'Paid'],
-      ['Jan 10, 2026', 'Axis Bank Personal Loan EMI', 10248, 'Paid'],
-      ['Jan 15, 2026', 'ICICI Bank Car Loan EMI', 16765, 'Pending']
-    ]
-  } else if (reportType.value === 'interest') {
-    headers = ['Loan', 'Interest Rate %', 'Total Interest Paid', 'Monthly Interest (Est.)']
+    // Generate payment rows from actual loan data
     rows = loansList.value.map(l => [
-      l.lenderName,
-      l.interestRate,
-      l.totalInterestPaid,
-      Math.round(l.emiAmount * 0.6)
+      l.lastPaymentDate || 'N/A',
+      `${l.loanName || l.lender} EMI`,
+      l.emiAmount ?? 0,
+      l.status === 'ACTIVE' ? 'Active' : l.status
+    ])
+  } else if (reportType.value === 'interest') {
+    headers = ['Loan', 'Interest Rate %', 'Monthly Interest (Est.)']
+    rows = loansList.value.map(l => [
+      l.loanName || l.lender,
+      l.interestRate ?? 0,
+      Math.round((l.emiAmount ?? 0) * 0.6)
     ])
   } else if (reportType.value === 'tax') {
     headers = ['Deduction Section', 'Amount Claimed', 'Limit']
@@ -406,15 +392,15 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
                 <tbody>
                   <tr v-for="loan in loansList" :key="loan.id">
                     <td>
-                      <div class="font-weight-medium">{{ loan.lenderName }}</div>
+                      <div class="font-weight-medium">{{ loan.loanName || loan.lender }}</div>
                       <div class="text-caption text-medium-emphasis">{{ getLoanTypeLabel(loan.loanType) }}</div>
                     </td>
                     <td class="text-right">{{ formatINRCompact(loan.principalAmount) }}</td>
-                    <td class="text-right font-weight-bold text-error">{{ formatINRCompact(loan.outstandingPrincipal) }}</td>
+                    <td class="text-right font-weight-bold text-error">{{ formatINRCompact(loan.outstandingAmount) }}</td>
                     <td class="text-right">{{ loan.interestRate }}%</td>
                     <td class="text-right">{{ formatINR(loan.emiAmount) }}</td>
-                    <td class="text-right text-success">{{ formatINRCompact(loan.totalPrincipalPaid) }}</td>
-                    <td class="text-right text-warning">{{ formatINRCompact(loan.totalInterestPaid) }}</td>
+                    <td class="text-right text-success">{{ formatINRCompact(calculatePrincipalPaid(loan.principalAmount ?? 0, loan.outstandingAmount ?? 0)) }}</td>
+                    <td class="text-right text-warning">-</td>
                   </tr>
                 </tbody>
               </v-table>
@@ -503,14 +489,14 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
                 <v-card-text>
                   <v-list>
                     <v-list-item v-for="loan in loansList" :key="loan.id">
-                      <v-list-item-title>{{ loan.lenderName }}</v-list-item-title>
+                      <v-list-item-title>{{ loan.loanName || loan.lender }}</v-list-item-title>
                       <v-list-item-subtitle>
-                        Rate: {{ loan.interestRate }}% | Total Interest: {{ formatINRCompact(loan.totalInterestPaid) }}
+                        Rate: {{ loan.interestRate }}%
                       </v-list-item-subtitle>
                       <template #append>
                         <div class="text-right">
-                          <div class="text-warning font-weight-bold">{{ formatINR(Math.round(loan.emiAmount * 0.6)) }}</div>
-                          <div class="text-caption">per month</div>
+                          <div class="text-warning font-weight-bold">{{ formatINR(Math.round((loan.emiAmount ?? 0) * 0.6)) }}</div>
+                          <div class="text-caption">per month (est.)</div>
                         </div>
                       </template>
                     </v-list-item>
@@ -610,23 +596,22 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
                   <tr>
                     <th>Loan</th>
                     <th>Section</th>
-                    <th class="text-right">Claimed</th>
+                    <th class="text-right">Estimated Benefit</th>
                     <th class="text-right">Limit</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="loan in loansList.filter(l => l.section80C || l.section24 || l.section80E)" :key="loan.id">
-                    <td>{{ loan.lenderName }}</td>
+                  <tr v-for="loan in loansList.filter(l => l.loanType === 'HOME_LOAN' || l.loanType === 'EDUCATION_LOAN')" :key="loan.id">
+                    <td>{{ loan.loanName || loan.lender }}</td>
                     <td>
-                      <v-chip v-if="loan.section80C" size="x-small" color="primary" class="mr-1">80C</v-chip>
-                      <v-chip v-if="loan.section24" size="x-small" color="success" class="mr-1">24(b)</v-chip>
-                      <v-chip v-if="loan.section80E" size="x-small" color="teal">80E</v-chip>
+                      <v-chip v-if="loan.loanType === 'HOME_LOAN'" size="x-small" color="primary" class="mr-1">80C</v-chip>
+                      <v-chip v-if="loan.loanType === 'HOME_LOAN'" size="x-small" color="success" class="mr-1">24(b)</v-chip>
+                      <v-chip v-if="loan.loanType === 'EDUCATION_LOAN'" size="x-small" color="teal">80E</v-chip>
                     </td>
-                    <td class="text-right">{{ formatINR((loan.section80C || 0) + (loan.section24 || 0) + (loan.section80E || 0)) }}</td>
+                    <td class="text-right">{{ loan.taxBenefitSection || 'See above' }}</td>
                     <td class="text-right text-medium-emphasis">
-                      {{ loan.section80C ? '₹1.5L' : '' }}
-                      {{ loan.section24 ? '₹2L' : '' }}
-                      {{ loan.section80E ? 'No limit' : '' }}
+                      {{ loan.loanType === 'HOME_LOAN' ? '₹1.5L + ₹2L' : '' }}
+                      {{ loan.loanType === 'EDUCATION_LOAN' ? 'No limit' : '' }}
                     </td>
                   </tr>
                 </tbody>

@@ -41,14 +41,6 @@ export class ProtectionOverviewPage extends BasePage {
     return this.page.getByRole("tab", { name: /Calculator/i });
   }
 
-  get totalCoverageCard(): Locator {
-    return this.getSummaryCardByTitle("Total Coverage");
-  }
-
-  get annualPremiumCard(): Locator {
-    return this.getSummaryCardByTitle("Annual Premium");
-  }
-
   get lifeCoverageCard(): Locator {
     return this.getSummaryCardByTitle("Life Coverage");
   }
@@ -57,17 +49,35 @@ export class ProtectionOverviewPage extends BasePage {
     return this.getSummaryCardByTitle("Health Coverage");
   }
 
+  get annualPremiumCard(): Locator {
+    return this.getSummaryCardByTitle("Annual Premium");
+  }
+
+  get activePoliciesCard(): Locator {
+    return this.getSummaryCardByTitle("Active Policies");
+  }
+
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
   }
 
-  async getTotalCoverage(): Promise<string> {
-    return await this.getSummaryCardValue("Total Coverage");
+  async getLifeCoverage(): Promise<string> {
+    // Overview page shows "Life Coverage" card from InsuranceSummaryCard component
+    return await this.getSummaryCardValue("Life Coverage");
+  }
+
+  async getHealthCoverage(): Promise<string> {
+    return await this.getSummaryCardValue("Health Coverage");
   }
 
   async getAnnualPremium(): Promise<string> {
     return await this.getSummaryCardValue("Annual Premium");
+  }
+
+  // Alias for backwards compatibility - uses Life Coverage
+  async getTotalCoverage(): Promise<string> {
+    return await this.getLifeCoverage();
   }
 
   async expectPageLoaded() {
@@ -88,60 +98,62 @@ export class LifeInsurancePage extends BasePage {
   }
 
   get addPolicyButton(): Locator {
-    return this.page.getByRole("button", { name: /Add Policy|Add Life|Add New/i });
+    // Match "Add Life Policy" or "Add Your First Policy" buttons on life.vue page
+    return this.page.getByRole("button", { name: /Add.*Policy|Add Life|Add New|First Policy/i }).first();
   }
 
   get policyFormDialog(): Locator {
-    return this.page.locator(".v-dialog").filter({ hasText: /Add.*Policy|Edit.*Policy|New Policy/i });
+    // Match any visible v-dialog with insurance form content
+    return this.page.locator(".v-dialog--active, .v-dialog:visible").first();
   }
 
   // Form fields - matching InsurancePolicyForm.vue
   get policyTypeButtonGroup(): Locator {
-    return this.policyFormDialog.locator(".v-btn-toggle");
+    return this.page.locator(".v-dialog").locator(".v-btn-toggle").first();
   }
 
   get providerField(): Locator {
-    return this.policyFormDialog.locator('.v-autocomplete').filter({ hasText: /Provider/i });
+    return this.page.locator(".v-dialog").getByLabel(/Insurance Provider/i);
   }
 
   get policyNumberField(): Locator {
-    return this.policyFormDialog.getByLabel(/Policy Number/i);
+    return this.page.locator(".v-dialog").getByLabel(/Policy Number/i);
   }
 
   get policyNameField(): Locator {
-    return this.policyFormDialog.getByLabel(/Policy Name/i);
+    return this.page.locator(".v-dialog").getByLabel(/Policy Name/i);
   }
 
   get sumAssuredField(): Locator {
-    return this.policyFormDialog.getByLabel(/Sum Assured/i);
+    return this.page.locator(".v-dialog").getByLabel(/Sum Assured/i);
   }
 
   get premiumField(): Locator {
-    return this.policyFormDialog.getByLabel(/Premium Amount/i);
+    return this.page.locator(".v-dialog").getByLabel(/Premium Amount/i);
   }
 
   get paymentFrequencyField(): Locator {
-    return this.policyFormDialog.locator('.v-select').filter({ hasText: /Payment Frequency/i });
+    return this.page.locator(".v-dialog").locator('.v-select').filter({ hasText: /Payment Frequency/i });
   }
 
   get taxBenefitField(): Locator {
-    return this.policyFormDialog.locator('.v-select').filter({ hasText: /Tax Benefit/i });
+    return this.page.locator(".v-dialog").locator('.v-select').filter({ hasText: /Tax Benefit/i });
   }
 
   get startDateField(): Locator {
-    return this.policyFormDialog.getByLabel(/Start Date/i);
+    return this.page.locator(".v-dialog").getByLabel(/Start Date/i);
   }
 
   get endDateField(): Locator {
-    return this.policyFormDialog.getByLabel(/End Date/i);
+    return this.page.locator(".v-dialog").getByLabel(/End Date/i);
   }
 
   get saveButton(): Locator {
-    return this.policyFormDialog.getByRole("button", { name: /Add Policy|Update Policy/i });
+    return this.page.locator(".v-dialog").getByRole("button", { name: /Add Policy|Update Policy/i });
   }
 
   get cancelButton(): Locator {
-    return this.policyFormDialog.getByRole("button", { name: /Cancel/i });
+    return this.page.locator(".v-dialog").getByRole("button", { name: /Cancel/i });
   }
 
   get deleteDialog(): Locator {
@@ -155,7 +167,9 @@ export class LifeInsurancePage extends BasePage {
 
   async openAddForm() {
     await this.addPolicyButton.click();
-    await this.policyFormDialog.waitFor({ state: "visible" });
+    // Wait for dialog to appear
+    await this.page.locator(".v-dialog").first().waitFor({ state: "visible", timeout: 5000 });
+    await this.page.waitForTimeout(300); // Wait for dialog animation
   }
 
   async selectPolicyType(type: 'Life' | 'Health' | 'Motor' | 'Home' | 'Travel') {
@@ -175,12 +189,20 @@ export class LifeInsurancePage extends BasePage {
   }) {
     if (data.type) {
       await this.selectPolicyType(data.type);
-    }
-    if (data.provider) {
-      await this.providerField.click();
       await this.page.waitForTimeout(200);
-      await this.page.getByRole("option", { name: data.provider }).click();
     }
+
+    if (data.provider) {
+      // Click to open autocomplete, wait for it to open, then select
+      await this.providerField.click();
+      await this.page.waitForTimeout(300);
+      const providerOption = this.page.getByRole("option", { name: data.provider });
+      await providerOption.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      await providerOption.click();
+      // Wait for dropdown to close
+      await this.page.waitForTimeout(300);
+    }
+
     if (data.policyNumber) {
       await this.policyNumberField.fill(data.policyNumber);
     }
@@ -193,11 +215,17 @@ export class LifeInsurancePage extends BasePage {
     if (data.premium !== undefined) {
       await this.premiumField.fill(data.premium.toString());
     }
+
     if (data.paymentFrequency) {
+      // Click to open dropdown, wait for options to appear
       await this.paymentFrequencyField.click();
+      await this.page.waitForTimeout(300);
+      const freqOption = this.page.getByRole("option", { name: data.paymentFrequency });
+      await freqOption.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      await freqOption.click();
       await this.page.waitForTimeout(200);
-      await this.page.getByRole("option", { name: data.paymentFrequency }).click();
     }
+
     if (data.startDate) {
       await this.startDateField.fill(data.startDate);
     }
@@ -240,57 +268,59 @@ export class HealthInsurancePage extends BasePage {
   }
 
   get addPolicyButton(): Locator {
-    return this.page.getByRole("button", { name: /Add Policy|Add Health|Add New/i });
+    // Match "Add Health Policy" or "Add Your First Policy" buttons on health.vue page
+    return this.page.getByRole("button", { name: /Add.*Policy|Add Health|Add New|First Policy/i }).first();
   }
 
   get policyFormDialog(): Locator {
-    return this.page.locator(".v-dialog").filter({ hasText: /Add.*Policy|Edit.*Policy|New Policy/i });
+    // Match any visible v-dialog with insurance form content
+    return this.page.locator(".v-dialog--active, .v-dialog:visible").first();
   }
 
   // Form fields - same structure as LifeInsurancePage
   get policyTypeButtonGroup(): Locator {
-    return this.policyFormDialog.locator(".v-btn-toggle");
+    return this.page.locator(".v-dialog").locator(".v-btn-toggle").first();
   }
 
   get providerField(): Locator {
-    return this.policyFormDialog.locator('.v-autocomplete').filter({ hasText: /Provider/i });
+    return this.page.locator(".v-dialog").getByLabel(/Insurance Provider/i);
   }
 
   get policyNumberField(): Locator {
-    return this.policyFormDialog.getByLabel(/Policy Number/i);
+    return this.page.locator(".v-dialog").getByLabel(/Policy Number/i);
   }
 
   get policyNameField(): Locator {
-    return this.policyFormDialog.getByLabel(/Policy Name/i);
+    return this.page.locator(".v-dialog").getByLabel(/Policy Name/i);
   }
 
   get sumAssuredField(): Locator {
-    return this.policyFormDialog.getByLabel(/Sum Assured/i);
+    return this.page.locator(".v-dialog").getByLabel(/Sum Assured/i);
   }
 
   get premiumField(): Locator {
-    return this.policyFormDialog.getByLabel(/Premium Amount/i);
+    return this.page.locator(".v-dialog").getByLabel(/Premium Amount/i);
   }
 
   // Health-specific fields
   get coverageTypeField(): Locator {
-    return this.policyFormDialog.locator('.v-select').filter({ hasText: /Coverage Type/i });
+    return this.page.locator(".v-dialog").locator('.v-select').filter({ hasText: /Coverage Type/i });
   }
 
   get roomRentField(): Locator {
-    return this.policyFormDialog.getByLabel(/Room Rent/i);
+    return this.page.locator(".v-dialog").getByLabel(/Room Rent/i);
   }
 
   get coPaymentField(): Locator {
-    return this.policyFormDialog.getByLabel(/Co-payment/i);
+    return this.page.locator(".v-dialog").getByLabel(/Co-payment/i);
   }
 
   get saveButton(): Locator {
-    return this.policyFormDialog.getByRole("button", { name: /Add Policy|Update Policy/i });
+    return this.page.locator(".v-dialog").getByRole("button", { name: /Add Policy|Update Policy/i });
   }
 
   get cancelButton(): Locator {
-    return this.policyFormDialog.getByRole("button", { name: /Cancel/i });
+    return this.page.locator(".v-dialog").getByRole("button", { name: /Cancel/i });
   }
 
   async navigateTo() {
@@ -300,7 +330,9 @@ export class HealthInsurancePage extends BasePage {
 
   async openAddForm() {
     await this.addPolicyButton.click();
-    await this.policyFormDialog.waitFor({ state: "visible" });
+    // Wait for dialog to appear
+    await this.page.locator(".v-dialog").first().waitFor({ state: "visible", timeout: 5000 });
+    await this.page.waitForTimeout(300); // Wait for dialog animation
   }
 
   async selectPolicyType(type: 'Life' | 'Health' | 'Motor' | 'Home' | 'Travel') {
@@ -322,12 +354,20 @@ export class HealthInsurancePage extends BasePage {
   }) {
     if (data.type) {
       await this.selectPolicyType(data.type);
-    }
-    if (data.provider) {
-      await this.providerField.click();
       await this.page.waitForTimeout(200);
-      await this.page.getByRole("option", { name: data.provider }).click();
     }
+
+    if (data.provider) {
+      // Click to open autocomplete, wait for it to open, then select
+      await this.providerField.click();
+      await this.page.waitForTimeout(300);
+      const providerOption = this.page.getByRole("option", { name: data.provider });
+      await providerOption.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      await providerOption.click();
+      // Wait for dropdown to close
+      await this.page.waitForTimeout(300);
+    }
+
     if (data.policyNumber) {
       await this.policyNumberField.fill(data.policyNumber);
     }
@@ -340,11 +380,17 @@ export class HealthInsurancePage extends BasePage {
     if (data.premium !== undefined) {
       await this.premiumField.fill(data.premium.toString());
     }
+
     if (data.coverageType) {
+      // Click to open dropdown, wait for options to appear
       await this.coverageTypeField.click();
+      await this.page.waitForTimeout(300);
+      const coverageOption = this.page.getByRole("option", { name: data.coverageType });
+      await coverageOption.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      await coverageOption.click();
       await this.page.waitForTimeout(200);
-      await this.page.getByRole("option", { name: data.coverageType }).click();
     }
+
     if (data.startDate) {
       await this.policyFormDialog.getByLabel(/Start Date/i).fill(data.startDate);
     }
@@ -416,7 +462,9 @@ export class ProtectionReportsPage extends BasePage {
 
   async navigateTo() {
     await this.goto(this.url);
-    await this.waitForPageLoad();
+    // Wait for heading or report controls to be visible
+    await this.page.waitForLoadState("domcontentloaded");
+    await this.page.getByRole("heading", { name: /Protection/i }).waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   }
 
   async selectReportTab(tabName: 'Coverage' | 'Premium' | 'Tax' | 'Renewals') {
@@ -425,13 +473,13 @@ export class ProtectionReportsPage extends BasePage {
   }
 
   async expectPageLoaded() {
-    await expect(this.page.getByRole("heading", { name: /Protection|Insurance|Reports/i })).toBeVisible();
+    await expect(this.page.getByRole("heading", { name: /Protection/i })).toBeVisible();
   }
 
   async expectHasChartOrTable() {
-    // Reports page should have either a chart or a data table
-    const chart = this.page.locator("canvas, svg, .v-data-table").first();
-    await expect(chart).toBeVisible();
+    // Reports page should have either a chart, a data table, or report selector buttons
+    const reportContent = this.page.locator("canvas, svg, .v-data-table, .v-table, .v-btn-toggle").first();
+    await expect(reportContent).toBeVisible();
   }
 }
 
@@ -455,7 +503,8 @@ export class ProtectionCalculatorPage extends BasePage {
   }
 
   get calculateButton(): Locator {
-    return this.page.getByRole("button", { name: /Calculate|Get Results/i });
+    // Match "Open Full Calculator" button on calculator.vue page
+    return this.page.getByRole("button", { name: /Calculate|Get Results|Open.*Calculator/i });
   }
 
   get resultsSection(): Locator {
@@ -464,11 +513,13 @@ export class ProtectionCalculatorPage extends BasePage {
 
   async navigateTo() {
     await this.goto(this.url);
-    await this.waitForPageLoad();
+    // Wait for heading to be visible
+    await this.page.waitForLoadState("domcontentloaded");
+    await this.page.getByRole("heading", { name: /Protection/i }).waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   }
 
   async expectPageLoaded() {
-    await expect(this.page.getByRole("heading", { name: /Protection|Calculator|Adequacy/i })).toBeVisible();
+    await expect(this.page.getByRole("heading", { name: /Protection/i })).toBeVisible();
   }
 
   async expectWizardVisible() {

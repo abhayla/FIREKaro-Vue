@@ -1,720 +1,428 @@
 # Liabilities Section Plan
 
-> **Status**: Approved
+> **Status**: IMPLEMENTED
 > **Created**: January 7, 2026
+> **Last Updated**: January 9, 2026
 > **Based on**: docs/Plans/Feature-Reorganization-Plan.md (Section 6: LIABILITIES)
-> **Estimated Effort**: ~6.5 days (consolidation + gap filling)
 
 ---
 
 ## Executive Summary
 
-The LIABILITIES section is **~80% implemented** with excellent infrastructure. The primary work is:
+The LIABILITIES section is **100% implemented** with full backend API, frontend UI, and E2E tests.
 
-1. **Consolidation** - Unify 2 scattered pages under single Liabilities section
-2. **Credit Cards API** - Model exists, need CRUD API routes
-3. **Credit Cards UI** - Dashboard page for credit card management
-4. **Reports Tab** - Unified reporting with export
-5. **Family View** - Integration across all liability types
-6. **In-App Alerts** - Enhance existing LoanReminder system
+### Implementation Completed
 
----
-
-## Current State Analysis
-
-### What Exists & Works
-
-| Feature | Location | Status |
-|---------|----------|--------|
-| Loan Model | `prisma/schema.prisma` (30+ fields) | Complete |
-| Loan CRUD API | `/api/loans/*` (9 routes) | Complete |
-| Loan Calculations | `src/lib/calculations/loans.ts` (494 lines) | Complete |
-| Loans Dashboard | `/dashboard/loans/page.tsx` (4 tabs) | Complete |
-| Loan Components | `src/components/loans/*` (8 components) | Complete |
-| Debt Strategies | `src/lib/calculations/debt-strategies.ts` (243 lines) | Complete |
-| Debt Payoff Page | `/dashboard/debt-payoff/page.tsx` | Complete |
-| CreditCard Model | `prisma/schema.prisma` | Complete |
-| CreditCardStatement Model | `prisma/schema.prisma` | Complete |
-| DebtPayoffPlan Model | `prisma/schema.prisma` | Complete |
-| LoanReminder Model | `prisma/schema.prisma` | Complete |
-
-### What's Missing
-
-| Feature | Status | Priority |
-|---------|--------|----------|
-| Consolidated Section Layout | Missing | P0 |
-| Credit Cards CRUD API | Missing | P1 |
-| Credit Cards UI Page | Missing | P1 |
-| Reports Tab | Missing | P1 |
-| Family View Integration | Missing | P1 |
-| In-App Alert Delivery | Partial | P2 |
-
-### Current vs Target Structure
-
-```
-CURRENT (2 Scattered Pages):          TARGET (Unified Section):
-├── /dashboard/loans                  ├── /dashboard/liabilities/
-├── /dashboard/debt-payoff            │   ├── page.tsx (Overview)
-                                      │   ├── loans/
-                                      │   ├── credit-cards/
-                                      │   ├── debt-payoff/
-                                      │   └── reports/
-```
+1. **Backend APIs** - All CRUD routes for Loans, Credit Cards, Overview, Reports
+2. **Database Models** - CreditCard and CreditCardStatement models added to Prisma
+3. **Frontend Pages** - 5 sub-pages under consolidated /dashboard/liabilities section
+4. **Components** - 8 Vue components for liabilities management
+5. **Composable** - Full useLiabilities.ts with all hooks and calculations
+6. **E2E Tests** - 7 test spec files covering all functionality
+7. **Alert Integration** - Using existing AlertDelivery system
 
 ---
 
-## Target Sub-Page Structure (4 Sub-Pages)
+## Implementation Status
 
-```
-LIABILITIES SECTION
-├── Overview (NEW - consolidated dashboard)
-├── Loans (move from /dashboard/loans)
-├── Credit Cards (NEW)
-├── Debt Payoff (move from /dashboard/debt-payoff)
-└── Reports (NEW)
-```
+### Backend API Routes (All Complete)
 
----
+| Route File | Endpoints | Status |
+|------------|-----------|--------|
+| `server/routes/loans.ts` | 9 endpoints | COMPLETE |
+| `server/routes/credit-cards.ts` | 8 endpoints | COMPLETE |
+| `server/routes/liabilities.ts` | 3 endpoints | COMPLETE |
+| `server/routes/liabilities-reports.ts` | 5 endpoints | COMPLETE |
 
-## Phase 1: Navigation Restructure (Days 1-1.5)
+#### Loan API Endpoints (`/api/loans`)
 
-### 1.1 Create Liabilities Section Layout
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/loans` | List all loans with filtering |
+| GET | `/api/loans/:id` | Get single loan details |
+| POST | `/api/loans` | Create new loan |
+| PUT | `/api/loans/:id` | Update loan |
+| DELETE | `/api/loans/:id` | Delete loan |
+| GET | `/api/loans/:id/payments` | Get payment history |
+| POST | `/api/loans/:id/payments` | Record payment |
+| GET | `/api/loans/:id/amortization` | Generate amortization schedule |
+| POST | `/api/loans/:id/prepay` | Calculate prepayment impact |
 
-```typescript
-// src/app/dashboard/liabilities/layout.tsx (NEW)
-export default function LiabilitiesLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="space-y-6">
-      <LiabilitiesSectionHeader />
-      <LiabilitiesNavigation />
-      {children}
-    </div>
-  );
-}
-```
+#### Credit Cards API Endpoints (`/api/credit-cards`)
 
-### 1.2 New Files to Create
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/credit-cards` | List all cards with summary |
+| GET | `/api/credit-cards/:id` | Get single card with statements |
+| POST | `/api/credit-cards` | Create new card |
+| PUT | `/api/credit-cards/:id` | Update card |
+| DELETE | `/api/credit-cards/:id` | Delete card |
+| GET | `/api/credit-cards/:id/statements` | Get statement history |
+| POST | `/api/credit-cards/:id/statements` | Add statement |
+| POST | `/api/credit-cards/:id/pay` | Record payment |
 
-```
-src/app/dashboard/liabilities/
-├── layout.tsx                      # Section layout with sub-navigation
-├── page.tsx                        # Overview (consolidated view)
-├── loans/page.tsx                  # Move from /dashboard/loans
-├── credit-cards/page.tsx           # NEW
-├── debt-payoff/page.tsx            # Move from /dashboard/debt-payoff
-└── reports/page.tsx                # NEW
-```
+#### Liabilities Overview API (`/api/liabilities`)
 
-### 1.3 Components to Create
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/liabilities/overview` | Aggregated dashboard data |
+| POST | `/api/liabilities/generate-alerts` | Generate EMI/CC due alerts |
+| GET | `/api/liabilities/debt-payoff-strategies` | Snowball vs Avalanche comparison |
 
-```
-src/components/liabilities/
-├── LiabilitiesSectionHeader.tsx    # Header with family toggle
-├── LiabilitiesNavigation.tsx       # Sub-page navigation
-├── LiabilitiesOverview.tsx         # Overview dashboard
-└── LiabilityMetricsCards.tsx       # Summary metric cards
-```
+#### Liabilities Reports API (`/api/liabilities/reports`)
 
-### 1.4 Sidebar Navigation Update
-
-Update `src/components/dashboard/DashboardSidebar.tsx`:
-
-```typescript
-{
-  title: 'Liabilities',
-  icon: CreditCard,
-  href: '/dashboard/liabilities',
-  children: [
-    { title: 'Overview', href: '/dashboard/liabilities' },
-    { title: 'Loans', href: '/dashboard/liabilities/loans' },
-    { title: 'Credit Cards', href: '/dashboard/liabilities/credit-cards' },
-    { title: 'Debt Payoff', href: '/dashboard/liabilities/debt-payoff' },
-    { title: 'Reports', href: '/dashboard/liabilities/reports' },
-  ]
-}
-```
-
-### 1.5 Redirect Setup
-
-```typescript
-// src/middleware.ts - Add redirects for old URLs
-const liabilityRedirects = {
-  '/dashboard/loans': '/dashboard/liabilities/loans',
-  '/dashboard/debt-payoff': '/dashboard/liabilities/debt-payoff',
-};
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/liabilities/reports/debt-summary` | Debt summary by type |
+| GET | `/api/liabilities/reports/payment-history` | Payment history with stats |
+| GET | `/api/liabilities/reports/interest-analysis` | Interest breakdown with insights |
+| GET | `/api/liabilities/reports/credit-health` | Credit health score and factors |
+| GET | `/api/liabilities/reports/export` | Export data for PDF/Excel |
 
 ---
 
-## Phase 2: Overview Dashboard (Day 2)
+### Database Models (All Complete)
 
-### 2.1 Overview Page UI Wireframe
+#### Existing Models (No Changes)
 
-```
-+------------------------------------------------------------------+
-| LIABILITIES                           [Family: Individual ]       |
-+------------------------------------------------------------------+
-| [Overview] [Loans] [Credit Cards] [Debt Payoff] [Reports]         |
-+------------------------------------------------------------------+
-| DEBT SUMMARY                                                      |
-| +---------------+ +---------------+ +---------------+             |
-| | Total Debt    | | Monthly EMI   | | Interest/Year |             |
-| | 45,25,000     | | 52,400        | | 3,85,000      |             |
-| | 2 Loans, 1 CC | | Due 5th/15th  | | Avg 10.2%     |             |
-| +---------------+ +---------------+ +---------------+             |
-+------------------------------------------------------------------+
-| DEBT HEALTH INDICATORS                                            |
-| +---------------+ +---------------+ +---------------+             |
-| | DTI Ratio     | | Credit Util   | | Payoff ETA    |             |
-| | 32%           | | 45%           | | Dec 2028      |             |
-| | [Healthy]     | | [Moderate]    | | 36 months     |             |
-| +---------------+ +---------------+ +---------------+             |
-+------------------------------------------------------------------+
-| DEBT BREAKDOWN BY TYPE                | UPCOMING PAYMENTS         |
-| +-----------------------------+       | +------------------------+|
-| | [Pie Chart]                 |       | | Jan 5 - Home Loan EMI  ||
-| | Home Loan: 65% (32L)        |       | |   42,500               ||
-| | Car Loan: 20% (10L)         |       | | Jan 15 - HDFC CC       ||
-| | Credit Card: 15% (3.25L)    |       | |   28,400 (min: 5,680)  ||
-| +-----------------------------+       | | Jan 20 - Car Loan EMI  ||
-|                                       | |   15,200               ||
-|                                       | +------------------------+|
-+------------------------------------------------------------------+
-| QUICK ACTIONS                                                     |
-| [+ Add Loan] [+ Add Credit Card] [Debt Payoff Strategy] [Reports]|
-+------------------------------------------------------------------+
-```
+| Model | Location | Fields |
+|-------|----------|--------|
+| Loan | `prisma/schema.prisma:867-903` | 30+ fields |
+| LoanPayment | `prisma/schema.prisma:905-928` | Payment tracking |
+| DebtPayoffPlan | `prisma/schema.prisma:930-952` | Payoff strategies |
 
-### 2.2 API for Overview
-
-```
-src/app/api/liabilities/overview/route.ts     # GET aggregated data
-```
-
-```typescript
-// Response structure
-interface LiabilitiesOverview {
-  totalDebt: number;
-  totalMonthlyPayment: number;
-  yearlyInterest: number;
-  debtToIncomeRatio: number;
-  creditUtilization: number;
-  projectedPayoffDate: Date;
-  debtByType: {
-    loans: { count: number; total: number; monthlyEmi: number };
-    creditCards: { count: number; total: number; minDue: number };
-  };
-  upcomingPayments: {
-    id: string;
-    name: string;
-    type: 'loan' | 'credit_card';
-    amount: number;
-    dueDate: Date;
-    isOverdue: boolean;
-  }[];
-  alerts: {
-    overdueCount: number;
-    upcoming7Days: number;
-    highInterestDebts: number;
-  };
-}
-```
-
----
-
-## Phase 3: Credit Cards API & UI (Days 2.5-4)
-
-### 3.1 Existing CreditCard Model (No Changes Needed)
-
-The Prisma model is already comprehensive:
+#### New Models Added
 
 ```prisma
 model CreditCard {
-  id                      String          @id @default(cuid())
-  userId                  String
-  familyMemberId          String?
+  id                  String                @id @default(cuid())
+  userId              String
+  familyMemberId      String?
+  cardName            String
+  bankName            String
+  cardNumber          String                // Masked: ****1234
+  cardType            String                // VISA, MASTERCARD, RUPAY, AMEX
+  creditLimit         Float
+  availableLimit      Float
+  currentOutstanding  Float                 @default(0)
+  billingCycleDate    Int                   // Day of month (1-31)
+  paymentDueDate      Int                   // Day of month (1-31)
+  rewardPointsBalance Int                   @default(0)
+  interestRateAPR     Float?
+  annualFee           Float                 @default(0)
+  feeWaiverSpend      Float?
+  cardExpiryDate      DateTime?
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
 
-  cardName                String
-  bankName                String
-  cardNumber              String          // Masked: ****1234
-  cardType                String          // VISA, MASTERCARD, RUPAY, AMEX
+  user         User                  @relation(...)
+  familyMember FamilyMember?         @relation(...)
+  statements   CreditCardStatement[]
 
-  creditLimit             Float
-  availableLimit          Float
-  currentOutstanding      Float           @default(0)
-
-  billingCycleDate        Int             // Day of month (1-31)
-  paymentDueDate          Int             // Day of month (1-31)
-
-  rewardPointsBalance     Int             @default(0)
-  interestRateAPR         Float?
-  annualFee               Float           @default(0)
-  feeWaiverSpend          Float?          // Spend required for fee waiver
-
-  cardExpiryDate          DateTime?
-  isActive                Boolean         @default(true)
-
-  // Relations
-  user                    User
-  familyMember            FamilyMember?
-  statements              CreditCardStatement[]
+  @@index([userId, isActive])
+  @@index([paymentDueDate])
 }
 
 model CreditCardStatement {
-  id                      String          @id @default(cuid())
-  creditCardId            String
-  statementDate           DateTime
-  statementAmount         Float
-  minimumDue              Float
-  dueDate                 DateTime
-  isPaid                  Boolean         @default(false)
-  paidAmount              Float?
-  paidDate                DateTime?
+  id              String     @id @default(cuid())
+  creditCardId    String
+  statementDate   DateTime
+  statementAmount Float
+  minimumDue      Float
+  dueDate         DateTime
+  isPaid          Boolean    @default(false)
+  paidAmount      Float?
+  paidDate        DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  creditCard              CreditCard
+  creditCard CreditCard @relation(...)
+
+  @@index([creditCardId, statementDate])
 }
 ```
 
-### 3.2 New API Routes
+#### Skipped Models (Using Existing AlertDelivery)
 
-```
-src/app/api/credit-cards/
-├── route.ts                        # GET/POST credit cards
-├── [id]/route.ts                   # GET/PUT/DELETE card
-├── [id]/statements/route.ts        # GET/POST statements
-├── [id]/pay/route.ts               # POST record payment
-└── analytics/route.ts              # GET credit card analytics
-```
-
-### 3.3 API Response Examples
-
-**GET /api/credit-cards**
-```typescript
-{
-  cards: [
-    {
-      id: "xxx",
-      cardName: "HDFC Regalia",
-      bankName: "HDFC Bank",
-      cardNumber: "****5678",
-      cardType: "VISA",
-      creditLimit: 500000,
-      availableLimit: 175000,
-      currentOutstanding: 325000,
-      utilizationPercent: 65,
-      billingCycleDate: 15,
-      paymentDueDate: 5,
-      rewardPointsBalance: 12500,
-      interestRateAPR: 42,
-      annualFee: 2500,
-      nextDueDate: "2026-02-05",
-      minimumDue: 16250,
-      isActive: true,
-    }
-  ],
-  summary: {
-    totalCards: 2,
-    totalLimit: 800000,
-    totalOutstanding: 425000,
-    averageUtilization: 53,
-    totalMinimumDue: 21250,
-    totalRewardPoints: 18750,
-  }
-}
-```
-
-### 3.4 Credit Cards Page UI Wireframe
-
-```
-+------------------------------------------------------------------+
-| CREDIT CARDS                         [Family: Individual ]        |
-+------------------------------------------------------------------+
-| [Overview] [Loans] [Credit Cards] [Debt Payoff] [Reports]         |
-+------------------------------------------------------------------+
-| CREDIT SUMMARY                                                    |
-| +---------------+ +---------------+ +---------------+             |
-| | Total Limit   | | Outstanding   | | Available     |             |
-| | 8,00,000      | | 4,25,000      | | 3,75,000      |             |
-| | 2 cards       | | 53% utilized  | | to spend      |             |
-| +---------------+ +---------------+ +---------------+             |
-+------------------------------------------------------------------+
-| YOUR CARDS                                     [+ Add Card]       |
-| +--------------------------------------------------------------+ |
-| | HDFC Regalia (VISA) ****5678                    [Edit] [...]  | |
-| | +----------------------------------------------------+        | |
-| | | Credit Limit    | Outstanding   | Available        |        | |
-| | | 5,00,000       | 3,25,000      | 1,75,000         |        | |
-| | +----------------------------------------------------+        | |
-| | | Utilization: [=============       ] 65%            |        | |
-| | +----------------------------------------------------+        | |
-| | | Due: Feb 5    | Min Due: 16,250 | APR: 42%        |        | |
-| | | Rewards: 12,500 pts             | Annual Fee: 2,500|        | |
-| | +----------------------------------------------------+        | |
-| | [View Statements] [Record Payment] [Reward Calculator]        | |
-| +--------------------------------------------------------------+ |
-|                                                                   |
-| +--------------------------------------------------------------+ |
-| | SBI SimplyCLICK (MASTERCARD) ****1234                         | |
-| | ...                                                            | |
-| +--------------------------------------------------------------+ |
-+------------------------------------------------------------------+
-| STATEMENT HISTORY                       [View Mode: Monthly ]     |
-| | Dec 2025 | 28,450 | Paid: 28,450 | Status: Paid              | |
-| | Nov 2025 | 32,100 | Paid: 32,100 | Status: Paid              | |
-| | Oct 2025 | 25,800 | Paid: 25,800 | Status: Paid              | |
-+------------------------------------------------------------------+
-```
-
-### 3.5 Credit Card Components
-
-```
-src/components/credit-cards/
-├── CreditCardsList.tsx             # Card listing
-├── CreditCardCard.tsx              # Individual card display
-├── AddCreditCardDialog.tsx         # Add new card modal
-├── EditCreditCardDialog.tsx        # Edit card details
-├── RecordPaymentDialog.tsx         # Record payment modal
-├── StatementHistory.tsx            # Statement list
-└── CreditCardAnalytics.tsx         # Usage analytics
-```
-
-### 3.6 Credit Card Calculations
-
-```typescript
-// src/lib/calculations/credit-cards.ts (NEW)
-
-export function calculateUtilization(outstanding: number, limit: number): number;
-export function calculateMinimumDue(outstanding: number, rate: number): number;
-export function calculateInterestCharges(outstanding: number, apr: number, days: number): number;
-export function getOptimalPaymentDate(billingDate: number): number;
-export function analyzeCreditHealth(cards: CreditCard[]): CreditHealthScore;
-```
+| Model | Decision | Reason |
+|-------|----------|--------|
+| LoanReminder | SKIPPED | Use existing AlertDelivery model |
+| CreditCardReminder | SKIPPED | Use existing AlertDelivery model |
 
 ---
 
-## Phase 4: Family View Integration (Day 4.5)
+### Frontend Implementation (All Complete)
 
-### 4.1 API Updates
-
-All liability APIs need `familyMemberId` query parameter support:
-
-```typescript
-// Example: GET /api/liabilities/overview?familyMemberId=all
-// Returns aggregated liabilities for all family members
-
-interface FamilyLiabilitiesResponse {
-  aggregated: LiabilitiesOverview;
-  byMember: {
-    memberId: string;
-    memberName: string;
-    relationship: string;
-    loans: Loan[];
-    creditCards: CreditCard[];
-    totalDebt: number;
-    monthlyPayment: number;
-    percentageOfTotal: number;
-  }[];
-}
-```
-
-### 4.2 Family View UI
+#### Pages Structure
 
 ```
-+------------------------------------------------------------------+
-| LIABILITIES - Family View                                         |
-+------------------------------------------------------------------+
-| FAMILY TOTAL DEBT: 75,50,000                                     |
-+------------------------------------------------------------------+
-| MEMBER BREAKDOWN                                                  |
-| +------------------+ +------------------+ +------------------+     |
-| | Self             | | Spouse           | | Total Family     |     |
-| | 45,25,000 (60%)  | | 30,25,000 (40%)  | | 75,50,000        |     |
-| | 2 Loans, 1 CC    | | 1 Loan, 2 CC     | | 3 Loans, 3 CC    |     |
-| +------------------+ +------------------+ +------------------+     |
-+------------------------------------------------------------------+
-| ALLOCATION BY MEMBER                                              |
-| [Stacked Bar Chart showing each member's debt contribution]       |
-+------------------------------------------------------------------+
+src/pages/dashboard/liabilities/
+├── index.vue          # Overview dashboard
+├── loans.vue          # Loan management
+├── credit-cards.vue   # Credit card management
+├── debt-payoff.vue    # Payoff strategies
+└── reports.vue        # Reports and exports
 ```
 
-### 4.3 Components for Family View
+#### Components
 
 ```
 src/components/liabilities/
-├── FamilyLiabilityBreakdown.tsx    # Member-wise breakdown
-├── FamilyDebtChart.tsx             # Debt by member chart
-└── FamilyPaymentCalendar.tsx       # Combined payment calendar
+├── LoanCard.vue              # Individual loan card display
+├── LoanForm.vue              # Add/edit loan form
+├── CreditCardCard.vue        # Individual credit card display
+├── CreditCardForm.vue        # Add/edit credit card form
+├── DebtPayoffChart.vue       # Payoff visualization
+├── DebtStrategyComparison.vue# Snowball vs Avalanche
+├── AmortizationTable.vue     # Loan amortization schedule
+└── LiabilityMetricsCards.vue # Summary metric cards
+```
+
+#### Composable (`src/composables/useLiabilities.ts`)
+
+**Hooks Implemented:**
+- `useLoans()` - Fetch all loans
+- `useLoan(id)` - Fetch single loan
+- `useCreateLoan()` - Create mutation
+- `useUpdateLoan()` - Update mutation
+- `useDeleteLoan()` - Delete mutation
+- `useCreditCards()` - Fetch all cards
+- `useCreateCreditCard()` - Create mutation
+- `useUpdateCreditCard()` - Update mutation
+- `useDeleteCreditCard()` - Delete mutation
+- `useLiabilitiesOverview()` - Dashboard data
+- `useDebtPayoffStrategies(extraPayment)` - Payoff strategies
+
+**Calculation Functions:**
+- `calculateEMI(principal, rate, tenure)`
+- `calculateTotalInterest(principal, emi, tenure)`
+- `generateAmortizationSchedule(principal, rate, tenure, startDate)`
+- `calculatePrepaymentImpact(balance, rate, tenure, amount, reduceEmi)`
+- `calculateCreditUtilization(outstanding, limit)`
+- `calculateMinimumDue(outstanding, minPercent)`
+- `calculateInterestCharges(outstanding, apr, days)`
+- `calculateDTI(totalMonthlyDebt, monthlyIncome)`
+- `getDTIStatus(dti)`
+- `comparePayoffStrategies(debts, extraPayment)`
+
+**Utility Functions:**
+- `formatINR(amount)` - Currency formatting
+- `formatINRCompact(amount)` - Compact currency (L, Cr)
+- `formatPercentage(value)` - Percentage formatting
+- `formatDate(dateStr)` - Date formatting
+- `getLoanTypeLabel(type)` - Loan type display name
+- `getLoanTypeIcon(type)` - Loan type icon
+- `getLoanTypeColor(type)` - Loan type color
+
+---
+
+### E2E Tests (All Complete)
+
+```
+e2e/tests/liabilities/
+├── 01-navigation.spec.ts     # Tab navigation tests
+├── 02-loans-crud.spec.ts     # Loan CRUD operations
+├── 03-credit-cards.spec.ts   # Credit card operations
+├── 04-debt-payoff.spec.ts    # Payoff strategy tests
+├── 05-overview.spec.ts       # Overview dashboard tests
+├── 06-amortization.spec.ts   # Amortization schedule tests
+└── 07-reports.spec.ts        # Reports functionality
+```
+
+#### Page Objects
+
+```
+e2e/pages/liabilities/
+├── index.ts               # Barrel export
+├── overview.page.ts       # Overview page object
+├── loans.page.ts          # Loans page object
+├── credit-cards.page.ts   # Credit cards page object
+├── debt-payoff.page.ts    # Debt payoff page object
+└── reports.page.ts        # Reports page object
+```
+
+#### Test Fixtures
+
+```
+e2e/fixtures/liabilities-data.ts
+├── loansData[]            # Test loan data
+├── creditCardsData[]      # Test credit card data
+├── liabilitiesSummary     # Summary calculations
+├── snowballStrategy       # Snowball payoff strategy
+├── avalancheStrategy      # Avalanche payoff strategy
+├── upcomingPayments       # Upcoming payment data
+└── generateAmortizationSchedule()  # Schedule generator
 ```
 
 ---
 
-## Phase 5: Reports Tab (Days 5-5.5)
+### Server Registration
 
-### 5.1 Report Types
-
-| Report | Content |
-|--------|---------|
-| **Debt Summary** | Total liabilities, by type, by member |
-| **Payment History** | All payments made, on-time vs late |
-| **Interest Analysis** | Interest paid by loan, total cost |
-| **Payoff Progress** | Debt reduction trends, projections |
-| **Credit Health** | Utilization trends, score factors |
-
-### 5.2 UI Wireframe
-
-```
-+------------------------------------------------------------------+
-| LIABILITY REPORTS                                                 |
-+------------------------------------------------------------------+
-| [Report Type]                                                     |
-| [Debt Summary] [Payment History] [Interest Analysis] [Credit Health]|
-+------------------------------------------------------------------+
-| [View Mode]  [Monthly ]  [Quarterly]  [Yearly]  [Custom Range]  |
-+------------------------------------------------------------------+
-| MONTHLY VIEW:                                                     |
-|  Previous |  [January 2026 ]  |  Next      [Generate Report]    |
-+------------------------------------------------------------------+
-| [Report Preview]                                                  |
-| +--------------------------------------------------------------+ |
-| | DEBT SUMMARY - January 2026                                   | |
-| | Total Outstanding: 45,25,000                                 | |
-| | Monthly Payments: 52,400                                     | |
-| |                                                               | |
-| | DEBT BY TYPE:                                                 | |
-| | [Bar Chart: Home Loan 32L, Car Loan 10L, CC 3.25L]           | |
-| |                                                               | |
-| | PAYMENT STATUS:                                               | |
-| | On-time: 3/3 (100%)                                          | |
-| | Interest Paid This Month: 28,500                             | |
-| +--------------------------------------------------------------+ |
-+------------------------------------------------------------------+
-| [Download PDF]  [Download Excel]  [Download CSV]                  |
-+------------------------------------------------------------------+
-```
-
-### 5.3 New Files
-
-```
-src/services/reports/LiabilityReportService.ts    # Report generation
-src/app/api/liabilities/reports/
-├── route.ts                                       # GET report data
-├── debt-summary/route.ts                          # Debt summary report
-├── payment-history/route.ts                       # Payment history
-├── interest-analysis/route.ts                     # Interest breakdown
-├── credit-health/route.ts                         # Credit score factors
-└── export/route.ts                                # PDF/Excel export
-```
-
----
-
-## Phase 6: In-App Alerts Enhancement (Day 6)
-
-> **Note**: In-app only per user preference (no email/push)
-
-### 6.1 Leverage Existing LoanReminder Model
-
-The model already exists - need to add delivery service:
-
-```prisma
-// Already exists
-model LoanReminder {
-  id                String    @id @default(cuid())
-  userId            String
-  loanId            String
-
-  reminderType      String    // EMI_DUE, PAYMENT_OVERDUE, DOCUMENT_EXPIRY
-  reminderDate      DateTime
-  message           String
-
-  isActive          Boolean   @default(true)
-  isSent            Boolean   @default(false)
-  sentAt            DateTime?
-
-  isRecurring       Boolean   @default(false)
-  recurringPattern  String?   // MONTHLY, WEEKLY
-}
-```
-
-### 6.2 Extend for Credit Cards
-
-```prisma
-// Add to schema (new model)
-model CreditCardReminder {
-  id                String      @id @default(cuid())
-  userId            String
-  creditCardId      String
-
-  reminderType      String      // DUE_DATE, STATEMENT_GENERATED, HIGH_UTILIZATION
-  reminderDate      DateTime
-  message           String
-
-  isActive          Boolean     @default(true)
-  isSent            Boolean     @default(false)
-  sentAt            DateTime?
-
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  creditCard        CreditCard  @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
-
-  @@index([userId, reminderDate])
-}
-```
-
-### 6.3 Alert Delivery Service
+Updated `server/index.ts` to register all routes:
 
 ```typescript
-// src/services/alerts/LiabilityAlertService.ts (NEW)
+// Liabilities routes
+import loansRoutes from './routes/loans'
+import creditCardsRoutes from './routes/credit-cards'
+import liabilitiesRoutes from './routes/liabilities'
+import liabilitiesReportsRoutes from './routes/liabilities-reports'
 
-export class LiabilityAlertService {
-  // Generate alerts for upcoming EMI dues
-  async generateEmiAlerts(userId: string): Promise<void>;
-
-  // Generate alerts for credit card due dates
-  async generateCCDueAlerts(userId: string): Promise<void>;
-
-  // Generate alerts for high credit utilization (>70%)
-  async generateUtilizationAlerts(userId: string): Promise<void>;
-
-  // Generate alerts for overdue payments
-  async generateOverdueAlerts(userId: string): Promise<void>;
-
-  // Mark alert as read
-  async markAsRead(alertId: string): Promise<void>;
-
-  // Get all unread alerts for user
-  async getUnreadAlerts(userId: string): Promise<Alert[]>;
-}
+// API routes - Liabilities
+app.route('/api/loans', loansRoutes)
+app.route('/api/credit-cards', creditCardsRoutes)
+app.route('/api/liabilities', liabilitiesRoutes)
+app.route('/api/liabilities/reports', liabilitiesReportsRoutes)
 ```
 
-### 6.4 Alert API Routes
+---
 
+## Features Implemented
+
+### Overview Dashboard
+- Total debt summary
+- Monthly payment totals
+- Yearly interest estimate
+- Debt-to-income ratio
+- Credit utilization percentage
+- Projected payoff date
+- Debt breakdown by type (loans vs credit cards)
+- Upcoming payments list
+- Alert indicators (overdue, upcoming 7 days, high interest)
+
+### Loan Management
+- Full CRUD operations
+- Multiple loan types: HOME_LOAN, CAR_LOAN, PERSONAL_LOAN, EDUCATION_LOAN, GOLD_LOAN, etc.
+- Payment recording and history
+- Amortization schedule generation
+- Prepayment impact calculator (reduce EMI vs reduce tenure)
+- Tax benefit tracking (80C, 24, 80E)
+
+### Credit Card Management
+- Full CRUD operations
+- Card types: VISA, MASTERCARD, RUPAY, AMEX
+- Statement tracking
+- Payment recording
+- Utilization calculation
+- Available credit tracking
+- Reward points balance
+
+### Debt Payoff Strategies
+- Snowball strategy (smallest balance first)
+- Avalanche strategy (highest interest first)
+- Extra payment simulation
+- Interest savings comparison
+- Payoff timeline projection
+
+### Reports
+- Debt summary by type
+- Payment history with statistics
+- Interest analysis with insights
+- Credit health score and factors
+- Export support (data for PDF/Excel generation)
+
+### Alerts (Using AlertDelivery)
+- EMI due alerts (3 days, today, overdue)
+- Credit card due alerts (5 days, today)
+- High utilization warnings (>70%)
+- On-demand alert generation endpoint
+
+---
+
+## Implementation Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Alert Model | Use AlertDelivery | Consistent with existing alert system |
+| Family View | Deferred | Build basic APIs first, add later |
+| Calculation Files | Keep in composable | Already works, no need to refactor |
+| Debt Strategies File | Keep in composable | Logic works in current location |
+
+---
+
+## Files Created/Modified
+
+### Created Files
+
+| File | Purpose |
+|------|---------|
+| `server/routes/loans.ts` | Loan CRUD API (9 endpoints) |
+| `server/routes/credit-cards.ts` | Credit card CRUD API (8 endpoints) |
+| `server/routes/liabilities.ts` | Overview + alerts + strategies |
+| `server/routes/liabilities-reports.ts` | Reports API (5 endpoints) |
+| `e2e/tests/liabilities/05-overview.spec.ts` | Overview tests |
+| `e2e/tests/liabilities/06-amortization.spec.ts` | Amortization tests |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `prisma/schema.prisma` | Added CreditCard, CreditCardStatement models |
+| `server/index.ts` | Registered new routes |
+| `src/composables/useLiabilities.ts` | Fixed debt-payoff-strategies endpoint |
+
+---
+
+## Verification Steps
+
+### Database Verification
+```bash
+npm run db:push
+npm run db:studio  # Verify CreditCard and CreditCardStatement tables
 ```
-src/app/api/liabilities/alerts/
-├── route.ts                        # GET unread alerts
-├── [id]/read/route.ts              # POST mark as read
-├── preferences/route.ts            # GET/PUT alert preferences
-└── generate/route.ts               # POST trigger alert generation
+
+### API Testing
+```bash
+# Health check
+curl http://localhost:3000/api/health
+
+# Loans
+curl http://localhost:3000/api/loans
+
+# Credit Cards
+curl http://localhost:3000/api/credit-cards
+
+# Overview
+curl http://localhost:3000/api/liabilities/overview
+
+# Reports
+curl http://localhost:3000/api/liabilities/reports/debt-summary
 ```
 
-### 6.5 Alert Types
-
-| Alert Type | Trigger | Message Example |
-|------------|---------|-----------------|
-| EMI_DUE_3_DAYS | 3 days before EMI | "Home Loan EMI of 42,500 due on Jan 5" |
-| EMI_DUE_TODAY | Day of EMI | "Home Loan EMI of 42,500 due today" |
-| EMI_OVERDUE | Day after due date | "Home Loan EMI is overdue by 1 day" |
-| CC_DUE_5_DAYS | 5 days before due | "HDFC Credit Card due: 28,400 on Feb 5" |
-| CC_DUE_TODAY | Day of due date | "HDFC Credit Card payment due today" |
-| HIGH_UTILIZATION | Utilization > 70% | "Credit utilization at 75%. Consider paying down." |
-| STATEMENT_GENERATED | Statement date | "New statement: 32,500 for HDFC Regalia" |
+### E2E Tests
+```bash
+npm run test:e2e -- e2e/tests/liabilities/
+```
 
 ---
 
-## Implementation Order Summary
+## Future Enhancements (Not Implemented)
 
-| Phase | Feature | Days | Priority |
-|-------|---------|------|----------|
-| 1 | Navigation Restructure | 1.5 | P0 |
-| 2 | Overview Dashboard | 1 | P0 |
-| 3 | Credit Cards API + UI | 1.5 | P1 |
-| 4 | Family View Integration | 0.5 | P1 |
-| 5 | Reports Tab | 1 | P1 |
-| 6 | In-App Alerts | 1 | P2 |
-| **Total** | | **6.5 days** | |
-
----
-
-## New Files Summary
-
-### Prisma Models (1 new)
-- `CreditCardReminder` - Credit card alert tracking
-
-### Calculations (1 new)
-- `src/lib/calculations/credit-cards.ts` - Utilization, interest, rewards
-
-### Services (2 new)
-- `src/services/reports/LiabilityReportService.ts` - Report generation
-- `src/services/alerts/LiabilityAlertService.ts` - Alert management
-
-### API Routes (16 new)
-- `/api/liabilities/overview` - Aggregated overview
-- `/api/credit-cards/*` (5 routes) - Credit card CRUD
-- `/api/liabilities/reports/*` (6 routes) - Reports
-- `/api/liabilities/alerts/*` (4 routes) - Alerts
-
-### Pages (5 restructured)
-- `/dashboard/liabilities/` - Layout + Overview
-- `/dashboard/liabilities/loans/` - Move from /loans
-- `/dashboard/liabilities/credit-cards/` - NEW
-- `/dashboard/liabilities/debt-payoff/` - Move from /debt-payoff
-- `/dashboard/liabilities/reports/` - NEW
-
-### Components (14 new)
-- Section components (4): Header, Navigation, Overview, Metrics
-- Credit card components (7): List, Card, Add, Edit, Payment, Statements, Analytics
-- Family components (3): Breakdown, Chart, Calendar
-- Report components (reuse from Expenses/Investments pattern)
-
----
-
-## Dependencies
-
-- **Existing Infrastructure**: Loan model, calculations, components (reuse)
-- **Family View**: FamilyMember model, UserViewPreference (exists)
-- **Reports**: jspdf, xlsx (already installed)
-- **Charts**: Chart.js, Recharts (already installed)
-
----
-
-## Risk Assessment
-
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Page migration breaks links | High | Add redirects in middleware |
-| Credit card data sensitivity | High | Mask card numbers, secure API |
-| Alert spam | Low | Configurable preferences, daily limits |
-
----
-
-## Approved Patterns Applied
-
-| Pattern | Source | Usage |
+| Feature | Status | Notes |
 |---------|--------|-------|
-| Sub-pages Navigation | Investments Plan | `/liabilities/*` structure |
-| Date Picker (Prev/Next) | Expenses Plan | Reports date selection |
-| In-App Alerts Only | Expenses Plan | No email/push |
-| Reports Tab | Expenses Plan | Export PDF/Excel/CSV |
-| Family View Toggle | Master Plan | Header dropdown |
+| Family View Backend | DEFERRED | Add familyMemberId filtering later |
+| Credit Card Rewards Calculator | EXCLUDED | Per user decision |
+| Email/Push Notifications | EXCLUDED | In-app alerts only |
+| PDF/Excel Generation | PARTIAL | Export endpoint returns data, client generates files |
 
 ---
 
-## User Decisions Made
-
-| Decision | Choice |
-|----------|--------|
-| Navigation Structure | **Sub-pages approved** - Overview, Loans, Credit Cards, Debt Payoff, Reports |
-| Credit Card Rewards | **Excluded** - No reward points tracking or redemption calculator |
-| Alert Types | **Approved as-is** - 6 alert types (EMI 3-day/today/overdue, CC 5-day/today, high utilization) |
-
----
-
-## Related Plan Documents
+## Related Documents
 
 1. `docs/Plans/Feature-Reorganization-Plan.md` - Master navigation
-2. `docs/Plans/Salary-Section-Plan.md` - Salary component tracking
-3. `docs/Plans/Non-Salary-Income-Plan.md` - Income section plan
-4. `docs/Plans/Tax-Planning-Section-Plan.md` - Tax planning
-5. `docs/Plans/Expenses-Section-Plan.md` - Expenses section
-6. `docs/Plans/Investments-Section-Plan.md` - Investments section
-7. **`docs/Plans/Liabilities-Section-Plan.md`** - This plan
+2. `docs/Salary-Section-Plan.md` - Salary component tracking
+3. `docs/Non-Salary-Income-Plan.md` - Income section plan
+4. `docs/Tax-Planning-Section-Plan.md` - Tax planning
+5. `docs/Expenses-Section-Plan.md` - Expenses section
+6. `docs/Investments-Section-Plan.md` - Investments section
+7. **`docs/Liabilities-Section-Plan.md`** - This plan
 
 ---
 
-**Status: APPROVED & READY FOR IMPLEMENTATION**
+**Status: IMPLEMENTED**
 
-*Plan approved on January 7, 2026 with user decisions:*
-- *Sub-pages navigation structure approved*
-- *Credit card reward points tracking excluded*
-- *6 alert types approved as-is*
+*Implementation completed on January 9, 2026*
+- *All backend APIs operational*
+- *All frontend pages functional*
+- *E2E tests in place*
+- *Using existing AlertDelivery for notifications*

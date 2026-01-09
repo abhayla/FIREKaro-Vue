@@ -2,55 +2,93 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { useUiStore } from '@/stores/ui'
 
-// Types
+// Types - Match backend Prisma schema
+export type LoanType =
+  | 'HOME_LOAN'
+  | 'PERSONAL_LOAN'
+  | 'CAR_LOAN'
+  | 'EDUCATION_LOAN'
+  | 'BUSINESS_LOAN'
+  | 'GOLD_LOAN'
+  | 'LOAN_AGAINST_PROPERTY'
+  | 'LOAN_AGAINST_SECURITIES'
+  | 'OTHER'
+
+export type LoanStatus = 'ACTIVE' | 'CLOSED' | 'DEFAULTED' | 'FORECLOSED'
+
 export interface Loan {
   id: string
   userId: string
-  familyMemberId?: string
-  loanType: 'home' | 'car' | 'personal' | 'education' | 'gold' | 'other'
-  lenderName: string
-  accountNumber?: string
+  loanName: string
+  loanType: LoanType
+  lender: string
+  loanAccountNumber?: string | null
   principalAmount: number
-  outstandingPrincipal: number
+  outstandingAmount: number
   interestRate: number
-  tenure: number // in months
   emiAmount: number
-  emiDate: number // day of month (1-31)
-  startDate: string
-  endDate: string
-  totalInterestPaid: number
-  totalPrincipalPaid: number
-  prepaymentsMade: number
-  isActive: boolean
-  // Tax benefits
-  section80C?: number // Principal deduction
-  section24?: number // Interest deduction (home loan)
-  section80E?: number // Education loan interest
-  section80EE?: number // First home buyer
+  tenure: number // in months
+  remainingTenure: number
+  loanStartDate: string
+  emiStartDate: string
+  maturityDate: string
+  paymentFrequency: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+  nextEmiDate?: string | null
+  lastPaymentDate?: string | null
+  status: LoanStatus
+  collateralValue?: number | null
+  processingFee?: number | null
+  prepaymentCharges?: number | null
+  taxBenefitSection?: string | null
+  maxTaxBenefit?: number | null
+  purpose?: string | null
+  notes?: string | null
+  createdAt?: string
+  updatedAt?: string
+  // Joined data
+  lastPayment?: LoanPayment | null
+}
+
+export interface LoanPayment {
+  id: string
+  userId: string
+  loanId: string
+  paymentDate: string
+  emiNumber?: number | null
+  principalPaid: number
+  interestPaid: number
+  totalPaid: number
+  outstandingAfter: number
+  paymentMode?: string | null
+  transactionId?: string | null
+  isLateFee: boolean
+  lateFeeAmount: number
+  notes?: string | null
 }
 
 export interface CreditCard {
   id: string
   userId: string
-  familyMemberId?: string
+  familyMemberId?: string | null
   cardName: string
   bankName: string
   cardNumber: string // Masked: ****1234
-  cardType: 'VISA' | 'MASTERCARD' | 'RUPAY' | 'AMEX'
+  cardType: string // VISA, MASTERCARD, RUPAY, AMEX
   creditLimit: number
   availableLimit: number
   currentOutstanding: number
-  utilizationPercent: number
   billingCycleDate: number // Day of month (1-31)
   paymentDueDate: number // Day of month (1-31)
   rewardPointsBalance: number
-  interestRateAPR: number
+  interestRateAPR?: number | null
   annualFee: number
-  feeWaiverSpend?: number
-  cardExpiryDate?: string
+  feeWaiverSpend?: number | null
+  cardExpiryDate?: string | null
   isActive: boolean
-  minimumDue: number
-  nextDueDate: string
+  createdAt?: string
+  updatedAt?: string
+  // Joined/calculated data
+  statements?: CreditCardStatement[]
 }
 
 export interface CreditCardStatement {
@@ -291,12 +329,21 @@ export function useLiabilitiesOverview() {
 }
 
 // Debt Payoff Strategies
-export function useDebtPayoffStrategies() {
+export function useDebtPayoffStrategies(extraPayment: number = 0) {
   const uiStore = useUiStore()
   return useQuery({
-    queryKey: computed(() => ['debt-payoff-strategies', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
-    queryFn: async (): Promise<DebtPayoffStrategy[]> => {
-      const res = await fetch(`/api/debt-payoff/strategies${buildQueryParams()}`)
+    queryKey: computed(() => ['debt-payoff-strategies', extraPayment, uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async () => {
+      const params = new URLSearchParams()
+      if (extraPayment > 0) params.append('extraPayment', extraPayment.toString())
+      if (uiStore.isFamilyView) {
+        params.append('familyView', 'true')
+        if (uiStore.selectedFamilyMemberId) {
+          params.append('familyMemberId', uiStore.selectedFamilyMemberId)
+        }
+      }
+      const queryString = params.toString() ? `?${params.toString()}` : ''
+      const res = await fetch(`/api/liabilities/debt-payoff-strategies${queryString}`)
       if (!res.ok) throw new Error('Failed to fetch payoff strategies')
       return res.json()
     }
@@ -548,38 +595,81 @@ export function formatDate(dateStr: string): string {
 }
 
 // Loan type helpers
-export function getLoanTypeLabel(type: Loan['loanType']): string {
-  const labels: Record<Loan['loanType'], string> = {
-    home: 'Home Loan',
-    car: 'Car Loan',
-    personal: 'Personal Loan',
-    education: 'Education Loan',
-    gold: 'Gold Loan',
-    other: 'Other Loan'
+export function getLoanTypeLabel(type: LoanType): string {
+  const labels: Record<LoanType, string> = {
+    HOME_LOAN: 'Home Loan',
+    CAR_LOAN: 'Car Loan',
+    PERSONAL_LOAN: 'Personal Loan',
+    EDUCATION_LOAN: 'Education Loan',
+    BUSINESS_LOAN: 'Business Loan',
+    GOLD_LOAN: 'Gold Loan',
+    LOAN_AGAINST_PROPERTY: 'Loan Against Property',
+    LOAN_AGAINST_SECURITIES: 'Loan Against Securities',
+    OTHER: 'Other Loan'
   }
   return labels[type] || type
 }
 
-export function getLoanTypeIcon(type: Loan['loanType']): string {
-  const icons: Record<Loan['loanType'], string> = {
-    home: 'mdi-home',
-    car: 'mdi-car',
-    personal: 'mdi-account-cash',
-    education: 'mdi-school',
-    gold: 'mdi-gold',
-    other: 'mdi-bank'
+export function getLoanTypeIcon(type: LoanType): string {
+  const icons: Record<LoanType, string> = {
+    HOME_LOAN: 'mdi-home',
+    CAR_LOAN: 'mdi-car',
+    PERSONAL_LOAN: 'mdi-account-cash',
+    EDUCATION_LOAN: 'mdi-school',
+    BUSINESS_LOAN: 'mdi-briefcase',
+    GOLD_LOAN: 'mdi-gold',
+    LOAN_AGAINST_PROPERTY: 'mdi-home-city',
+    LOAN_AGAINST_SECURITIES: 'mdi-chart-line',
+    OTHER: 'mdi-bank'
   }
   return icons[type] || 'mdi-bank'
 }
 
-export function getLoanTypeColor(type: Loan['loanType']): string {
-  const colors: Record<Loan['loanType'], string> = {
-    home: 'blue',
-    car: 'orange',
-    personal: 'purple',
-    education: 'teal',
-    gold: 'amber',
-    other: 'grey'
+export function getLoanTypeColor(type: LoanType): string {
+  const colors: Record<LoanType, string> = {
+    HOME_LOAN: 'blue',
+    CAR_LOAN: 'orange',
+    PERSONAL_LOAN: 'purple',
+    EDUCATION_LOAN: 'teal',
+    BUSINESS_LOAN: 'indigo',
+    GOLD_LOAN: 'amber',
+    LOAN_AGAINST_PROPERTY: 'cyan',
+    LOAN_AGAINST_SECURITIES: 'green',
+    OTHER: 'grey'
   }
   return colors[type] || 'grey'
+}
+
+// List of all loan types for dropdowns
+export const LOAN_TYPES: { value: LoanType; label: string }[] = [
+  { value: 'HOME_LOAN', label: 'Home Loan' },
+  { value: 'CAR_LOAN', label: 'Car Loan' },
+  { value: 'PERSONAL_LOAN', label: 'Personal Loan' },
+  { value: 'EDUCATION_LOAN', label: 'Education Loan' },
+  { value: 'BUSINESS_LOAN', label: 'Business Loan' },
+  { value: 'GOLD_LOAN', label: 'Gold Loan' },
+  { value: 'LOAN_AGAINST_PROPERTY', label: 'Loan Against Property' },
+  { value: 'LOAN_AGAINST_SECURITIES', label: 'Loan Against Securities' },
+  { value: 'OTHER', label: 'Other' },
+]
+
+// Credit card helpers
+export function calculateUtilization(card: CreditCard): number {
+  if (card.creditLimit <= 0) return 0
+  return Math.round((card.currentOutstanding / card.creditLimit) * 100)
+}
+
+export function calculateMinimumDueForCard(card: CreditCard): number {
+  const minPercent = 5
+  const minAmount = card.currentOutstanding * (minPercent / 100)
+  return Math.max(minAmount, Math.min(200, card.currentOutstanding))
+}
+
+export function getNextDueDate(card: CreditCard): string {
+  const today = new Date()
+  const dueDate = new Date(today.getFullYear(), today.getMonth(), card.paymentDueDate)
+  if (dueDate < today) {
+    dueDate.setMonth(dueDate.getMonth() + 1)
+  }
+  return dueDate.toISOString().split('T')[0]
 }
