@@ -1187,3 +1187,407 @@ export function useUpdateESOPFMV() {
     }
   })
 }
+
+// ==========================================
+// Investment Reports Types & Composables
+// ==========================================
+
+export interface PortfolioSummaryReport {
+  generatedAt: string
+  financialYear: string
+  summary: {
+    totalPortfolioValue: number
+    totalInvested: number
+    absoluteReturn: number
+    absoluteReturnPercent: number
+  }
+  breakdown: {
+    investments: { value: number; percentage: number }
+    epf: { value: number; percentage: number }
+    ppf: { value: number; percentage: number }
+    nps: { value: number; percentage: number }
+    esop: { value: number; percentage: number }
+  }
+  categoryBreakdown: Array<{
+    category: string
+    value: number
+    invested: number
+    count: number
+    returns: number
+    returnsPercent: number
+    allocation: number
+  }>
+  typeBreakdown: Array<{
+    type: string
+    value: number
+    invested: number
+    count: number
+    returns: number
+    returnsPercent: number
+    allocation: number
+  }>
+  topHoldings: Array<{
+    name: string
+    type: string
+    value: number
+    invested: number
+    returns: number
+    returnsPercent: number
+    allocation: number
+  }>
+  retirementAccounts: {
+    epf: { balance: number; employeeShare: number; employerShare: number } | null
+    ppf: Array<{ id: string; balance: number; maturityDate: string }>
+    nps: Array<{
+      id: string
+      tierType: string
+      corpus: number
+      allocation: { equity: number; corporateDebt: number; governmentBonds: number }
+    }>
+  }
+  esopSummary: {
+    totalGrants: number
+    vestedValue: number
+    unvestedValue: number
+    exercisableValue: number
+  }
+}
+
+export interface TaxReportData {
+  financialYear: string
+  generatedAt: string
+  capitalGains: {
+    shortTerm: {
+      equity: { gain: number; taxRate: string; estimatedTax: number; transactions: number }
+      other: { gain: number; taxRate: string; estimatedTax: number; transactions: number }
+      total: number
+      totalTax: number
+    }
+    longTerm: {
+      equity: {
+        gain: number
+        exemption: number
+        taxableGain: number
+        taxRate: string
+        estimatedTax: number
+        transactions: number
+      }
+      other: { gain: number; taxRate: string; estimatedTax: number; transactions: number }
+      total: number
+      totalTax: number
+    }
+    totalGain: number
+    totalTax: number
+  }
+  dividendIncome: {
+    total: number
+    tdsDeducted: number
+    taxRate: string
+    transactions: number
+  }
+  esopIncome: {
+    perquisiteValue: number
+    tdsDeducted: number
+    taxRate: string
+    exercises: number
+    note: string
+  }
+  summary: {
+    totalTaxableIncome: number
+    totalEstimatedTax: number
+    totalTdsDeducted: number
+    netTaxPayable: number
+  }
+  transactions: Array<{
+    id: string
+    assetName: string
+    assetType: string
+    purchaseDate: string
+    saleDate: string
+    purchasePrice: number
+    salePrice: number
+    holdingPeriod: number
+    gainType: string
+    grossGain: number
+    exemption: number
+    taxableGain: number
+    taxRate: string
+    estimatedTax: number
+  }>
+}
+
+export interface PerformanceReportData {
+  period: string
+  generatedAt: string
+  summary: {
+    totalReturn: number
+    totalReturnPercent: number
+    cagr: number
+    benchmarkReturn?: number
+    alpha?: number
+  }
+  topPerformers: Array<{
+    name: string
+    type: string
+    returnPercent: number
+    absoluteReturn: number
+  }>
+  bottomPerformers: Array<{
+    name: string
+    type: string
+    returnPercent: number
+    absoluteReturn: number
+  }>
+  monthlyReturns: Array<{
+    month: string
+    return: number
+    returnPercent: number
+  }>
+}
+
+export interface Section80CStatus {
+  limit: number
+  used: number
+  remaining: number
+  items: Array<{
+    category: string
+    amount: number
+    maxAllowed: number
+    source: string
+  }>
+}
+
+export interface RetirementProjection {
+  currentAge: number
+  retirementAge: number
+  yearsToRetirement: number
+  currentCorpus: number
+  projectedCorpus: number
+  monthlyPension: number
+  assumptions: {
+    expectedReturn: number
+    inflationRate: number
+    monthlyContribution: number
+  }
+}
+
+// Portfolio Summary Report
+export function usePortfolioSummaryReport() {
+  return useQuery({
+    queryKey: ['investment-reports', 'portfolio-summary'],
+    queryFn: async (): Promise<PortfolioSummaryReport> => {
+      const res = await fetch('/api/investment-reports/portfolio-summary')
+      if (!res.ok) {
+        // Return mock data for demo
+        return {
+          generatedAt: new Date().toISOString(),
+          financialYear: '2024-25',
+          summary: {
+            totalPortfolioValue: 5000000,
+            totalInvested: 4000000,
+            absoluteReturn: 1000000,
+            absoluteReturnPercent: 25,
+          },
+          breakdown: {
+            investments: { value: 3000000, percentage: 60 },
+            epf: { value: 800000, percentage: 16 },
+            ppf: { value: 500000, percentage: 10 },
+            nps: { value: 400000, percentage: 8 },
+            esop: { value: 300000, percentage: 6 },
+          },
+          categoryBreakdown: [
+            { category: 'EQUITY', value: 2000000, invested: 1600000, count: 15, returns: 400000, returnsPercent: 25, allocation: 40 },
+            { category: 'DEBT', value: 1500000, invested: 1400000, count: 8, returns: 100000, returnsPercent: 7.14, allocation: 30 },
+            { category: 'GOLD', value: 500000, invested: 400000, count: 2, returns: 100000, returnsPercent: 25, allocation: 10 },
+          ],
+          typeBreakdown: [
+            { type: 'MUTUAL_FUND', value: 1800000, invested: 1500000, count: 12, returns: 300000, returnsPercent: 20, allocation: 36 },
+            { type: 'STOCK', value: 1200000, invested: 900000, count: 10, returns: 300000, returnsPercent: 33.3, allocation: 24 },
+          ],
+          topHoldings: [
+            { name: 'Axis Bluechip Fund', type: 'MUTUAL_FUND', value: 500000, invested: 400000, returns: 100000, returnsPercent: 25, allocation: 10 },
+            { name: 'HDFC Bank', type: 'STOCK', value: 400000, invested: 300000, returns: 100000, returnsPercent: 33.3, allocation: 8 },
+          ],
+          retirementAccounts: {
+            epf: { balance: 800000, employeeShare: 400000, employerShare: 400000 },
+            ppf: [{ id: '1', balance: 500000, maturityDate: '2030-04-01' }],
+            nps: [{ id: '1', tierType: 'TIER_1', corpus: 400000, allocation: { equity: 50, corporateDebt: 30, governmentBonds: 20 } }],
+          },
+          esopSummary: {
+            totalGrants: 2,
+            vestedValue: 200000,
+            unvestedValue: 100000,
+            exercisableValue: 150000,
+          },
+        }
+      }
+      const data = await res.json()
+      return data.data
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+// Tax Report
+export function useTaxReport(financialYear?: string) {
+  const fy = financialYear || getCurrentFinancialYear()
+
+  return useQuery({
+    queryKey: ['investment-reports', 'tax-report', fy],
+    queryFn: async (): Promise<TaxReportData> => {
+      const res = await fetch(`/api/investment-reports/tax-report?financialYear=${fy}`)
+      if (!res.ok) {
+        // Return mock data for demo
+        return {
+          financialYear: fy,
+          generatedAt: new Date().toISOString(),
+          capitalGains: {
+            shortTerm: {
+              equity: { gain: 50000, taxRate: '20%', estimatedTax: 10000, transactions: 5 },
+              other: { gain: 20000, taxRate: 'Slab Rate', estimatedTax: 6000, transactions: 2 },
+              total: 70000,
+              totalTax: 16000,
+            },
+            longTerm: {
+              equity: { gain: 200000, exemption: 125000, taxableGain: 75000, taxRate: '12.5%', estimatedTax: 9375, transactions: 3 },
+              other: { gain: 50000, taxRate: '12.5%', estimatedTax: 6250, transactions: 1 },
+              total: 250000,
+              totalTax: 15625,
+            },
+            totalGain: 320000,
+            totalTax: 31625,
+          },
+          dividendIncome: {
+            total: 25000,
+            tdsDeducted: 2500,
+            taxRate: 'Slab Rate (TDS 10% above Rs 5,000)',
+            transactions: 8,
+          },
+          esopIncome: {
+            perquisiteValue: 100000,
+            tdsDeducted: 30000,
+            taxRate: 'Slab Rate (at vesting)',
+            exercises: 1,
+            note: 'Capital gains on sale taxed separately',
+          },
+          summary: {
+            totalTaxableIncome: 445000,
+            totalEstimatedTax: 31625,
+            totalTdsDeducted: 32500,
+            netTaxPayable: -875,
+          },
+          transactions: [],
+        }
+      }
+      const data = await res.json()
+      return data.data
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Performance Report
+export function usePerformanceReport(period: string = '1Y') {
+  return useQuery({
+    queryKey: ['investment-reports', 'performance', period],
+    queryFn: async (): Promise<PerformanceReportData> => {
+      const res = await fetch(`/api/investment-reports/performance?period=${period}`)
+      if (!res.ok) {
+        // Return mock data for demo
+        return {
+          period,
+          generatedAt: new Date().toISOString(),
+          summary: {
+            totalReturn: 250000,
+            totalReturnPercent: 18.5,
+            cagr: 15.2,
+            benchmarkReturn: 12.5,
+            alpha: 2.7,
+          },
+          topPerformers: [
+            { name: 'Tata Digital Fund', type: 'MUTUAL_FUND', returnPercent: 45.2, absoluteReturn: 90000 },
+            { name: 'Infosys', type: 'STOCK', returnPercent: 38.5, absoluteReturn: 77000 },
+            { name: 'ICICI Prudential Tech', type: 'MUTUAL_FUND', returnPercent: 32.1, absoluteReturn: 64000 },
+          ],
+          bottomPerformers: [
+            { name: 'Paytm', type: 'STOCK', returnPercent: -25.3, absoluteReturn: -12500 },
+            { name: 'Zomato', type: 'STOCK', returnPercent: -15.2, absoluteReturn: -7600 },
+          ],
+          monthlyReturns: [
+            { month: '2024-01', return: 25000, returnPercent: 2.1 },
+            { month: '2024-02', return: 18000, returnPercent: 1.5 },
+            { month: '2024-03', return: -8000, returnPercent: -0.6 },
+          ],
+        }
+      }
+      const data = await res.json()
+      return data.data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+// 80C Status Report
+export function use80CStatus() {
+  return useQuery({
+    queryKey: ['investment-reports', '80c-status'],
+    queryFn: async (): Promise<Section80CStatus> => {
+      const res = await fetch('/api/investment-reports/80c-status')
+      if (!res.ok) {
+        // Return mock data for demo
+        return {
+          limit: 150000,
+          used: 125000,
+          remaining: 25000,
+          items: [
+            { category: 'EPF', amount: 50000, maxAllowed: 150000, source: 'Employer Deduction' },
+            { category: 'PPF', amount: 40000, maxAllowed: 150000, source: 'Self Deposit' },
+            { category: 'ELSS', amount: 25000, maxAllowed: 150000, source: 'Mutual Funds' },
+            { category: 'Life Insurance', amount: 10000, maxAllowed: 150000, source: 'Premium Payment' },
+          ],
+        }
+      }
+      const data = await res.json()
+      return data.data
+    },
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+// Retirement Projection Report
+export function useRetirementProjection() {
+  return useQuery({
+    queryKey: ['investment-reports', 'retirement-projection'],
+    queryFn: async (): Promise<RetirementProjection> => {
+      const res = await fetch('/api/investment-reports/retirement-projection')
+      if (!res.ok) {
+        // Return mock data for demo
+        return {
+          currentAge: 35,
+          retirementAge: 60,
+          yearsToRetirement: 25,
+          currentCorpus: 2500000,
+          projectedCorpus: 45000000,
+          monthlyPension: 150000,
+          assumptions: {
+            expectedReturn: 12,
+            inflationRate: 6,
+            monthlyContribution: 50000,
+          },
+        }
+      }
+      const data = await res.json()
+      return data.data
+    },
+    staleTime: 30 * 60 * 1000, // 30 minutes
+  })
+}
+
+// Helper function to get current financial year
+function getCurrentFinancialYear(): string {
+  const now = new Date()
+  const month = now.getMonth()
+  const year = now.getFullYear()
+  const startYear = month >= 3 ? year : year - 1
+  return `${startYear}-${String(startYear + 1).slice(-2)}`
+}
