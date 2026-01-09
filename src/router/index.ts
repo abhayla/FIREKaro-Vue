@@ -298,16 +298,19 @@ const router = createRouter({
   ],
 });
 
-// Auth guard
+// Auth guard - uses Better Auth's get-session endpoint
 router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth) {
     try {
-      const res = await fetch("/api/auth/session");
-      const session = await res.json();
-      if (!session?.user) {
+      const res = await fetch("/api/auth/get-session", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      // Better Auth returns { session, user } format
+      if (!data?.user) {
         // DEV MODE: Skip auth if backend unavailable
         if (import.meta.env.DEV) {
-          console.warn('[DEV] Auth bypassed - backend not available')
+          console.warn('[DEV] Auth bypassed - no authenticated session')
           return next()
         }
         return next('/auth/signin')

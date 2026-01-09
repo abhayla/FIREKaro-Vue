@@ -9,6 +9,7 @@ import {
   usePortfolio,
   useInvestments,
   useCreateInvestment,
+  useYieldCalculations,
   formatINR,
   formatINRCompact,
   formatPercentage,
@@ -30,6 +31,7 @@ const tabs = [
 // Data fetching
 const { data: portfolio, isLoading: portfolioLoading, error: portfolioError } = usePortfolio()
 const { data: investments, isLoading: investmentsLoading } = useInvestments()
+const { data: yields } = useYieldCalculations()
 const createInvestment = useCreateInvestment()
 
 // Add investment dialog
@@ -218,6 +220,46 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
           </v-card>
         </v-col>
       </v-row>
+
+      <!-- Yield Summary Card -->
+      <v-card v-if="yields" variant="outlined" class="mb-6">
+        <v-card-text class="d-flex flex-wrap ga-6 align-center">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-cash-multiple" color="success" class="mr-3" size="32" />
+            <div>
+              <div class="text-body-2 text-medium-emphasis">Dividend Yield</div>
+              <div class="d-flex align-center">
+                <span class="text-h6 font-weight-bold">{{ yields.dividendYield.toFixed(2) }}%</span>
+                <span class="text-caption text-medium-emphasis ml-2">
+                  ({{ formatINRCompact(yields.totalAnnualDividends) }}/year)
+                </span>
+              </div>
+            </div>
+          </div>
+          <v-divider vertical class="mx-2 d-none d-md-block" />
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-home-city" color="purple" class="mr-3" size="32" />
+            <div>
+              <div class="text-body-2 text-medium-emphasis">Rental Yield</div>
+              <div class="d-flex align-center">
+                <span class="text-h6 font-weight-bold">{{ yields.rentalYield.toFixed(2) }}%</span>
+                <span class="text-caption text-medium-emphasis ml-2">
+                  ({{ formatINRCompact(yields.totalAnnualRent) }}/year)
+                </span>
+              </div>
+            </div>
+          </div>
+          <v-spacer />
+          <v-chip
+            v-if="yields.dividendYield > 0 || yields.rentalYield > 0"
+            color="success"
+            variant="tonal"
+          >
+            <v-icon icon="mdi-leaf" size="small" class="mr-1" />
+            Passive Income: {{ formatINRCompact(yields.totalAnnualDividends + yields.totalAnnualRent) }}/year
+          </v-chip>
+        </v-card-text>
+      </v-card>
 
       <!-- Quick Actions -->
       <v-card variant="outlined" class="mb-6">

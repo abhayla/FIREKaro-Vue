@@ -135,6 +135,33 @@ export interface HealthAlert {
   message: string
 }
 
+// Net Worth Milestones
+export interface NetWorthMilestone {
+  id: string
+  userId: string
+  targetAmount: number      // User-defined target (e.g., 1000000 for 10L)
+  name: string              // "First 10 Lakhs", "Crorepati", etc.
+  achievedDate?: string     // When achieved (null if pending)
+  isAchieved: boolean
+  createdAt: string
+}
+
+export interface NetWorthMilestoneInput {
+  targetAmount: number
+  name: string
+}
+
+// Default milestone suggestions
+export const DEFAULT_MILESTONE_SUGGESTIONS = [
+  { amount: 1000000, name: 'First 10 Lakhs' },
+  { amount: 2500000, name: '25 Lakhs' },
+  { amount: 5000000, name: '50 Lakhs' },
+  { amount: 10000000, name: 'Crorepati' },
+  { amount: 20000000, name: '2 Crore' },
+  { amount: 50000000, name: '5 Crore' },
+  { amount: 100000000, name: '10 Crore' },
+]
+
 // Format INR helper
 export const formatINR = (amount: number, compact = false): string => {
   if (compact) {
@@ -491,4 +518,248 @@ export function useFinancialHealthSummary() {
     isLoading,
     hasError
   }
+}
+
+// Net Worth Milestones Composables
+export function useNetWorthMilestones() {
+  return useQuery({
+    queryKey: ['financial-health', 'milestones'],
+    queryFn: async (): Promise<NetWorthMilestone[]> => {
+      const res = await fetch('/api/financial-health/milestones')
+      if (!res.ok) throw new Error('Failed to fetch milestones')
+      return res.json()
+    }
+  })
+}
+
+export function useCreateMilestone() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (milestone: NetWorthMilestoneInput): Promise<NetWorthMilestone> => {
+      const res = await fetch('/api/financial-health/milestones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(milestone)
+      })
+      if (!res.ok) throw new Error('Failed to create milestone')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial-health', 'milestones'] })
+    }
+  })
+}
+
+export function useUpdateMilestone() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<NetWorthMilestoneInput> }): Promise<NetWorthMilestone> => {
+      const res = await fetch(`/api/financial-health/milestones/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      if (!res.ok) throw new Error('Failed to update milestone')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial-health', 'milestones'] })
+    }
+  })
+}
+
+export function useDeleteMilestone() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const res = await fetch(`/api/financial-health/milestones/${id}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) throw new Error('Failed to delete milestone')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial-health', 'milestones'] })
+    }
+  })
+}
+
+// Check and auto-update milestone achievements based on current net worth
+export function useMilestoneProgress(currentNetWorth: Ref<number | undefined>) {
+  const { data: milestones } = useNetWorthMilestones()
+
+  const milestoneProgress = computed(() => {
+    if (!milestones.value || currentNetWorth.value === undefined) return []
+
+    return milestones.value
+      .sort((a, b) => a.targetAmount - b.targetAmount)
+      .map(m => ({
+        ...m,
+        progress: Math.min(100, (currentNetWorth.value! / m.targetAmount) * 100),
+        remaining: Math.max(0, m.targetAmount - currentNetWorth.value!),
+        justAchieved: !m.isAchieved && currentNetWorth.value! >= m.targetAmount
+      }))
+  })
+
+  const achievedMilestones = computed(() =>
+    milestoneProgress.value.filter(m => m.isAchieved || currentNetWorth.value! >= m.targetAmount)
+  )
+
+  const pendingMilestones = computed(() =>
+    milestoneProgress.value.filter(m => !m.isAchieved && currentNetWorth.value! < m.targetAmount)
+  )
+
+  const nextMilestone = computed(() => {
+    const next = pendingMilestones.value[0]
+    if (!next) return null
+    return {
+      ...next,
+      daysToReach: estimateDaysToMilestone(currentNetWorth.value!, next.targetAmount)
+    }
+  })
+
+  return {
+    milestoneProgress,
+    achievedMilestones,
+    pendingMilestones,
+    nextMilestone
+  }
+}
+
+// Helper to estimate days to reach milestone based on historical growth
+function estimateDaysToMilestone(current: number, target: number, monthlyGrowthRate = 0.02): number | null {
+  if (current >= target) return 0
+  if (monthlyGrowthRate <= 0) return null
+
+  const remaining = target - current
+  const monthlyGrowth = current * monthlyGrowthRate
+  if (monthlyGrowth <= 0) return null
+
+  const months = Math.log(target / current) / Math.log(1 + monthlyGrowthRate)
+  return Math.ceil(months * 30)
+}
+
+// ============================================
+// Passive Income Summary
+// ============================================
+
+export interface PassiveIncomeSource {
+  type: 'rental' | 'dividend' | 'interest' | 'other'
+  name: string
+  monthlyAmount: number
+  annualAmount: number
+  color: string
+}
+
+export interface PassiveIncomeSummary {
+  totalMonthly: number
+  totalAnnual: number
+  sources: PassiveIncomeSource[]
+  expensesCoverage: number  // % of monthly expenses covered
+  monthlyTrend: Array<{ month: string; amount: number }>
+}
+
+export function usePassiveIncomeSummary() {
+  return useQuery({
+    queryKey: ['financial-health', 'passive-income'],
+    queryFn: async (): Promise<PassiveIncomeSummary> => {
+      // Fetch passive income data from various sources
+      const [rentalRes, otherIncomeRes, cashFlowRes] = await Promise.all([
+        fetch('/api/rental-income'),
+        fetch('/api/other-income'),
+        fetch('/api/financial-health/cash-flow')
+      ])
+
+      if (!rentalRes.ok || !otherIncomeRes.ok) {
+        throw new Error('Failed to fetch passive income data')
+      }
+
+      const rentalIncome = await rentalRes.json()
+      const otherIncome = await otherIncomeRes.json()
+      const cashFlow = cashFlowRes.ok ? await cashFlowRes.json() : null
+
+      const sources: PassiveIncomeSource[] = []
+
+      // Aggregate rental income
+      const totalRentalAnnual = rentalIncome.reduce(
+        (sum: number, r: { monthlyRent: number }) => sum + (r.monthlyRent * 12),
+        0
+      )
+      if (totalRentalAnnual > 0) {
+        sources.push({
+          type: 'rental',
+          name: 'Rental Income',
+          monthlyAmount: totalRentalAnnual / 12,
+          annualAmount: totalRentalAnnual,
+          color: '#78716c' // Stone for real estate
+        })
+      }
+
+      // Aggregate dividend income
+      const dividendIncome = otherIncome.filter(
+        (o: { category: string }) => o.category === 'dividend'
+      )
+      const totalDividendAnnual = dividendIncome.reduce(
+        (sum: number, d: { grossAmount: number }) => sum + d.grossAmount,
+        0
+      )
+      if (totalDividendAnnual > 0) {
+        sources.push({
+          type: 'dividend',
+          name: 'Dividends',
+          monthlyAmount: totalDividendAnnual / 12,
+          annualAmount: totalDividendAnnual,
+          color: '#3b82f6' // Blue for equity
+        })
+      }
+
+      // Aggregate interest income
+      const interestIncome = otherIncome.filter(
+        (o: { category: string }) => o.category === 'interest'
+      )
+      const totalInterestAnnual = interestIncome.reduce(
+        (sum: number, i: { grossAmount: number }) => sum + i.grossAmount,
+        0
+      )
+      if (totalInterestAnnual > 0) {
+        sources.push({
+          type: 'interest',
+          name: 'Interest',
+          monthlyAmount: totalInterestAnnual / 12,
+          annualAmount: totalInterestAnnual,
+          color: '#10b981' // Emerald for debt
+        })
+      }
+
+      // Calculate totals
+      const totalAnnual = sources.reduce((sum, s) => sum + s.annualAmount, 0)
+      const totalMonthly = totalAnnual / 12
+
+      // Calculate expenses coverage
+      const monthlyExpenses = cashFlow?.totalExpenses || 0
+      const expensesCoverage = monthlyExpenses > 0
+        ? (totalMonthly / monthlyExpenses) * 100
+        : 0
+
+      // Generate monthly trend (placeholder - would need historical data)
+      const monthlyTrend = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date()
+        date.setMonth(date.getMonth() - (11 - i))
+        return {
+          month: date.toLocaleDateString('en-IN', { month: 'short' }),
+          amount: totalMonthly * (0.9 + Math.random() * 0.2) // Simulate slight variation
+        }
+      })
+
+      return {
+        totalMonthly,
+        totalAnnual,
+        sources,
+        expensesCoverage,
+        monthlyTrend
+      }
+    }
+  })
 }

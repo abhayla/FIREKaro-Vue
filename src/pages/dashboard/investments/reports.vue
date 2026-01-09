@@ -16,6 +16,9 @@ import {
 import SectionHeader from '@/components/shared/SectionHeader.vue'
 import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import PortfolioAllocationChart from '@/components/investments/PortfolioAllocationChart.vue'
+import SIPProgressionChart from '@/components/investments/SIPProgressionChart.vue'
+import CompoundingChart from '@/components/investments/CompoundingChart.vue'
+import PortfolioJourney from '@/components/investments/PortfolioJourney.vue'
 import { usePortfolio, formatINR, formatINRCompact, formatPercentage } from '@/composables/useInvestments'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler)
@@ -34,7 +37,7 @@ const tabs = [
 const { data: portfolio, isLoading } = usePortfolio()
 
 // Report type
-const reportType = ref<'portfolio' | 'performance' | 'allocation' | 'tax'>('portfolio')
+const reportType = ref<'portfolio' | 'performance' | 'sip' | 'compounding' | 'journey' | 'allocation' | 'tax'>('portfolio')
 const dateRange = ref<'1m' | '3m' | '6m' | '1y' | 'all'>('1y')
 
 // Mock portfolio value over time
@@ -238,10 +241,13 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
     <v-card variant="outlined" class="mb-6">
       <v-card-text class="d-flex gap-3 flex-wrap align-center">
         <v-btn-toggle v-model="reportType" mandatory color="primary" variant="outlined">
-          <v-btn value="portfolio">Portfolio Summary</v-btn>
+          <v-btn value="portfolio">Portfolio</v-btn>
           <v-btn value="performance">Performance</v-btn>
-          <v-btn value="allocation">Rebalancing</v-btn>
-          <v-btn value="tax">Tax Report</v-btn>
+          <v-btn value="sip">SIP</v-btn>
+          <v-btn value="compounding">Compounding</v-btn>
+          <v-btn value="journey">Journey</v-btn>
+          <v-btn value="allocation">Rebalance</v-btn>
+          <v-btn value="tax">Tax</v-btn>
         </v-btn-toggle>
 
         <v-spacer />
@@ -393,6 +399,21 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
           </v-card>
         </v-col>
       </v-row>
+    </template>
+
+    <!-- SIP Progression Report -->
+    <template v-else-if="reportType === 'sip'">
+      <SIPProgressionChart />
+    </template>
+
+    <!-- Compounding Visualization Report -->
+    <template v-else-if="reportType === 'compounding'">
+      <CompoundingChart />
+    </template>
+
+    <!-- Portfolio Journey Report -->
+    <template v-else-if="reportType === 'journey'">
+      <PortfolioJourney />
     </template>
 
     <!-- Rebalancing Report -->

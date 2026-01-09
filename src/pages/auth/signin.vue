@@ -7,56 +7,165 @@ const router = useRouter();
 const userStore = useUserStore();
 
 const isLoading = ref(false);
-const testEmail = ref("abhayfaircent@gmail.com");
-const testPassword = ref("abhayinfosys@123");
+const email = ref("");
+const password = ref("");
+const name = ref("");
 const errorMessage = ref("");
+const isSignUp = ref(false);
 
 const isDev = import.meta.env.DEV;
 
-const signInWithGoogle = async () => {
+// Sign in with email/password
+const signInWithEmail = async () => {
+  if (!email.value || !password.value) {
+    errorMessage.value = "Please enter email and password";
+    return;
+  }
+
   isLoading.value = true;
+  errorMessage.value = "";
+
   try {
-    // Redirect to Next.js OAuth endpoint
-    window.location.href = "/api/auth/signin/google";
+    const res = await fetch("/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorMessage.value = data.message || "Sign in failed. Please check your credentials.";
+      return;
+    }
+
+    // Fetch session to update user store
+    await userStore.fetchSession();
+
+    // Redirect to dashboard
+    router.push("/dashboard");
   } catch (error) {
     console.error("Sign in error:", error);
+    errorMessage.value = "Sign in failed. Please try again.";
+  } finally {
     isLoading.value = false;
   }
 };
 
-const signInWithTestCredentials = async () => {
+// Sign up with email/password
+const signUpWithEmail = async () => {
+  if (!email.value || !password.value || !name.value) {
+    errorMessage.value = "Please fill in all fields";
+    return;
+  }
+
+  if (password.value.length < 8) {
+    errorMessage.value = "Password must be at least 8 characters";
+    return;
+  }
+
   isLoading.value = true;
   errorMessage.value = "";
+
   try {
-    // Get CSRF token first
-    const csrfRes = await fetch("/api/auth/csrf");
-    const { csrfToken } = await csrfRes.json();
+    const res = await fetch("/api/auth/sign-up/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+        name: name.value,
+      }),
+    });
 
-    // Build form and submit to NextAuth signin endpoint
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/api/auth/signin/test-credentials";
+    const data = await res.json();
 
-    const fields = {
-      csrfToken,
-      email: testEmail.value,
-      password: testPassword.value,
-      callbackUrl: window.location.origin + "/dashboard",
-    };
-
-    for (const [key, value] of Object.entries(fields)) {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
+    if (!res.ok) {
+      errorMessage.value = data.message || "Sign up failed. Please try again.";
+      return;
     }
 
-    document.body.appendChild(form);
-    form.submit();
+    // Auto sign in after sign up
+    await signInWithEmail();
   } catch (error) {
-    console.error("Test sign in error:", error);
-    errorMessage.value = "Sign in failed. Please try again.";
+    console.error("Sign up error:", error);
+    errorMessage.value = "Sign up failed. Please try again.";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Toggle between sign in and sign up
+const toggleMode = () => {
+  isSignUp.value = !isSignUp.value;
+  errorMessage.value = "";
+};
+
+// Dev mode: quick login with test credentials
+const devQuickLogin = async () => {
+  email.value = "test@firekaro.com";
+  password.value = "testpassword123";
+  name.value = "Test User";
+
+  // First try to sign in, if fails, sign up
+  isLoading.value = true;
+  errorMessage.value = "";
+
+  try {
+    const signInRes = await fetch("/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+      }),
+    });
+
+    if (signInRes.ok) {
+      await userStore.fetchSession();
+      router.push("/dashboard");
+      return;
+    }
+
+    // If sign in failed, try sign up
+    const signUpRes = await fetch("/api/auth/sign-up/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+        name: name.value,
+      }),
+    });
+
+    if (signUpRes.ok) {
+      // Sign in after sign up
+      await fetch("/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: email.value,
+          password: password.value,
+        }),
+      });
+      await userStore.fetchSession();
+      router.push("/dashboard");
+    } else {
+      const data = await signUpRes.json();
+      errorMessage.value = data.message || "Quick login failed";
+    }
+  } catch (error) {
+    console.error("Quick login error:", error);
+    errorMessage.value = "Quick login failed. Please try again.";
+  } finally {
     isLoading.value = false;
   }
 };
@@ -81,68 +190,101 @@ const signInWithTestCredentials = async () => {
                   FIRE<span class="text-primary">Karo</span>
                 </h1>
                 <p class="text-body-2 text-medium-emphasis">
-                  Sign in to your account
+                  {{ isSignUp ? "Create your account" : "Sign in to your account" }}
                 </p>
               </div>
 
-              <!-- Sign In Button -->
+              <!-- Error Alert -->
+              <v-alert
+                v-if="errorMessage"
+                type="error"
+                density="compact"
+                class="mb-4"
+                closable
+                @click:close="errorMessage = ''"
+              >
+                {{ errorMessage }}
+              </v-alert>
+
+              <!-- Sign Up: Name Field -->
+              <v-text-field
+                v-if="isSignUp"
+                v-model="name"
+                label="Full Name"
+                variant="outlined"
+                density="compact"
+                class="mb-3"
+                prepend-inner-icon="mdi-account"
+                @keyup.enter="signUpWithEmail"
+              />
+
+              <!-- Email Field -->
+              <v-text-field
+                v-model="email"
+                label="Email"
+                type="email"
+                variant="outlined"
+                density="compact"
+                class="mb-3"
+                prepend-inner-icon="mdi-email"
+                @keyup.enter="isSignUp ? signUpWithEmail() : signInWithEmail()"
+              />
+
+              <!-- Password Field -->
+              <v-text-field
+                v-model="password"
+                label="Password"
+                type="password"
+                variant="outlined"
+                density="compact"
+                class="mb-4"
+                prepend-inner-icon="mdi-lock"
+                :hint="isSignUp ? 'Minimum 8 characters' : ''"
+                @keyup.enter="isSignUp ? signUpWithEmail() : signInWithEmail()"
+              />
+
+              <!-- Submit Button -->
               <v-btn
                 block
+                color="primary"
                 size="large"
-                variant="outlined"
                 :loading="isLoading"
-                @click="signInWithGoogle"
+                @click="isSignUp ? signUpWithEmail() : signInWithEmail()"
               >
-                <v-icon icon="mdi-google" class="mr-2" />
-                Continue with Google
+                <v-icon :icon="isSignUp ? 'mdi-account-plus' : 'mdi-login'" class="mr-2" />
+                {{ isSignUp ? "Create Account" : "Sign In" }}
               </v-btn>
 
-              <!-- Test Login (Dev Only) -->
+              <!-- Toggle Sign In / Sign Up -->
+              <div class="text-center mt-4">
+                <span class="text-medium-emphasis">
+                  {{ isSignUp ? "Already have an account?" : "Don't have an account?" }}
+                </span>
+                <v-btn
+                  variant="text"
+                  color="primary"
+                  density="compact"
+                  @click="toggleMode"
+                >
+                  {{ isSignUp ? "Sign In" : "Sign Up" }}
+                </v-btn>
+              </div>
+
+              <!-- Dev Mode Quick Login -->
               <template v-if="isDev">
                 <v-divider class="my-4" />
-
-                <v-alert
-                  v-if="errorMessage"
-                  type="error"
-                  density="compact"
-                  class="mb-4"
-                  closable
-                  @click:close="errorMessage = ''"
-                >
-                  {{ errorMessage }}
-                </v-alert>
-
                 <p class="text-caption text-medium-emphasis text-center mb-3">
-                  Development Mode - Test Login
+                  Development Mode
                 </p>
-
-                <v-text-field
-                  v-model="testEmail"
-                  id="test-email"
-                  label="Test Email"
-                  variant="outlined"
-                  density="compact"
-                  class="mb-2"
-                />
-
-                <v-text-field
-                  v-model="testPassword"
-                  id="test-password"
-                  label="Test Password"
-                  type="password"
-                  variant="outlined"
-                  density="compact"
-                  class="mb-3"
-                />
-
                 <v-btn
                   block
-                  color="primary"
+                  variant="outlined"
+                  color="secondary"
                   :loading="isLoading"
-                  @click="signInWithTestCredentials"
+                  @click="devQuickLogin"
                 >
-                  <v-icon icon="mdi-login" class="mr-2" />
-                  Sign in with Test Account
+                  <v-icon icon="mdi-lightning-bolt" class="mr-2" />
+                  Quick Dev Login
                 </v-btn>
               </template>
 

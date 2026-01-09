@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
 import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import CashFlowSummary from '@/components/financial-health/CashFlowSummary.vue'
+import PassiveIncomeSummary from '@/components/financial-health/PassiveIncomeSummary.vue'
 import { useCashFlow, formatINR } from '@/composables/useFinancialHealth'
 
 const tabs = [
@@ -116,6 +117,9 @@ const chartPaths = computed(() => {
     <template v-else-if="cashFlow">
       <!-- Cash Flow Summary -->
       <CashFlowSummary :data="cashFlow" class="mb-6" />
+
+      <!-- Passive Income Summary -->
+      <PassiveIncomeSummary class="mb-6" />
 
       <!-- Cash Flow Trend Chart -->
       <v-card class="mb-6">

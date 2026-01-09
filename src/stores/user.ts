@@ -40,10 +40,18 @@ export const useUserStore = defineStore("user", () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const res = await fetch("/api/auth/session");
-      const session = await res.json();
-      if (session?.user) {
-        user.value = session.user;
+      const res = await fetch("/api/auth/get-session", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      // Better Auth returns { session, user } format
+      if (data?.user) {
+        user.value = {
+          id: data.user.id,
+          name: data.user.name || "",
+          email: data.user.email,
+          image: data.user.image,
+        };
       } else {
         user.value = null;
       }
@@ -69,7 +77,10 @@ export const useUserStore = defineStore("user", () => {
 
   async function signOut() {
     try {
-      await fetch("/api/auth/signout", { method: "POST" });
+      await fetch("/api/auth/sign-out", {
+        method: "POST",
+        credentials: "include",
+      });
       user.value = null;
       familyMembers.value = [];
     } catch (e) {

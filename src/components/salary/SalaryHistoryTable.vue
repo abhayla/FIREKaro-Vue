@@ -1,27 +1,44 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { SalaryHistoryRecord } from "@/types/salary";
+import type { SalaryHistoryRecord, SyncStatus } from "@/types/salary";
 import { getShortMonthName } from "@/types/salary";
 import { formatINR, formatINRLakhs } from "@/composables/useSalary";
 
 const props = defineProps<{
   records: SalaryHistoryRecord[];
   loading?: boolean;
+  syncing?: string | null; // ID of record currently being synced
 }>();
 
 const emit = defineEmits<{
   (e: "edit", record: SalaryHistoryRecord): void;
   (e: "delete", record: SalaryHistoryRecord): void;
   (e: "add"): void;
+  (e: "sync", record: SalaryHistoryRecord): void;
 }>();
+
+// Sync status display helper
+const getSyncStatusInfo = (status?: SyncStatus) => {
+  switch (status) {
+    case "SYNCED":
+      return { icon: "mdi-check-circle", color: "success", text: "Synced" };
+    case "CONFLICT":
+      return { icon: "mdi-alert-circle", color: "warning", text: "Conflict" };
+    case "SKIPPED":
+      return { icon: "mdi-skip-next-circle", color: "grey", text: "Skipped" };
+    case "PENDING":
+    default:
+      return { icon: "mdi-sync", color: "primary", text: "Pending" };
+  }
+};
 
 const headers = [
   { title: "Month", key: "monthDisplay", sortable: false },
-  { title: "Paid Days", key: "paidDays", align: "center" as const },
+  { title: "Employer", key: "employerDisplay", sortable: false },
   { title: "Gross", key: "grossEarnings", align: "end" as const },
   { title: "Deductions", key: "totalDeductions", align: "end" as const },
   { title: "Net", key: "netSalary", align: "end" as const },
-  { title: "TDS", key: "tdsDeduction", align: "end" as const },
+  { title: "Sync", key: "syncStatus", align: "center" as const, sortable: false },
   {
     title: "Actions",
     key: "actions",
@@ -42,6 +59,7 @@ const tableItems = computed(() => {
   return safeRecords.value.map((record) => ({
     ...record,
     monthDisplay: `${getShortMonthName(record.month)}'${record.year.toString().slice(-2)}`,
+    employerDisplay: record.incomeSource?.sourceName || record.employerName || "—",
   }));
 });
 
@@ -73,6 +91,7 @@ const totals = computed(() => {
         variant="tonal"
         size="small"
         prepend-icon="mdi-plus"
+        data-testid="btn-add-salary"
         @click="emit('add')"
       >
         Add Month
@@ -85,6 +104,7 @@ const totals = computed(() => {
       :loading="loading"
       density="comfortable"
       class="salary-history-table"
+      data-testid="table-salary-history"
       :items-per-page="12"
       :items-per-page-options="[12, 24, -1]"
     >
@@ -104,17 +124,41 @@ const totals = computed(() => {
         <span class="font-weight-bold">{{ formatINR(item.netSalary) }}</span>
       </template>
 
-      <template #item.tdsDeduction="{ item }">
-        <span class="text-medium-emphasis">{{
-          formatINR(item.tdsDeduction)
-        }}</span>
+      <template #item.employerDisplay="{ item }">
+        <span class="text-caption">{{ item.employerDisplay }}</span>
+      </template>
+
+      <template #item.syncStatus="{ item }">
+        <v-tooltip :text="getSyncStatusInfo(item.syncStatus).text">
+          <template #activator="{ props: tooltipProps }">
+            <v-icon
+              v-bind="tooltipProps"
+              :icon="getSyncStatusInfo(item.syncStatus).icon"
+              :color="getSyncStatusInfo(item.syncStatus).color"
+              size="small"
+            />
+          </template>
+        </v-tooltip>
       </template>
 
       <template #item.actions="{ item }">
         <v-btn
+          v-if="item.syncStatus !== 'SYNCED'"
+          icon="mdi-sync"
+          variant="text"
+          size="small"
+          color="primary"
+          :loading="syncing === item.id"
+          data-testid="btn-sync-salary"
+          @click="emit('sync', item)"
+        >
+          <v-tooltip activator="parent" text="Sync to EPF/NPS" />
+        </v-btn>
+        <v-btn
           icon="mdi-pencil"
           variant="text"
           size="small"
+          data-testid="btn-edit-salary"
           @click="emit('edit', item)"
         />
         <v-btn
@@ -122,6 +166,7 @@ const totals = computed(() => {
           variant="text"
           size="small"
           color="error"
+          data-testid="btn-delete-salary"
           @click="emit('delete', item)"
         />
       </template>

@@ -9,6 +9,7 @@ import {
   useUpdateSalaryHistory,
   useDeleteSalaryHistory,
   useFinancialYear,
+  useSyncSalary,
 } from "@/composables/useSalary";
 import type { SalaryHistoryRecord, SalaryHistoryInput } from "@/types/salary";
 import { getFinancialYearOptions } from "@/types/salary";
@@ -27,6 +28,10 @@ const { data: salaryHistory, isLoading } = useSalaryHistory();
 const addMutation = useAddSalaryHistory();
 const updateMutation = useUpdateSalaryHistory();
 const deleteMutation = useDeleteSalaryHistory();
+const syncMutation = useSyncSalary();
+
+// Sync state
+const syncingId = ref<string | null>(null);
 
 // Dialog state
 const showFormDialog = ref(false);
@@ -93,6 +98,25 @@ const handleSave = async (data: SalaryHistoryInput) => {
     showSnackbar("Failed to save salary record", "error");
   }
 };
+
+const handleSync = async (record: SalaryHistoryRecord) => {
+  syncingId.value = record.id;
+  try {
+    const result = await syncMutation.mutateAsync(record.id);
+    if (result.epf.synced || result.nps.synced) {
+      const parts = [];
+      if (result.epf.synced) parts.push("EPF");
+      if (result.nps.synced) parts.push("NPS");
+      showSnackbar(`Synced to ${parts.join(" & ")} successfully`);
+    } else {
+      showSnackbar("No contributions to sync", "info");
+    }
+  } catch (error) {
+    showSnackbar("Failed to sync salary to retirement accounts", "error");
+  } finally {
+    syncingId.value = null;
+  }
+};
 </script>
 
 <template>
@@ -122,9 +146,11 @@ const handleSave = async (data: SalaryHistoryInput) => {
     <SalaryHistoryTable
       :records="salaryHistory || []"
       :loading="isLoading"
+      :syncing="syncingId"
       @add="handleAdd"
       @edit="handleEdit"
       @delete="handleDelete"
+      @sync="handleSync"
     />
 
     <!-- Add/Edit Form Dialog -->

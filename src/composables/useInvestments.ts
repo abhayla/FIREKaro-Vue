@@ -6,8 +6,8 @@ import { useUiStore } from '@/stores/ui'
 export interface Investment {
   id: string
   name: string
-  type: 'stock' | 'mutual_fund' | 'fd' | 'bond' | 'gold' | 'real_estate' | 'other'
-  category: 'equity' | 'debt' | 'hybrid' | 'gold' | 'real_estate' | 'cash'
+  type: 'stock' | 'mutual_fund' | 'fd' | 'bond' | 'gold' | 'real_estate' | 'crypto' | 'other'
+  category: 'equity' | 'debt' | 'hybrid' | 'gold' | 'real_estate' | 'crypto' | 'cash'
   currentValue: number
   investedAmount: number
   units?: number
@@ -507,4 +507,424 @@ export function calculateNPSProjection(params: {
     totalContributions: currentCorpus + monthlyContribution * totalMonths,
     totalReturns: Math.round(futureCorpus - currentCorpus - monthlyContribution * totalMonths)
   }
+}
+
+// ============================================
+// Yield Calculations
+// ============================================
+
+export interface YieldSummary {
+  dividendYield: number         // % - annual dividends / portfolio value
+  rentalYield: number           // % - annual rent / property value
+  totalAnnualDividends: number
+  totalAnnualRent: number
+  portfolioValue: number
+  propertyValue: number
+}
+
+export function useYieldCalculations() {
+  return useQuery({
+    queryKey: ['investments', 'yields'],
+    queryFn: async (): Promise<YieldSummary> => {
+      // Fetch portfolio and income data
+      const [portfolioRes, propertiesRes, otherIncomeRes] = await Promise.all([
+        fetch('/api/portfolio'),
+        fetch('/api/investments?type=real_estate'),
+        fetch('/api/other-income')
+      ])
+
+      const portfolio = portfolioRes.ok ? await portfolioRes.json() : { totalValue: 0 }
+      const properties = propertiesRes.ok ? await propertiesRes.json() : []
+      const otherIncome = otherIncomeRes.ok ? await otherIncomeRes.json() : []
+
+      // Calculate dividend yield
+      const dividendIncome = otherIncome.filter(
+        (o: { category: string }) => o.category === 'dividend'
+      )
+      const totalAnnualDividends = dividendIncome.reduce(
+        (sum: number, d: { grossAmount: number }) => sum + d.grossAmount,
+        0
+      )
+
+      // Calculate rental yield
+      const totalAnnualRent = properties.reduce(
+        (sum: number, p: { rentalIncome?: number }) => sum + ((p.rentalIncome || 0) * 12),
+        0
+      )
+      const propertyValue = properties.reduce(
+        (sum: number, p: { currentValue: number }) => sum + p.currentValue,
+        0
+      )
+
+      // Exclude real estate from dividend yield calculation (only stocks/MF value)
+      const equityDebtValue = portfolio.totalValue - propertyValue
+
+      const dividendYield = equityDebtValue > 0
+        ? (totalAnnualDividends / equityDebtValue) * 100
+        : 0
+
+      const rentalYield = propertyValue > 0
+        ? (totalAnnualRent / propertyValue) * 100
+        : 0
+
+      return {
+        dividendYield,
+        rentalYield,
+        totalAnnualDividends,
+        totalAnnualRent,
+        portfolioValue: equityDebtValue,
+        propertyValue
+      }
+    }
+  })
+}
+
+// Calculate rental yield for a single property
+export function calculateRentalYield(monthlyRent: number, propertyValue: number): number {
+  if (propertyValue <= 0) return 0
+  return (monthlyRent * 12 / propertyValue) * 100
+}
+
+// Calculate dividend yield
+export function calculateDividendYield(annualDividends: number, portfolioValue: number): number {
+  if (portfolioValue <= 0) return 0
+  return (annualDividends / portfolioValue) * 100
+}
+
+// ============================================
+// SIP History and Progression
+// ============================================
+
+export interface SIPYearlyData {
+  year: number
+  monthlySIP: number          // Total monthly SIP amount for that year
+  yearlyContribution: number  // Total contributed that year
+  sipCount: number            // Number of SIPs running
+  growthPercent?: number      // % growth from previous year
+}
+
+export interface SIPHistorySummary {
+  currentMonthlySIP: number
+  totalContributed: number
+  startYear: number
+  yearlyData: SIPYearlyData[]
+  averageGrowthRate: number   // Average year-over-year growth
+}
+
+// ============================================
+// Compounding Visualization
+// ============================================
+
+export interface CompoundingDataPoint {
+  year: number
+  contributions: number       // Cumulative amount invested
+  returns: number             // Cumulative returns (value - contributions)
+  totalValue: number          // Total portfolio value
+  returnsExceedContributions: boolean  // True when returns > contributions
+}
+
+export interface CompoundingAnalysis {
+  data: CompoundingDataPoint[]
+  crossoverYear: number | null   // Year when returns exceeded contributions
+  currentContributions: number
+  currentReturns: number
+  currentValue: number
+  returnsMultiplier: number      // returns / contributions
+  isCompoundingStrong: boolean   // Returns > 50% of contributions
+}
+
+export function useCompoundingAnalysis() {
+  return useQuery({
+    queryKey: ['investments', 'compounding'],
+    queryFn: async (): Promise<CompoundingAnalysis> => {
+      // Fetch portfolio data
+      const portfolioRes = await fetch('/api/portfolio')
+      const portfolio = portfolioRes.ok ? await portfolioRes.json() : { totalValue: 0, totalInvested: 0 }
+
+      const currentValue = portfolio.totalValue || 0
+      const currentContributions = portfolio.totalInvested || 0
+      const currentReturns = currentValue - currentContributions
+
+      // Generate historical simulation data (would come from actual historical API)
+      const currentYear = new Date().getFullYear()
+      const startYear = currentYear - 10  // 10 years of history
+      const data: CompoundingDataPoint[] = []
+
+      // Simulate growth pattern (in real app, this would come from historical data)
+      // Using realistic CAGR of ~12% and assuming even contributions
+      const yearlyContribution = currentContributions / 10
+      let cumulativeContributions = 0
+      let cumulativeValue = 0
+
+      for (let year = startYear; year <= currentYear; year++) {
+        cumulativeContributions += yearlyContribution
+
+        // Simulate market growth (varying returns)
+        const yearIndex = year - startYear
+        const growthFactor = 1 + (0.08 + Math.sin(yearIndex * 0.5) * 0.06) // 8-14% returns
+        cumulativeValue = (cumulativeValue + yearlyContribution) * growthFactor
+
+        const returns = cumulativeValue - cumulativeContributions
+
+        data.push({
+          year,
+          contributions: Math.round(cumulativeContributions),
+          returns: Math.round(returns),
+          totalValue: Math.round(cumulativeValue),
+          returnsExceedContributions: returns > cumulativeContributions
+        })
+      }
+
+      // Adjust last data point to match actual portfolio values
+      if (data.length > 0) {
+        const lastPoint = data[data.length - 1]
+        lastPoint.contributions = currentContributions
+        lastPoint.returns = currentReturns
+        lastPoint.totalValue = currentValue
+        lastPoint.returnsExceedContributions = currentReturns > currentContributions
+      }
+
+      // Find crossover year
+      const crossoverPoint = data.find(d => d.returnsExceedContributions)
+      const crossoverYear = crossoverPoint?.year || null
+
+      const returnsMultiplier = currentContributions > 0
+        ? currentReturns / currentContributions
+        : 0
+
+      return {
+        data,
+        crossoverYear,
+        currentContributions,
+        currentReturns,
+        currentValue,
+        returnsMultiplier,
+        isCompoundingStrong: returnsMultiplier >= 0.5
+      }
+    }
+  })
+}
+
+// ============================================
+// Portfolio Journey Timeline (Manual Snapshots)
+// ============================================
+
+export interface PortfolioSnapshot {
+  id: string
+  userId: string
+  date: string              // "2020-01-01"
+  totalValue: number        // Portfolio value at that date
+  notes?: string            // Optional context
+  createdAt: string
+}
+
+export interface PortfolioSnapshotInput {
+  date: string
+  totalValue: number
+  notes?: string
+}
+
+export interface PortfolioJourney {
+  snapshots: PortfolioSnapshot[]
+  currentValue: number
+  startValue: number
+  totalGrowth: number
+  totalGrowthPercent: number
+  yearsTracked: number
+}
+
+export function usePortfolioSnapshots() {
+  return useQuery({
+    queryKey: ['investments', 'portfolio-snapshots'],
+    queryFn: async (): Promise<PortfolioSnapshot[]> => {
+      const res = await fetch('/api/portfolio-snapshots')
+      if (!res.ok) throw new Error('Failed to fetch portfolio snapshots')
+      return res.json()
+    }
+  })
+}
+
+export function useCreatePortfolioSnapshot() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (snapshot: PortfolioSnapshotInput): Promise<PortfolioSnapshot> => {
+      const res = await fetch('/api/portfolio-snapshots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(snapshot)
+      })
+      if (!res.ok) throw new Error('Failed to create snapshot')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investments', 'portfolio-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['investments', 'portfolio-journey'] })
+    }
+  })
+}
+
+export function useDeletePortfolioSnapshot() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const res = await fetch(`/api/portfolio-snapshots/${id}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) throw new Error('Failed to delete snapshot')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investments', 'portfolio-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['investments', 'portfolio-journey'] })
+    }
+  })
+}
+
+export function usePortfolioJourney() {
+  return useQuery({
+    queryKey: ['investments', 'portfolio-journey'],
+    queryFn: async (): Promise<PortfolioJourney> => {
+      // Fetch snapshots and current portfolio
+      const [snapshotsRes, portfolioRes] = await Promise.all([
+        fetch('/api/portfolio-snapshots'),
+        fetch('/api/portfolio')
+      ])
+
+      let snapshots: PortfolioSnapshot[] = []
+      if (snapshotsRes.ok) {
+        snapshots = await snapshotsRes.json()
+      }
+
+      const portfolio = portfolioRes.ok ? await portfolioRes.json() : { totalValue: 0 }
+      const currentValue = portfolio.totalValue || 0
+
+      // If no snapshots, generate sample data for demo
+      if (snapshots.length === 0) {
+        const now = new Date()
+        const sampleData = [
+          { year: 2017, value: 500000 },
+          { year: 2018, value: 850000 },
+          { year: 2019, value: 1200000 },
+          { year: 2020, value: 1800000 },
+          { year: 2021, value: 3200000 },
+          { year: 2022, value: 4500000 },
+          { year: 2023, value: 6200000 },
+          { year: 2024, value: 7800000 },
+          { year: 2025, value: currentValue || 8500000 }
+        ]
+
+        snapshots = sampleData.map((s, i) => ({
+          id: `sample-${i}`,
+          userId: 'demo',
+          date: `${s.year}-12-31`,
+          totalValue: s.value,
+          createdAt: now.toISOString()
+        }))
+      }
+
+      // Sort by date
+      snapshots.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+      const startValue = snapshots.length > 0 ? snapshots[0].totalValue : 0
+      const totalGrowth = currentValue - startValue
+      const totalGrowthPercent = startValue > 0 ? (totalGrowth / startValue) * 100 : 0
+
+      // Calculate years tracked
+      const firstDate = snapshots.length > 0 ? new Date(snapshots[0].date) : new Date()
+      const yearsTracked = Math.max(1, Math.round((Date.now() - firstDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
+
+      return {
+        snapshots,
+        currentValue,
+        startValue,
+        totalGrowth,
+        totalGrowthPercent,
+        yearsTracked
+      }
+    }
+  })
+}
+
+export function useSIPHistory() {
+  return useQuery({
+    queryKey: ['investments', 'sip-history'],
+    queryFn: async (): Promise<SIPHistorySummary> => {
+      // Fetch mutual funds with SIP data
+      const res = await fetch('/api/investments?type=mutual_fund')
+      const mutualFunds = res.ok ? await res.json() : []
+
+      // Group SIPs by start year and calculate progression
+      const currentYear = new Date().getFullYear()
+      const sipsByYear: Map<number, { total: number; count: number }> = new Map()
+
+      // Calculate SIP amounts by year (mock calculation based on purchase dates)
+      mutualFunds.forEach((mf: { sipAmount?: number; purchaseDate: string }) => {
+        if (mf.sipAmount && mf.sipAmount > 0) {
+          const startYear = new Date(mf.purchaseDate).getFullYear()
+          for (let year = startYear; year <= currentYear; year++) {
+            const existing = sipsByYear.get(year) || { total: 0, count: 0 }
+            sipsByYear.set(year, {
+              total: existing.total + mf.sipAmount,
+              count: existing.count + 1
+            })
+          }
+        }
+      })
+
+      // If no real data, generate sample progression for demo
+      if (sipsByYear.size === 0) {
+        const sampleProgression = [
+          { year: 2019, monthlySIP: 10000, count: 2 },
+          { year: 2020, monthlySIP: 20000, count: 3 },
+          { year: 2021, monthlySIP: 40000, count: 5 },
+          { year: 2022, monthlySIP: 55000, count: 6 },
+          { year: 2023, monthlySIP: 70000, count: 7 },
+          { year: 2024, monthlySIP: 90000, count: 8 },
+          { year: 2025, monthlySIP: 110000, count: 9 }
+        ]
+        sampleProgression.forEach(s => sipsByYear.set(s.year, { total: s.monthlySIP, count: s.count }))
+      }
+
+      // Convert to yearly data array
+      const years = Array.from(sipsByYear.keys()).sort()
+      const yearlyData: SIPYearlyData[] = years.map((year, index) => {
+        const data = sipsByYear.get(year)!
+        const prevYearData = index > 0 ? sipsByYear.get(years[index - 1]) : null
+        const growthPercent = prevYearData
+          ? ((data.total - prevYearData.total) / prevYearData.total) * 100
+          : 0
+
+        return {
+          year,
+          monthlySIP: data.total,
+          yearlyContribution: data.total * 12,
+          sipCount: data.count,
+          growthPercent: index > 0 ? growthPercent : undefined
+        }
+      })
+
+      // Calculate average growth rate
+      const growthRates = yearlyData
+        .filter(y => y.growthPercent !== undefined)
+        .map(y => y.growthPercent!)
+      const averageGrowthRate = growthRates.length > 0
+        ? growthRates.reduce((a, b) => a + b, 0) / growthRates.length
+        : 0
+
+      const currentMonthlySIP = yearlyData.length > 0
+        ? yearlyData[yearlyData.length - 1].monthlySIP
+        : 0
+
+      const totalContributed = yearlyData.reduce((sum, y) => sum + y.yearlyContribution, 0)
+
+      return {
+        currentMonthlySIP,
+        totalContributed,
+        startYear: years[0] || currentYear,
+        yearlyData,
+        averageGrowthRate
+      }
+    }
+  })
 }

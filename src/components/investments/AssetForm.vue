@@ -28,6 +28,7 @@ const assetTypes = [
   { title: 'Bond', value: 'bond' },
   { title: 'Gold', value: 'gold' },
   { title: 'Real Estate', value: 'real_estate' },
+  { title: 'Crypto', value: 'crypto' },
   { title: 'Other', value: 'other' }
 ]
 
@@ -37,14 +38,15 @@ const categories = [
   { title: 'Hybrid', value: 'hybrid' },
   { title: 'Gold', value: 'gold' },
   { title: 'Real Estate', value: 'real_estate' },
+  { title: 'Crypto', value: 'crypto' },
   { title: 'Cash', value: 'cash' }
 ]
 
 const schema = toTypedSchema(
   z.object({
     name: z.string().min(1, 'Name is required'),
-    type: z.enum(['stock', 'mutual_fund', 'fd', 'bond', 'gold', 'real_estate', 'other']),
-    category: z.enum(['equity', 'debt', 'hybrid', 'gold', 'real_estate', 'cash']),
+    type: z.enum(['stock', 'mutual_fund', 'fd', 'bond', 'gold', 'real_estate', 'crypto', 'other']),
+    category: z.enum(['equity', 'debt', 'hybrid', 'gold', 'real_estate', 'crypto', 'cash']),
     investedAmount: z.number().min(0, 'Amount must be positive'),
     currentValue: z.number().min(0, 'Value must be positive'),
     units: z.number().optional(),

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
 import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import NetWorthChart from '@/components/financial-health/NetWorthChart.vue'
 import NetWorthBreakdown from '@/components/financial-health/NetWorthBreakdown.vue'
+import NetWorthMilestones from '@/components/financial-health/NetWorthMilestones.vue'
 import { useNetWorth, formatINR } from '@/composables/useFinancialHealth'
 
 const tabs = [
@@ -16,37 +16,6 @@ const tabs = [
 ]
 
 const { data: netWorth, isLoading, isError } = useNetWorth()
-
-// Milestone thresholds in INR
-const milestones = [
-  { amount: 1000000, label: '10L' },
-  { amount: 2500000, label: '25L' },
-  { amount: 5000000, label: '50L' },
-  { amount: 10000000, label: '1Cr' },
-  { amount: 20000000, label: '2Cr' },
-  { amount: 50000000, label: '5Cr' },
-]
-
-const milestoneProgress = computed(() => {
-  if (!netWorth.value) return []
-  const current = netWorth.value.netWorth
-  return milestones.map(m => ({
-    ...m,
-    achieved: current >= m.amount,
-    progress: Math.min(100, (current / m.amount) * 100)
-  }))
-})
-
-const nextMilestone = computed(() => {
-  if (!netWorth.value) return null
-  const current = netWorth.value.netWorth
-  const next = milestones.find(m => current < m.amount)
-  if (!next) return null
-  return {
-    ...next,
-    remaining: next.amount - current
-  }
-})
 </script>
 
 <template>
@@ -143,49 +112,8 @@ const nextMilestone = computed(() => {
         class="mb-6"
       />
 
-      <!-- Milestones -->
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          <v-icon icon="mdi-flag-checkered" class="mr-2" />
-          Net Worth Milestones
-        </v-card-title>
-        <v-card-text>
-          <div class="d-flex flex-wrap ga-4 mb-4">
-            <v-chip
-              v-for="milestone in milestoneProgress"
-              :key="milestone.label"
-              :color="milestone.achieved ? 'success' : 'grey'"
-              :variant="milestone.achieved ? 'flat' : 'outlined'"
-              size="large"
-            >
-              <v-icon
-                :icon="milestone.achieved ? 'mdi-check-circle' : 'mdi-circle-outline'"
-                size="small"
-                class="mr-1"
-              />
-              {{ milestone.label }}
-            </v-chip>
-          </div>
-
-          <v-alert v-if="nextMilestone" type="info" variant="tonal">
-            <template #prepend>
-              <v-icon icon="mdi-target" />
-            </template>
-            <strong>Next milestone: {{ formatINR(nextMilestone.amount, true) }}</strong>
-            <br>
-            <span class="text-body-2">
-              {{ formatINR(nextMilestone.remaining, true) }} away from your next milestone!
-            </span>
-          </v-alert>
-
-          <v-alert v-else type="success" variant="tonal">
-            <template #prepend>
-              <v-icon icon="mdi-party-popper" />
-            </template>
-            <strong>Congratulations!</strong> You've achieved all milestones. Keep growing!
-          </v-alert>
-        </v-card-text>
-      </v-card>
+      <!-- Customizable Net Worth Milestones -->
+      <NetWorthMilestones :current-net-worth="netWorth.netWorth" />
     </template>
   </div>
 </template>
