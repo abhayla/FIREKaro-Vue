@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import HealthScoreGauge from '@/components/financial-health/HealthScoreGauge.vue'
 import HealthFactorCard from '@/components/financial-health/HealthFactorCard.vue'
 import { useFinancialHealthScore, useNetWorth, useCashFlow, useEmergencyFund, formatINR } from '@/composables/useFinancialHealth'
@@ -39,8 +38,6 @@ const quickLinks = [
       icon="mdi-heart-pulse"
       :tabs="tabs"
     />
-    <FamilyToggle class="mb-6" />
-
     <!-- Loading State -->
     <div v-if="isLoading" class="text-center py-8">
       <v-progress-circular indeterminate color="primary" size="48" />

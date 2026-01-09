@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import ExpenseFilters from '@/components/expenses/ExpenseFilters.vue'
 import BudgetCard from '@/components/expenses/BudgetCard.vue'
 import CategoryPieChart from '@/components/expenses/CategoryPieChart.vue'
@@ -55,8 +54,6 @@ const formatDate = (date: string) =>
       icon="mdi-cart-outline"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Month Filter -->
     <ExpenseFilters v-model:month="selectedMonth" class="mb-6" />

@@ -1305,83 +1305,61 @@ model AlertDelivery {
 
 // Business Income - Section 44AD/44ADA Presumptive Taxation
 model BusinessIncome {
-  id                String   @id @default(cuid())
-  userId            String
-  fiscalYear        String   // "2024-25"
-  businessName      String
-  businessType      String   // "PROPRIETORSHIP", "PARTNERSHIP", "LLP"
-  taxationScheme    String   // "44AD", "44ADA", "REGULAR"
-  natureOfBusiness  String?  // "TRADING", "MANUFACTURING", "PROFESSIONAL", etc.
-  grossReceipts     Float
-  digitalPaymentPct Float    @default(50)
-  deemedProfitRate  Float    // 8%, 6%, or 50%
-  taxableProfit     Float
-  gstRegistered     Boolean  @default(false)
-  gstNumber         String?
-  gstFilingFreq     String?  // "MONTHLY", "QUARTERLY"
-  pan               String?
+  id                       String   @id @default(cuid())
+  userId                   String
+  financialYear            String   // "2024-25"
+  businessName             String
+  businessType             String   // "proprietorship", "partnership", "freelance", "commission_agent"
+  taxationMethod           String   // "44AD", "44ADA", "regular_books"
+  grossReceipts            Float
+  digitalPaymentPercentage Float    @default(50)
+  totalExpenses            Float?   // For regular books
+  depreciation             Float?   // For regular books
+  deemedProfit             Float    // Calculated profit
+  deemedProfitRate         Float    // Effective rate (0-1)
+  isGstRegistered          Boolean  @default(false)
+  gstin                    String?
 
-  // For 5-year lock-in tracking
-  schemeStartYear   String?  // First year of 44AD/44ADA adoption
-  yearsOnScheme     Int      @default(1)
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, fiscalYear])
-  @@index([taxationScheme])
+  @@index([userId, financialYear])
+  @@index([taxationMethod])
 }
 
 // Rental Income - House Property with Section 24 Deductions
 model RentalIncome {
-  id                  String    @id @default(cuid())
-  userId              String
-  fiscalYear          String
-  propertyId          String?   // Link to Property in investments (optional)
-  propertyName        String
-  propertyAddress     String?
-  propertyType        String    // "RESIDENTIAL", "COMMERCIAL", "LAND"
-  ownershipType       String    @default("SELF") // "SELF", "JOINT", "HUF"
+  id                   String    @id @default(cuid())
+  userId               String
+  financialYear        String
+  propertyName         String
+  propertyType         String    // "residential", "commercial", "land"
+  propertyAddress      String
 
   // Rental Details
-  grossAnnualRent     Float
-  monthlyRent         Float?
-  vacantMonths        Int       @default(0)
-  municipalTaxes      Float     @default(0)
+  monthlyRent          Float
+  vacancyMonths        Int       @default(0)
+  municipalTaxesPaid   Float     @default(0)
+  housingLoanInterest  Float     @default(0)
+  isLetOut             Boolean   @default(true)
 
-  // Section 24 Deductions
-  netAnnualValue      Float     // GAV - Municipal Taxes
-  standardDeduction   Float     // 30% of NAV
-  housingLoanInterest Float     @default(0)
-  preConstructionInt  Float     @default(0) // 1/5th per year for 5 years
-  preCnstIntStartYear String?   // Year when pre-construction interest started
-  taxableIncome       Float
+  // Calculated Section 24 Deductions
+  grossAnnualValue     Float     // monthlyRent * (12 - vacancyMonths)
+  netAnnualValue       Float     // Taxable income after all deductions
+  standardDeduction    Float     // 30% of (GAV - municipalTaxes)
 
-  // Tenant Details
-  tenantName          String?
-  tenantPan           String?
-  tenantStartDate     DateTime?
-  rentAgreementExpiry DateTime?
+  // Tenant Details (optional)
+  tenantName           String?
+  tenantStartDate      String?
 
-  // Co-owners (JSON array)
-  coOwners            Json?     // [{name, pan, percentage, share}]
-  ownershipPercent    Float     @default(100)
-
-  // Loan Details
-  loanAccountNumber   String?
-  lenderName          String?
-  loanSanctionDate    DateTime?
-  possessionDate      DateTime?
-  isSelfOccupied      Boolean   @default(false)
-
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, fiscalYear])
+  @@index([userId, financialYear])
   @@index([propertyType])
 }
 

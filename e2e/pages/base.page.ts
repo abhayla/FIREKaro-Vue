@@ -319,7 +319,8 @@ export class BasePage {
    * Click edit button on a specific row
    */
   async clickEditOnRow(rowText: string) {
-    const row = this.getTableRowByText(rowText);
+    // Use .first() to handle multiple rows with same text (from parallel test runs)
+    const row = this.getTableRowByText(rowText).first();
     await row.getByRole("button").first().click(); // Usually first button is edit
     await this.page.waitForTimeout(300);
   }
@@ -328,7 +329,8 @@ export class BasePage {
    * Click delete button on a specific row
    */
   async clickDeleteOnRow(rowText: string) {
-    const row = this.getTableRowByText(rowText);
+    // Use .first() to handle multiple rows with same text (from parallel test runs)
+    const row = this.getTableRowByText(rowText).first();
     await row.getByRole("button").nth(1).click(); // Usually second button is delete
     await this.page.waitForTimeout(300);
   }

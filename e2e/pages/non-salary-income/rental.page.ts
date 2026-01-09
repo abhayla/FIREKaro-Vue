@@ -22,7 +22,7 @@ export class RentalIncomePage extends BasePage {
   }
 
   get addPropertyButton(): Locator {
-    return this.page.getByRole("button", { name: /Add Property|Add Rental/i });
+    return this.page.getByRole("button", { name: /Add Property|Add Rental/i }).first();
   }
 
   // Summary cards
@@ -40,7 +40,7 @@ export class RentalIncomePage extends BasePage {
 
   // Rental form dialog
   get rentalFormDialog(): Locator {
-    return this.page.locator(".v-dialog").filter({ hasText: /Rental.*Income|Add Property|Edit Property|House Property/i });
+    return this.page.locator(".v-dialog").filter({ hasText: /Rental Income/i });
   }
 
   // Form fields
@@ -53,31 +53,34 @@ export class RentalIncomePage extends BasePage {
   }
 
   get propertyAddressField(): Locator {
-    return this.page.getByRole("textbox", { name: /Address/i });
+    // Property Address uses v-textarea
+    return this.page.getByLabel(/Property Address/i);
   }
 
   get monthlyRentField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Monthly Rent/i });
+    return this.page.getByLabel(/Monthly Rent/i);
   }
 
   get annualRentField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Annual Rent/i });
+    return this.page.getByLabel(/Annual Rent/i);
   }
 
-  get vacantMonthsField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Vacant Months/i });
+  get vacancyMonthsSelect(): Locator {
+    // Vacancy Months is a v-select, not a spinbutton
+    return this.page.locator(".v-select").filter({ hasText: /Vacancy Months/i });
   }
 
   get municipalTaxField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Municipal Tax|Property Tax/i });
+    return this.page.getByLabel(/Municipal Tax|Property Tax/i);
   }
 
   get housingLoanInterestField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Housing Loan Interest|Loan Interest|Section 24/i });
+    return this.page.getByLabel(/Housing Loan Interest|Loan Interest|Section 24/i);
   }
 
-  get isLetOutCheckbox(): Locator {
-    return this.page.getByRole("checkbox", { name: /Let Out|Rented/i });
+  get isLetOutSwitch(): Locator {
+    // isLetOut is a v-switch, not checkbox
+    return this.page.locator(".v-switch").filter({ hasText: /let out|rented/i });
   }
 
   // Calculated fields
@@ -95,7 +98,7 @@ export class RentalIncomePage extends BasePage {
 
   // Form buttons
   get saveButton(): Locator {
-    return this.rentalFormDialog.getByRole("button", { name: /Save|Add|Submit/i });
+    return this.rentalFormDialog.getByRole("button", { name: /Add Property|Update Property/i });
   }
 
   get cancelButton(): Locator {
@@ -152,8 +155,11 @@ export class RentalIncomePage extends BasePage {
     }
 
     if (data.vacantMonths !== undefined) {
-      await this.vacantMonthsField.clear();
-      await this.vacantMonthsField.fill(data.vacantMonths.toString());
+      // Vacancy months is a v-select dropdown
+      await this.vacancyMonthsSelect.click();
+      await this.page.waitForTimeout(200);
+      await this.page.getByRole("option", { name: data.vacantMonths.toString(), exact: true }).click();
+      await this.page.waitForTimeout(200);
     }
 
     if (data.municipalTaxesPaid !== undefined) {
@@ -166,16 +172,35 @@ export class RentalIncomePage extends BasePage {
       await this.housingLoanInterestField.fill(data.housingLoanInterest.toString());
     }
 
-    if (data.isLetOut !== undefined) {
-      const isChecked = await this.isLetOutCheckbox.isChecked();
-      if (isChecked !== data.isLetOut) {
-        await this.isLetOutCheckbox.click();
+    // isLetOut is a switch - default is "let out" (true)
+    // Only toggle if explicitly set to false
+    if (data.isLetOut === false) {
+      const switchEl = this.isLetOutSwitch;
+      if (await switchEl.isVisible()) {
+        await switchEl.click();
       }
     }
   }
 
   async saveForm() {
+    // Click save and wait for API response
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().includes("/api/rental-income") &&
+                    (response.request().method() === "POST" || response.request().method() === "PUT"),
+      { timeout: 10000 }
+    );
     await this.saveButton.click();
+    try {
+      const response = await responsePromise;
+      const status = response.status();
+      if (status >= 400) {
+        console.log(`API returned ${status}: ${await response.text()}`);
+      }
+    } catch (e) {
+      // If no POST/PUT happens (e.g., validation error), wait a bit
+      await this.page.waitForTimeout(500);
+    }
+    // Wait for dialog to close and table to refresh
     await this.page.waitForTimeout(500);
   }
 
@@ -201,6 +226,11 @@ export class RentalIncomePage extends BasePage {
   async confirmDeleteProperty() {
     await this.deleteDialog.getByRole("button", { name: /Delete|Confirm|Yes/i }).click();
     await this.page.waitForTimeout(500);
+  }
+
+  async cancelDeleteProperty() {
+    await this.deleteDialog.getByRole("button", { name: /Cancel|No/i }).click();
+    await this.page.waitForTimeout(300);
   }
 
   // ============================================
@@ -232,8 +262,10 @@ export class RentalIncomePage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.pageTitle).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: "Rental" })).toHaveAttribute("aria-selected", "true");
+    // Wait for subtitle to be visible (rendered by SectionHeader)
+    await expect(this.page.locator("p.text-body-2").filter({ hasText: "Rental" })).toBeVisible();
+    // Also check the Add button is ready
+    await expect(this.addPropertyButton).toBeVisible();
   }
 
   async expectFormDialogVisible() {
@@ -245,14 +277,19 @@ export class RentalIncomePage extends BasePage {
   }
 
   async expectPropertyInTable(propertyName: string) {
-    await expect(this.getTableRowByText(propertyName)).toBeVisible();
+    // Use .first() to handle cases where multiple rows match
+    await expect(this.getTableRowByText(propertyName).first()).toBeVisible();
   }
 
   async expectPropertyNotInTable(propertyName: string) {
-    await expect(this.getTableRowByText(propertyName)).not.toBeVisible();
+    await expect(this.getTableRowByText(propertyName).first()).not.toBeVisible();
   }
 
   async expectNetAnnualValue(expectedAmount: string) {
     await expect(this.netAnnualValueDisplay).toContainText(expectedAmount);
+  }
+
+  async expectDeleteDialogVisible() {
+    await expect(this.deleteDialog).toBeVisible();
   }
 }

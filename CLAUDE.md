@@ -127,7 +127,22 @@ Routes are organized by domain. Each file in `server/routes/` exports a Hono app
 - **Investments**: `investments.ts`, `epf.ts`, `ppf.ts`, `nps.ts`, `esop.ts`, `investment-reports.ts`
 - **Non-Salary Income**: `business-income.ts`, `rental-income.ts`, `capital-gains.ts`, `interest-income.ts`, `dividend-income.ts`, `other-income.ts`
 - **Expenses**: `expenses.ts`, `budgets.ts`, `expenses-ai.ts`, `expense-rules.ts`
+- **Tax Planning**: `advance-tax.ts`, `tax-scenarios.ts`, `tax-reports.ts`
+- **Liabilities**: `loans.ts`, `credit-cards.ts`, `liabilities.ts`, `liabilities-reports.ts`
+- **Protection**: `insurance.ts`
 - **Other**: `alerts.ts`
+
+### Frontend Composables
+Main data-fetching composables in `src/composables/`:
+- `useSalary.ts` - Salary, income sources, salary history
+- `useIncome.ts` - All non-salary income types
+- `useExpenses.ts` - Expenses, budgets, AI categorization
+- `useInvestments.ts` - All investment types (EPF, PPF, NPS, ESOP, etc.)
+- `useLiabilities.ts` - Loans, credit cards, liabilities overview
+- `useProtection.ts` - Insurance policies
+- `useTax.ts` - Tax scenarios, advance tax, tax reports
+- `useFinancialHealth.ts` - Aggregated financial health metrics
+- `useFIRE.ts` - FIRE goal calculations and projections
 
 ### Backend Route Pattern (Hono + Zod)
 ```typescript
@@ -368,3 +383,5 @@ See `docs/` folder for detailed implementation plans per section:
 - `Expenses-Section-Plan.md`, `Investments-Section-Plan.md`, `Liabilities-Section-Plan.md`
 - `Protection-Section-Plan.md`
 - `STYLING-GUIDE.md` - UI patterns and Vuetify conventions
+- `Parallel-Implementation-Guide.md` - Multi-section implementation workflows
+- `START-IMPLEMENTATION.md`, `POST-IMPLEMENTATION.md` - Session workflow guides

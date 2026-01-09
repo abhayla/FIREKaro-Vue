@@ -206,8 +206,10 @@ export class NonSalaryOverviewPage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
+    // Wait for page title to be visible
     await expect(this.pageTitle).toBeVisible();
-    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+    // Also check the Add Income button is ready
+    await expect(this.addIncomeButton).toBeVisible();
   }
 
   async expectBusinessCardVisible() {

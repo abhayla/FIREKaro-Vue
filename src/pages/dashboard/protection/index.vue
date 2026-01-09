@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import InsuranceSummaryCard from '@/components/protection/InsuranceSummaryCard.vue'
 import CoverageGapAlert from '@/components/protection/CoverageGapAlert.vue'
 import FamilyCoverageView from '@/components/protection/FamilyCoverageView.vue'
@@ -122,8 +121,6 @@ const coverageStats = computed(() => {
       icon="mdi-shield-check"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Loading State -->
     <div v-if="isLoading && summaryLoading" class="text-center py-8">

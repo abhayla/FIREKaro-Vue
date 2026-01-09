@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import LoanCard from '@/components/liabilities/LoanCard.vue'
 import LoanForm from '@/components/liabilities/LoanForm.vue'
 import AmortizationTable from '@/components/liabilities/AmortizationTable.vue'
@@ -186,8 +185,6 @@ const handleCloseDialog = () => {
       icon="mdi-credit-card-outline"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Summary Cards -->
     <v-row class="mb-6">

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import CashFlowSummary from '@/components/financial-health/CashFlowSummary.vue'
 import PassiveIncomeSummary from '@/components/financial-health/PassiveIncomeSummary.vue'
 import { useCashFlow, formatINR } from '@/composables/useFinancialHealth'
@@ -83,8 +82,6 @@ const chartPaths = computed(() => {
       icon="mdi-heart-pulse"
       :tabs="tabs"
     />
-    <FamilyToggle class="mb-6" />
-
     <!-- Month Selector -->
     <div class="d-flex justify-end mb-4">
       <v-select

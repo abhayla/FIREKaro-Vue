@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
-import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 import ScenarioCard from "@/components/tax/ScenarioCard.vue";
 import ScenarioEditor from "@/components/tax/ScenarioEditor.vue";
 import ScenarioComparison from "@/components/tax/ScenarioComparison.vue";
@@ -187,9 +186,6 @@ async function handleApplySuggestion(suggestion: any) {
           hide-details
           prepend-inner-icon="mdi-calendar"
         />
-      </v-col>
-      <v-col cols="12" sm="6" md="4">
-        <FamilyToggle />
       </v-col>
       <v-col cols="12" md="4" class="text-md-end">
         <v-btn

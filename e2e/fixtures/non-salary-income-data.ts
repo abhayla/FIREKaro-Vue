@@ -14,8 +14,8 @@ import { testUserProfile } from './unified-profile';
 export interface BusinessIncomeTestData {
   id?: string;
   businessName: string;
-  businessType: 'trading' | 'freelance' | 'profession';
-  taxationMethod: '44AD' | '44ADA' | 'regular';
+  businessType: 'proprietorship' | 'partnership' | 'freelance' | 'commission_agent';
+  taxationMethod: '44AD' | '44ADA' | 'regular_books';
   financialYear: string;
   grossReceipts: number;
   cashReceiptsPercentage: number;
@@ -76,6 +76,9 @@ export interface OtherIncomeTestData {
   // For 80TTA/80TTB
   eligible80TTA?: boolean;
   eligible80TTB?: boolean;
+  // Aliases for test compatibility
+  incomeType?: string;
+  amount?: number;
 }
 
 export interface InterestIncomeTestData {
@@ -124,7 +127,7 @@ export const businessIncomeData: BusinessIncomeTestData[] = [
   },
   {
     businessName: "Online Course Sales",
-    businessType: "trading",
+    businessType: "proprietorship",
     taxationMethod: "44AD",
     financialYear: "2025-26",
     grossReceipts: 200000, // Rs. 2L
@@ -135,6 +138,35 @@ export const businessIncomeData: BusinessIncomeTestData[] = [
     // (160000 * 0.06) + (40000 * 0.08) = 9600 + 3200 = 12800
     expectedDeemedProfit: 12800,
     expectedProfitRate: 6.4,
+  },
+  {
+    businessName: "Cloud Architecture Consulting",
+    businessType: "freelance",
+    taxationMethod: "44ADA",
+    financialYear: "2025-26",
+    grossReceipts: 3000000, // Rs. 30L
+    cashReceiptsPercentage: 5,
+    digitalPaymentPercentage: 95,
+    gstRegistered: true,
+    gstNumber: "29ABCDE1234F1Z5",
+    // 44ADA: 50% deemed profit for professionals
+    expectedDeemedProfit: 1500000,
+    expectedProfitRate: 50,
+  },
+  {
+    businessName: "Software Reselling",
+    businessType: "partnership",
+    taxationMethod: "44AD",
+    financialYear: "2025-26",
+    grossReceipts: 1500000, // Rs. 15L
+    cashReceiptsPercentage: 0,
+    digitalPaymentPercentage: 100,
+    gstRegistered: true,
+    gstNumber: "29XYZPQ9876R1Z8",
+    // 44AD: 6% for digital payments (all digital)
+    // 1500000 * 0.06 = 90000
+    expectedDeemedProfit: 90000,
+    expectedProfitRate: 6,
   },
 ];
 
@@ -162,6 +194,44 @@ export const rentalIncomeData: RentalIncomeTestData[] = [
     expectedGrossAnnualValue: 300000,
     expectedNetAnnualValue: 21600,
     expectedSection24Deduction: 180000,
+  },
+  {
+    propertyName: "Electronic City Investment",
+    propertyType: "residential",
+    propertyAddress: "Brigade Gateway, Electronic City Phase 1, Bangalore 560100",
+    financialYear: "2025-26",
+    monthlyRent: 38000,
+    annualRent: 456000, // Rs. 4.56L
+    vacantMonths: 1,
+    municipalTaxesPaid: 18000,
+    housingLoanInterest: 0, // Loan paid off
+    isLetOut: true,
+    // GAV = 456000 - (38000 * 1 vacancy) = 418000
+    // NAV = GAV - Municipal Tax = 418000 - 18000 = 400000
+    // Standard Deduction (30%) = 120000
+    // Net = 400000 - 120000 = 280000
+    expectedGrossAnnualValue: 418000,
+    expectedNetAnnualValue: 280000,
+    expectedSection24Deduction: 0,
+  },
+  {
+    propertyName: "Commercial Shop",
+    propertyType: "commercial",
+    propertyAddress: "MG Road, Bangalore 560001",
+    financialYear: "2025-26",
+    monthlyRent: 45000,
+    annualRent: 540000, // Rs. 5.4L
+    vacantMonths: 0,
+    municipalTaxesPaid: 25000,
+    housingLoanInterest: 0,
+    isLetOut: true,
+    // GAV = 540000
+    // NAV = GAV - Municipal Tax = 540000 - 25000 = 515000
+    // Standard Deduction (30%) = 154500
+    // Net = 515000 - 154500 = 360500
+    expectedGrossAnnualValue: 540000,
+    expectedNetAnnualValue: 360500,
+    expectedSection24Deduction: 0,
   },
 ];
 
@@ -218,6 +288,71 @@ export const capitalGainsData: CapitalGainTestData[] = [
     expectedTaxableGain: 80000,
     expectedTaxRate: 12.5,
     expectedTax: 10000,
+  },
+  {
+    assetType: "equity",
+    assetName: "Reliance Industries",
+    financialYear: "2025-26",
+    purchaseDate: "2020-04-15",
+    purchasePrice: 132000, // 600 shares @ 2200
+    saleDate: "2025-08-10",
+    salePrice: 171000, // 600 shares @ 2850
+    holdingPeriod: 64, // > 12 months = LTCG
+    gainType: "LTCG",
+    // LTCG on equity: 12.5% above Rs. 1.25L exemption
+    expectedGain: 39000,
+    expectedTaxableGain: 0, // Below 1.25L exemption threshold
+    expectedTaxRate: 12.5,
+    expectedTax: 0,
+  },
+  {
+    assetType: "equity",
+    assetName: "Infosys",
+    financialYear: "2025-26",
+    purchaseDate: "2022-02-20",
+    purchasePrice: 1400000, // 1000 shares @ 1400
+    saleDate: "2025-07-15",
+    salePrice: 1750000, // 1000 shares @ 1750
+    holdingPeriod: 41, // > 12 months = LTCG
+    gainType: "LTCG",
+    // LTCG on equity: 12.5% above Rs. 1.25L exemption
+    expectedGain: 350000,
+    expectedTaxableGain: 225000, // 350000 - 125000 exemption
+    expectedTaxRate: 12.5,
+    expectedTax: 28125,
+  },
+  {
+    assetType: "equity",
+    assetName: "TCS",
+    financialYear: "2025-26",
+    purchaseDate: "2025-01-15",
+    purchasePrice: 410000, // 100 shares @ 4100
+    saleDate: "2025-06-20",
+    salePrice: 430000, // 100 shares @ 4300
+    holdingPeriod: 5, // < 12 months = STCG
+    gainType: "STCG",
+    // STCG on equity: 20%
+    expectedGain: 20000,
+    expectedTaxableGain: 20000,
+    expectedTaxRate: 20,
+    expectedTax: 4000,
+  },
+  {
+    assetType: "property",
+    assetName: "Land in Hosur",
+    financialYear: "2025-26",
+    purchaseDate: "2018-06-01",
+    purchasePrice: 3000000,
+    saleDate: "2025-09-15",
+    salePrice: 5500000,
+    holdingPeriod: 87, // > 24 months = LTCG for property
+    gainType: "LTCG",
+    indexedCost: 4200000, // With indexation
+    // LTCG on property: 12.5% without indexation (new rules)
+    expectedGain: 2500000,
+    expectedTaxableGain: 1300000,
+    expectedTaxRate: 12.5,
+    expectedTax: 162500,
   },
 ];
 

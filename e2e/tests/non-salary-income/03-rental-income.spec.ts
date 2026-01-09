@@ -1,9 +1,25 @@
 import { test, expect } from "@playwright/test";
 import { RentalIncomePage } from "../../pages/non-salary-income";
-import { rentalIncomeData, nonSalaryIncomeSummary } from "../../fixtures/non-salary-income-data";
+import { rentalIncomeData } from "../../fixtures/non-salary-income-data";
 
 test.describe("Rental Income (House Property)", () => {
   let rentalPage: RentalIncomePage;
+
+  // Clean up test data before all tests
+  test.beforeAll(async ({ request }) => {
+    // Delete all rental income for test user via API
+    try {
+      const rentals = await request.get("/api/rental-income?fy=2025-26");
+      const data = await rentals.json();
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          await request.delete(`/api/rental-income/${item.id}`);
+        }
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+  });
 
   test.beforeEach(async ({ page }) => {
     rentalPage = new RentalIncomePage(page);
@@ -52,9 +68,10 @@ test.describe("Rental Income (House Property)", () => {
     // Wait for calculation
     await page.waitForTimeout(500);
 
-    // Annual rent should be auto-calculated (25000 * 12 = 300000)
-    const annualRentValue = await rentalPage.annualRentField.inputValue();
-    expect(parseInt(annualRentValue)).toBe(300000);
+    // Annual rent field is read-only and formatted - check it contains the calculated value
+    // 25000 * 12 = 300000 = "₹3,00,000"
+    const annualRentField = rentalPage.annualRentField;
+    await expect(annualRentField).toHaveValue(/3,00,000|300000/);
   });
 
   test("should edit existing rental property", async ({ page }) => {
@@ -65,6 +82,7 @@ test.describe("Rental Income (House Property)", () => {
     await rentalPage.fillRentalForm({
       propertyName: testData.propertyName,
       propertyType: testData.propertyType,
+      propertyAddress: testData.propertyAddress,
       monthlyRent: testData.monthlyRent,
     });
     await rentalPage.saveForm();
@@ -82,21 +100,25 @@ test.describe("Rental Income (House Property)", () => {
   });
 
   test("should delete rental property", async ({ page }) => {
-    const testData = rentalIncomeData[0];
+    // Use unique name to avoid conflicts with other tests
+    const uniqueName = `Delete Test Property ${Date.now()}`;
 
     // First add the property
     await rentalPage.openAddForm();
     await rentalPage.fillRentalForm({
-      propertyName: testData.propertyName,
-      propertyType: testData.propertyType,
-      monthlyRent: testData.monthlyRent,
+      propertyName: uniqueName,
+      propertyType: "residential",
+      propertyAddress: "123 Test Street",
+      monthlyRent: 15000,
     });
     await rentalPage.saveForm();
+    await rentalPage.expectPropertyInTable(uniqueName);
 
     // Now delete it
-    await rentalPage.deleteProperty(testData.propertyName);
+    await rentalPage.deleteProperty(uniqueName);
+    await rentalPage.expectDeleteDialogVisible();
     await rentalPage.confirmDeleteProperty();
-    await rentalPage.expectPropertyNotInTable(testData.propertyName);
+    await rentalPage.expectPropertyNotInTable(uniqueName);
   });
 
   test("should cancel form without saving", async ({ page }) => {

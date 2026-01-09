@@ -12,7 +12,6 @@ import {
   Legend
 } from 'chart.js'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import {
   useLoans,
   useCreditCards,
@@ -266,8 +265,6 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
       icon="mdi-credit-card-outline"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Report Type Tabs -->
     <v-card variant="outlined" class="mb-6">

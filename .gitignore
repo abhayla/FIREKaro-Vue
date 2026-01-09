@@ -27,6 +27,7 @@ coverage
 
 # Test files
 /test-results/
+e2e/test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/

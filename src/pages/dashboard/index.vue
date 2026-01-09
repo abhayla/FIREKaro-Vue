@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useUserStore } from "@/stores/user";
-import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 
 const userStore = useUserStore();
 </script>
@@ -8,16 +7,13 @@ const userStore = useUserStore();
 <template>
   <div>
     <!-- Header -->
-    <div class="d-flex align-center justify-space-between mb-6">
-      <div>
-        <h1 class="text-h4 font-weight-bold">
-          Welcome back, {{ userStore.userName }}!
-        </h1>
-        <p class="text-body-1 text-medium-emphasis">
-          Here's your financial overview
-        </p>
-      </div>
-      <FamilyToggle />
+    <div class="mb-6">
+      <h1 class="text-h4 font-weight-bold">
+        Welcome back, {{ userStore.userName }}!
+      </h1>
+      <p class="text-body-1 text-medium-emphasis">
+        Here's your financial overview
+      </p>
     </div>
 
     <!-- Quick Stats Row -->

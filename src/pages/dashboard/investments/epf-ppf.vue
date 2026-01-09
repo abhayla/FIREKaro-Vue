@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import EPFCalculator from '@/components/investments/EPFCalculator.vue'
 import PPFTracker from '@/components/investments/PPFTracker.vue'
 import {
@@ -97,8 +96,6 @@ const totalRetirement = ref(2100000) // EPF + PPF
       icon="mdi-chart-line"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Summary Cards -->
     <v-row class="mb-6">

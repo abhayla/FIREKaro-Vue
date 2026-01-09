@@ -237,7 +237,9 @@ export class ScenariosPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    await expect(this.scenariosTab).toHaveAttribute("aria-selected", "true");
+    // Wait for tabs to update their state after route change
+    await this.page.waitForTimeout(300);
+    await expect(this.scenariosTab).toHaveAttribute("aria-selected", "true", { timeout: 5000 });
   }
 
   async expectBaselineVisible() {

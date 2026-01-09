@@ -24,22 +24,31 @@ const EXEMPT_RELATIVES = [
   'SPOUSE_LINEAL_DESCENDANT',
 ]
 
-// Validation schema for other income
-const otherIncomeSchema = z.object({
-  fiscalYear: z.string(),
-  category: z.enum([
-    'COMMISSION',
-    'ROYALTY',
-    'PENSION',
-    'GIFT',
-    'LOTTERY',
-    'AGRICULTURAL',
-    'FAMILY_PENSION',
-    'OTHER',
-  ]),
+// Map frontend lowercase categories to backend uppercase
+const CATEGORY_MAP: Record<string, string> = {
+  commission: 'COMMISSION',
+  royalty: 'ROYALTY',
+  pension: 'PENSION',
+  gift: 'GIFT',
+  lottery: 'LOTTERY',
+  agricultural: 'AGRICULTURAL',
+  family_pension: 'FAMILY_PENSION',
+  other: 'OTHER',
+  // Also support interest/dividend being redirected here (though they have separate routes)
+  interest: 'OTHER',
+  dividend: 'OTHER',
+}
+
+// Base validation schema for other income (accepts both cases)
+const otherIncomeBaseSchema = z.object({
+  fiscalYear: z.string().optional(),
+  financialYear: z.string().optional(), // Frontend sends this
+  category: z.string(), // Accept any string, will normalize
   description: z.string().min(1, 'Description is required'),
   sourceName: z.string().optional(),
   sourcePan: z.string().optional(),
+  sourceType: z.string().optional(), // Frontend sends this
+  subcategory: z.string().optional(), // Frontend sends this
   grossAmount: z.number().min(0),
   tdsDeducted: z.number().min(0).default(0),
 
@@ -69,6 +78,21 @@ const otherIncomeSchema = z.object({
 
   receiptDate: z.string().optional(),
 })
+
+// Schema with transform for create
+const otherIncomeSchema = otherIncomeBaseSchema.transform((data) => ({
+  ...data,
+  category: (CATEGORY_MAP[data.category.toLowerCase()] || data.category.toUpperCase()) as
+    | 'COMMISSION'
+    | 'ROYALTY'
+    | 'PENSION'
+    | 'GIFT'
+    | 'LOTTERY'
+    | 'AGRICULTURAL'
+    | 'FAMILY_PENSION'
+    | 'OTHER',
+  fiscalYear: data.fiscalYear || data.financialYear || '2025-26',
+}))
 
 // Calculate tax treatment based on category
 function calculateTaxTreatment(data: {
@@ -140,7 +164,8 @@ function calculateTaxTreatment(data: {
 // GET /api/other-income - List all other income records
 app.get('/', async (c) => {
   const userId = c.get('userId')
-  const financialYear = c.req.query('financialYear')
+  // Support both 'fy' and 'financialYear' query params
+  const financialYear = c.req.query('fy') || c.req.query('financialYear')
   const category = c.req.query('category')
 
   try {
@@ -151,62 +176,37 @@ app.get('/', async (c) => {
     } = { userId }
 
     if (financialYear) whereClause.fiscalYear = financialYear
-    if (category) whereClause.category = category
+    if (category) {
+      // Support lowercase category filter
+      whereClause.category = CATEGORY_MAP[category.toLowerCase()] || category.toUpperCase()
+    }
 
     const records = await prisma.otherIncome.findMany({
       where: whereClause,
       orderBy: [{ createdAt: 'desc' }],
     })
 
-    // Calculate summary
-    const totalGross = records.reduce((sum, r) => sum + r.grossAmount, 0)
-    const totalTDS = records.reduce((sum, r) => sum + r.tdsDeducted, 0)
-    const totalExempt = records.filter((r) => r.isExempt).reduce((sum, r) => sum + r.grossAmount, 0)
+    // Transform records to frontend format
+    const transformedRecords = records.map((r) => ({
+      id: r.id,
+      category: r.category.toLowerCase(),
+      subcategory: null, // Not stored in DB
+      description: r.description,
+      financialYear: r.fiscalYear,
+      grossAmount: r.grossAmount,
+      tdsDeducted: r.tdsDeducted,
+      netAmount: r.netAmount,
+      sourceName: r.sourceName,
+      sourceType: null, // Not stored in DB
+      isExempt: r.isExempt,
+      isFromRelative: r.isFromRelative,
+      donorRelationship: r.donorRelationship,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+    }))
 
-    // Lottery income (30% flat tax)
-    const lotteryIncome = records
-      .filter((r) => r.category === 'LOTTERY')
-      .reduce((sum, r) => sum + r.grossAmount, 0)
-    const lotteryTax = lotteryIncome * 0.312 // 30% + 4% cess
-
-    // Group by category
-    const byCategory = records.reduce(
-      (acc, r) => {
-        if (!acc[r.category]) {
-          acc[r.category] = { gross: 0, tds: 0, count: 0 }
-        }
-        acc[r.category].gross += r.grossAmount
-        acc[r.category].tds += r.tdsDeducted
-        acc[r.category].count += 1
-        return acc
-      },
-      {} as Record<string, { gross: number; tds: number; count: number }>
-    )
-
-    // Commission income that could be 44AD eligible
-    const regularCommission = records.filter((r) => r.category === 'COMMISSION' && r.isRegular)
-    const commission44ADEligible = regularCommission.reduce((sum, r) => sum + r.grossAmount, 0)
-
-    const summary = {
-      totalGross,
-      totalTDS,
-      totalExempt,
-      taxableIncome: totalGross - totalExempt,
-      netIncome: totalGross - totalTDS,
-      lotteryIncome,
-      lotteryTax,
-      commission44ADEligible,
-      recordCount: records.length,
-      byCategory: Object.entries(byCategory).map(([cat, data]) => ({
-        category: cat,
-        ...data,
-      })),
-    }
-
-    return c.json({
-      success: true,
-      data: { records, summary },
-    })
+    // Return array directly (frontend expects array)
+    return c.json(transformedRecords)
   } catch (error) {
     console.error('Error fetching other income:', error)
     return c.json({ success: false, error: 'Failed to fetch other income' }, 500)
@@ -277,7 +277,26 @@ app.post('/', zValidator('json', otherIncomeSchema), async (c) => {
       },
     })
 
-    return c.json({ success: true, data: record }, 201)
+    // Transform to frontend format
+    const transformed = {
+      id: record.id,
+      category: record.category.toLowerCase(),
+      subcategory: null,
+      description: record.description,
+      financialYear: record.fiscalYear,
+      grossAmount: record.grossAmount,
+      tdsDeducted: record.tdsDeducted,
+      netAmount: record.netAmount,
+      sourceName: record.sourceName,
+      sourceType: null,
+      isExempt: record.isExempt,
+      isFromRelative: record.isFromRelative,
+      donorRelationship: record.donorRelationship,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    }
+
+    return c.json(transformed, 201)
   } catch (error) {
     console.error('Error creating other income:', error)
     return c.json({ success: false, error: 'Failed to create other income' }, 500)
@@ -285,10 +304,19 @@ app.post('/', zValidator('json', otherIncomeSchema), async (c) => {
 })
 
 // PUT /api/other-income/:id - Update other income record
-app.put('/:id', zValidator('json', otherIncomeSchema.partial()), async (c) => {
+app.put('/:id', zValidator('json', otherIncomeBaseSchema.partial()), async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
-  const data = c.req.valid('json')
+  const rawData = c.req.valid('json')
+
+  // Normalize category if provided
+  const data = {
+    ...rawData,
+    category: rawData.category
+      ? (CATEGORY_MAP[rawData.category.toLowerCase()] || rawData.category.toUpperCase())
+      : undefined,
+    fiscalYear: rawData.fiscalYear || rawData.financialYear,
+  }
 
   try {
     const existing = await prisma.otherIncome.findFirst({
@@ -312,20 +340,59 @@ app.put('/:id', zValidator('json', otherIncomeSchema.partial()), async (c) => {
       donorRelationship,
     })
 
+    // Build update data excluding frontend-specific fields
+    const updateData: Record<string, unknown> = {
+      netAmount: grossAmount - (data.tdsDeducted ?? existing.tdsDeducted),
+      isExempt: taxTreatment.isExempt,
+      flatTaxRate: taxTreatment.flatTaxRate,
+    }
+
+    if (data.fiscalYear) updateData.fiscalYear = data.fiscalYear
+    if (data.category) updateData.category = data.category
+    if (data.description) updateData.description = data.description
+    if (data.sourceName !== undefined) updateData.sourceName = data.sourceName
+    if (data.sourcePan !== undefined) updateData.sourcePan = data.sourcePan
+    if (data.grossAmount !== undefined) updateData.grossAmount = data.grossAmount
+    if (data.tdsDeducted !== undefined) updateData.tdsDeducted = data.tdsDeducted
+    if (data.isRegular !== undefined) updateData.isRegular = data.isRegular
+    if (data.commissionType !== undefined) updateData.commissionType = data.commissionType
+    if (data.donorRelationship !== undefined) updateData.donorRelationship = data.donorRelationship
+    if (data.isFromRelative !== undefined) updateData.isFromRelative = data.isFromRelative
+    if (data.giftDate) updateData.giftDate = new Date(data.giftDate)
+    if (data.winningDate) updateData.winningDate = new Date(data.winningDate)
+    if (data.receiptDate) updateData.receiptDate = new Date(data.receiptDate)
+    if (data.pensionType !== undefined) updateData.pensionType = data.pensionType
+    if (data.pensionerName !== undefined) updateData.pensionerName = data.pensionerName
+    if (data.landLocation !== undefined) updateData.landLocation = data.landLocation
+    if (data.cropType !== undefined) updateData.cropType = data.cropType
+    if (data.royaltyType !== undefined) updateData.royaltyType = data.royaltyType
+    if (data.gameShowName !== undefined) updateData.gameShowName = data.gameShowName
+
     const record = await prisma.otherIncome.update({
       where: { id },
-      data: {
-        ...data,
-        netAmount: grossAmount - (data.tdsDeducted ?? existing.tdsDeducted),
-        isExempt: taxTreatment.isExempt,
-        flatTaxRate: taxTreatment.flatTaxRate,
-        giftDate: data.giftDate ? new Date(data.giftDate) : undefined,
-        winningDate: data.winningDate ? new Date(data.winningDate) : undefined,
-        receiptDate: data.receiptDate ? new Date(data.receiptDate) : undefined,
-      },
+      data: updateData,
     })
 
-    return c.json({ success: true, data: record })
+    // Transform to frontend format
+    const transformed = {
+      id: record.id,
+      category: record.category.toLowerCase(),
+      subcategory: null,
+      description: record.description,
+      financialYear: record.fiscalYear,
+      grossAmount: record.grossAmount,
+      tdsDeducted: record.tdsDeducted,
+      netAmount: record.netAmount,
+      sourceName: record.sourceName,
+      sourceType: null,
+      isExempt: record.isExempt,
+      isFromRelative: record.isFromRelative,
+      donorRelationship: record.donorRelationship,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    }
+
+    return c.json(transformed)
   } catch (error) {
     console.error('Error updating other income:', error)
     return c.json({ success: false, error: 'Failed to update other income' }, 500)

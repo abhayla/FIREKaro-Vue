@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import StockHoldingCard from '@/components/investments/StockHoldingCard.vue'
 import AssetForm from '@/components/investments/AssetForm.vue'
 import {
@@ -192,8 +191,6 @@ const confirmDelete = async () => {
       icon="mdi-chart-line"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Summary Cards -->
     <v-row class="mb-6">

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import PropertyCard from '@/components/investments/PropertyCard.vue'
 import {
   useProperties,
@@ -246,8 +245,6 @@ const handleAddProperty = async () => {
       icon="mdi-chart-line"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Summary Cards -->
     <v-row class="mb-6">

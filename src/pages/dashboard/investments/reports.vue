@@ -14,7 +14,6 @@ import {
   Filler
 } from 'chart.js'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import PortfolioAllocationChart from '@/components/investments/PortfolioAllocationChart.vue'
 import SIPProgressionChart from '@/components/investments/SIPProgressionChart.vue'
 import CompoundingChart from '@/components/investments/CompoundingChart.vue'
@@ -234,8 +233,6 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
       icon="mdi-chart-line"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Report Type Selector -->
     <v-card variant="outlined" class="mb-6">

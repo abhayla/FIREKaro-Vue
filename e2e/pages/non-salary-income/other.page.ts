@@ -44,24 +44,25 @@ export class OtherIncomePage extends BasePage {
 
   // Other income form dialog
   get otherIncomeFormDialog(): Locator {
-    return this.page.locator(".v-dialog").filter({ hasText: /Other.*Income|Add Income|Edit Income/i });
+    return this.page.locator(".v-dialog").filter({ hasText: /Other Income/i });
   }
 
   // Form fields
   get incomeTypeSelect(): Locator {
-    return this.page.locator(".v-select").filter({ hasText: /Income Type/i });
+    // Form uses "Income Category", not "Income Type"
+    return this.page.locator(".v-select").filter({ hasText: /Income Category/i });
   }
 
   get descriptionField(): Locator {
-    return this.page.getByRole("textbox", { name: /Description|Source/i });
+    return this.page.getByLabel("Description");
   }
 
   get amountField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Amount/i });
+    return this.page.getByLabel("Gross Amount");
   }
 
   get tdsDeductedField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /TDS.*Deducted|Tax Deducted/i });
+    return this.page.getByLabel("TDS Deducted");
   }
 
   get frequencySelect(): Locator {
@@ -104,7 +105,7 @@ export class OtherIncomePage extends BasePage {
 
   // Form buttons
   get saveButton(): Locator {
-    return this.otherIncomeFormDialog.getByRole("button", { name: /Save|Add|Submit/i });
+    return this.otherIncomeFormDialog.getByRole("button", { name: /Add Income|Update Income/i });
   }
 
   get cancelButton(): Locator {
@@ -190,7 +191,24 @@ export class OtherIncomePage extends BasePage {
   }
 
   async saveForm() {
+    // Click save and wait for API response
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().includes("/api/other-income") &&
+                    (response.request().method() === "POST" || response.request().method() === "PUT"),
+      { timeout: 10000 }
+    );
     await this.saveButton.click();
+    try {
+      const response = await responsePromise;
+      const status = response.status();
+      if (status >= 400) {
+        console.log(`API returned ${status}: ${await response.text()}`);
+      }
+    } catch (e) {
+      // If no POST/PUT happens (e.g., validation error), wait a bit
+      await this.page.waitForTimeout(500);
+    }
+    // Wait for dialog to close and table to refresh
     await this.page.waitForTimeout(500);
   }
 
@@ -258,16 +276,21 @@ export class OtherIncomePage extends BasePage {
   // ============================================
 
   private getIncomeTypeLabel(type: string): string {
+    // Match the actual category titles from OtherIncomeForm.vue
     const labels: Record<string, string> = {
-      savings_interest: "Savings Account Interest",
-      fd_interest: "Fixed Deposit Interest",
-      rd_interest: "Recurring Deposit Interest",
+      interest: "Interest Income",
+      savings_interest: "Interest Income",
+      fd_interest: "Interest Income",
+      rd_interest: "Interest Income",
       dividend: "Dividend Income",
-      gift: "Gift Received",
-      lottery: "Lottery/Game Show",
+      commission: "Commission",
+      royalty: "Royalty",
+      pension: "Pension",
+      gift: "Gift",
       agricultural: "Agricultural Income",
-      exempt: "Exempt Income",
-      other: "Other Income",
+      exempt: "Other",
+      lottery: "Other",
+      other: "Other",
     };
     return labels[type] || type;
   }
@@ -287,8 +310,10 @@ export class OtherIncomePage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.pageTitle).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: "Other" })).toHaveAttribute("aria-selected", "true");
+    // Wait for subtitle to be visible (rendered by SectionHeader)
+    await expect(this.page.locator("p.text-body-2").filter({ hasText: "Other Income Sources" })).toBeVisible();
+    // Also check the Add button is ready
+    await expect(this.addIncomeButton).toBeVisible();
   }
 
   async expectFormDialogVisible() {

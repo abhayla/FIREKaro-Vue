@@ -2,7 +2,6 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
-import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 import SummaryMetricCards from "@/components/shared/SummaryMetricCards.vue";
 import FinancialYearSelector from "@/components/shared/FinancialYearSelector.vue";
 import EmployerCard from "@/components/salary/EmployerCard.vue";
@@ -138,8 +137,6 @@ const handleCellClick = (payload: { componentCode: string; monthIndex: number; v
       icon="mdi-cash-multiple"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- FY Selector + Settings -->
     <div class="d-flex justify-end align-center ga-2 mb-4">

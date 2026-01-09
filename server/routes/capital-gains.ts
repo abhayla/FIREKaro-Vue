@@ -60,10 +60,33 @@ const LTCG_THRESHOLDS: Record<string, number> = {
   OTHER: 36,
 }
 
-// Validation schema for capital gains
-const capitalGainSchema = z.object({
-  fiscalYear: z.string(),
-  assetType: z.enum(['EQUITY', 'EQUITY_MF', 'DEBT_MF', 'PROPERTY', 'GOLD', 'CRYPTO', 'OTHER']),
+// Asset type mapping (lowercase to uppercase)
+const ASSET_TYPE_MAP: Record<string, string> = {
+  equity: 'EQUITY',
+  listed_equity: 'EQUITY',
+  equity_mf: 'EQUITY_MF',
+  debt_mf: 'DEBT_MF',
+  property: 'PROPERTY',
+  gold: 'GOLD',
+  crypto: 'CRYPTO',
+  other: 'OTHER',
+  // Also accept uppercase directly
+  EQUITY: 'EQUITY',
+  EQUITY_MF: 'EQUITY_MF',
+  DEBT_MF: 'DEBT_MF',
+  PROPERTY: 'PROPERTY',
+  GOLD: 'GOLD',
+  CRYPTO: 'CRYPTO',
+  OTHER: 'OTHER',
+}
+
+// Base validation schema for capital gains (lenient - accepts both frontend and backend formats)
+const capitalGainBaseSchema = z.object({
+  // Accept both fiscalYear and financialYear
+  fiscalYear: z.string().optional(),
+  financialYear: z.string().optional(),
+  // Accept any case for asset type
+  assetType: z.string(),
   assetName: z.string().min(1, 'Asset name is required'),
   assetDescription: z.string().optional(),
   quantity: z.number().optional(),
@@ -72,13 +95,32 @@ const capitalGainSchema = z.object({
   saleDate: z.string(),
   salePrice: z.number().min(0),
   expenses: z.number().min(0).default(0),
+  purchaseExpenses: z.number().min(0).optional(),
+  saleExpenses: z.number().min(0).optional(),
+  improvementCost: z.number().min(0).optional(),
   useIndexation: z.boolean().default(false),
-  exemptionSection: z.enum(['54', '54F', '54EC', '54B']).optional(),
+  exemptionSection: z.enum(['54', '54F', '54EC', '54B']).optional().nullable(),
   exemptionAmount: z.number().min(0).default(0),
+  exemptionClaimed: z.number().min(0).optional(),
   brokerName: z.string().optional(),
   brokerOrderId: z.string().optional(),
   importedFrom: z.enum(['ZERODHA', 'GROWW', 'UPSTOX', 'MANUAL']).optional(),
 })
+
+// Schema with transform for create operations
+const capitalGainSchema = capitalGainBaseSchema.transform((data) => ({
+  ...data,
+  // Normalize asset type to uppercase
+  assetType: ASSET_TYPE_MAP[data.assetType] || data.assetType.toUpperCase(),
+  // Normalize fiscalYear field
+  fiscalYear: data.fiscalYear || data.financialYear || '2025-26',
+  // Normalize expenses
+  expenses: data.expenses || (data.purchaseExpenses || 0) + (data.saleExpenses || 0) + (data.improvementCost || 0),
+  exemptionAmount: data.exemptionAmount || data.exemptionClaimed || 0,
+}))
+
+// Partial schema for updates
+const capitalGainUpdateSchema = capitalGainBaseSchema.partial()
 
 // Helper function to get fiscal year from date
 function getFiscalYearFromDate(date: Date): string {
@@ -201,7 +243,8 @@ function calculateCapitalGains(data: {
 // GET /api/capital-gains - List all capital gains records
 app.get('/', async (c) => {
   const userId = c.get('userId')
-  const financialYear = c.req.query('financialYear')
+  // Support both 'fy' and 'financialYear' query params
+  const financialYear = c.req.query('fy') || c.req.query('financialYear')
   const assetType = c.req.query('assetType')
   const gainType = c.req.query('gainType')
 
@@ -222,35 +265,31 @@ app.get('/', async (c) => {
       orderBy: [{ saleDate: 'desc' }],
     })
 
-    // Calculate summary
-    const stcgRecords = records.filter((r) => r.gainType === 'STCG')
-    const ltcgRecords = records.filter((r) => r.gainType === 'LTCG')
+    // Transform records to match frontend expected format
+    const transformedRecords = records.map((r) => ({
+      id: r.id,
+      assetType: r.assetType.toLowerCase(), // Frontend expects lowercase
+      assetName: r.assetName,
+      financialYear: r.fiscalYear, // Frontend expects financialYear
+      purchaseDate: r.purchaseDate.toISOString(),
+      purchasePrice: r.purchasePrice,
+      saleDate: r.saleDate.toISOString(),
+      salePrice: r.salePrice,
+      purchaseExpenses: r.expenses, // Map expenses to purchaseExpenses
+      saleExpenses: 0,
+      improvementCost: 0,
+      useIndexation: r.useIndexation,
+      exemptionClaimed: r.exemptionAmount,
+      exemptionSection: r.exemptionSection,
+      holdingPeriodMonths: r.holdingPeriodMonths,
+      gainType: r.gainType,
+      grossGain: r.grossGain,
+      taxableGain: r.taxableGain,
+      estimatedTax: r.estimatedTax,
+    }))
 
-    const summary = {
-      totalTransactions: records.length,
-      totalSTCG: stcgRecords.reduce((sum, r) => sum + r.taxableGain, 0),
-      totalLTCG: ltcgRecords.reduce((sum, r) => sum + r.taxableGain, 0),
-      totalEstimatedTax: records.reduce((sum, r) => sum + r.estimatedTax, 0),
-      stcgCount: stcgRecords.length,
-      ltcgCount: ltcgRecords.length,
-      byAssetType: Object.entries(
-        records.reduce(
-          (acc, r) => {
-            if (!acc[r.assetType]) acc[r.assetType] = { gain: 0, tax: 0, count: 0 }
-            acc[r.assetType].gain += r.taxableGain
-            acc[r.assetType].tax += r.estimatedTax
-            acc[r.assetType].count += 1
-            return acc
-          },
-          {} as Record<string, { gain: number; tax: number; count: number }>
-        )
-      ).map(([type, data]) => ({ type, ...data })),
-    }
-
-    return c.json({
-      success: true,
-      data: { records, summary },
-    })
+    // Return array directly (frontend expects this format)
+    return c.json(transformedRecords)
   } catch (error) {
     console.error('Error fetching capital gains:', error)
     return c.json({ success: false, error: 'Failed to fetch capital gains' }, 500)
@@ -330,18 +369,48 @@ app.post('/', zValidator('json', capitalGainSchema), async (c) => {
       },
     })
 
-    return c.json({ success: true, data: record }, 201)
+    // Transform to frontend expected format
+    const transformed = {
+      id: record.id,
+      assetType: record.assetType.toLowerCase(),
+      assetName: record.assetName,
+      financialYear: record.fiscalYear,
+      purchaseDate: record.purchaseDate.toISOString(),
+      purchasePrice: record.purchasePrice,
+      saleDate: record.saleDate.toISOString(),
+      salePrice: record.salePrice,
+      purchaseExpenses: record.expenses,
+      saleExpenses: 0,
+      improvementCost: 0,
+      useIndexation: record.useIndexation,
+      exemptionClaimed: record.exemptionAmount,
+      exemptionSection: record.exemptionSection,
+      holdingPeriodMonths: record.holdingPeriodMonths,
+      gainType: record.gainType,
+      grossGain: record.grossGain,
+      taxableGain: record.taxableGain,
+      estimatedTax: record.estimatedTax,
+    }
+
+    return c.json(transformed, 201)
   } catch (error) {
     console.error('Error creating capital gain:', error)
-    return c.json({ success: false, error: 'Failed to create capital gain' }, 500)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return c.json({ message: 'Failed to create capital gain', details: errorMessage }, 500)
   }
 })
 
 // PUT /api/capital-gains/:id - Update capital gain record
-app.put('/:id', zValidator('json', capitalGainSchema.partial()), async (c) => {
+app.put('/:id', zValidator('json', capitalGainUpdateSchema), async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
-  const data = c.req.valid('json')
+  const rawData = c.req.valid('json')
+
+  // Normalize asset type if provided
+  const data = {
+    ...rawData,
+    assetType: rawData.assetType ? (ASSET_TYPE_MAP[rawData.assetType] || rawData.assetType.toUpperCase()) : undefined,
+  }
 
   try {
     const existing = await prisma.capitalGain.findFirst({
@@ -364,32 +433,72 @@ app.put('/:id', zValidator('json', capitalGainSchema.partial()), async (c) => {
       exemptionAmount: data.exemptionAmount ?? existing.exemptionAmount,
     })
 
+    // Only include valid Prisma fields (exclude frontend-specific fields like financialYear)
+    const updateData: Record<string, unknown> = {
+      holdingPeriodMonths: calculations.holdingPeriodMonths,
+      gainType: calculations.gainType,
+      purchaseCII: calculations.purchaseCII,
+      saleCII: calculations.saleCII,
+      indexedCost: calculations.indexedCost,
+      grossGain: calculations.grossGain,
+      taxableGain: calculations.taxableGain,
+      taxRate: calculations.taxRate,
+      estimatedTax: calculations.estimatedTax,
+      isPreJuly2024: calculations.isPreJuly2024,
+      taxWithIndexation: calculations.taxWithIndexation,
+      taxWithoutIndex: calculations.taxWithoutIndex,
+      recommendedOption: calculations.recommendedOption,
+    }
+
+    // Only set fields that were actually provided
+    if (data.assetType) updateData.assetType = data.assetType
+    if (data.assetName) updateData.assetName = data.assetName
+    if (data.fiscalYear) updateData.fiscalYear = data.fiscalYear
+    if (data.purchaseDate) updateData.purchaseDate = new Date(data.purchaseDate)
+    if (data.saleDate) updateData.saleDate = new Date(data.saleDate)
+    if (data.purchasePrice !== undefined) updateData.purchasePrice = data.purchasePrice
+    if (data.salePrice !== undefined) updateData.salePrice = data.salePrice
+    if (data.expenses !== undefined) updateData.expenses = data.expenses
+    if (data.useIndexation !== undefined) updateData.useIndexation = data.useIndexation
+    if (data.exemptionSection !== undefined) updateData.exemptionSection = data.exemptionSection
+    if (data.exemptionAmount !== undefined) updateData.exemptionAmount = data.exemptionAmount
+    if (data.assetDescription !== undefined) updateData.assetDescription = data.assetDescription
+    if (data.quantity !== undefined) updateData.quantity = data.quantity
+    if (data.brokerName !== undefined) updateData.brokerName = data.brokerName
+    if (data.brokerOrderId !== undefined) updateData.brokerOrderId = data.brokerOrderId
+
     const record = await prisma.capitalGain.update({
       where: { id },
-      data: {
-        ...data,
-        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
-        saleDate: data.saleDate ? new Date(data.saleDate) : undefined,
-        holdingPeriodMonths: calculations.holdingPeriodMonths,
-        gainType: calculations.gainType,
-        purchaseCII: calculations.purchaseCII,
-        saleCII: calculations.saleCII,
-        indexedCost: calculations.indexedCost,
-        grossGain: calculations.grossGain,
-        taxableGain: calculations.taxableGain,
-        taxRate: calculations.taxRate,
-        estimatedTax: calculations.estimatedTax,
-        isPreJuly2024: calculations.isPreJuly2024,
-        taxWithIndexation: calculations.taxWithIndexation,
-        taxWithoutIndex: calculations.taxWithoutIndex,
-        recommendedOption: calculations.recommendedOption,
-      },
+      data: updateData,
     })
 
-    return c.json({ success: true, data: record })
+    // Transform to frontend expected format
+    const transformed = {
+      id: record.id,
+      assetType: record.assetType.toLowerCase(),
+      assetName: record.assetName,
+      financialYear: record.fiscalYear,
+      purchaseDate: record.purchaseDate.toISOString(),
+      purchasePrice: record.purchasePrice,
+      saleDate: record.saleDate.toISOString(),
+      salePrice: record.salePrice,
+      purchaseExpenses: record.expenses,
+      saleExpenses: 0,
+      improvementCost: 0,
+      useIndexation: record.useIndexation,
+      exemptionClaimed: record.exemptionAmount,
+      exemptionSection: record.exemptionSection,
+      holdingPeriodMonths: record.holdingPeriodMonths,
+      gainType: record.gainType,
+      grossGain: record.grossGain,
+      taxableGain: record.taxableGain,
+      estimatedTax: record.estimatedTax,
+    }
+
+    return c.json(transformed)
   } catch (error) {
     console.error('Error updating capital gain:', error)
-    return c.json({ success: false, error: 'Failed to update capital gain' }, 500)
+    return c.json({ message: 'Failed to update capital gain' }, 500)
   }
 })
 

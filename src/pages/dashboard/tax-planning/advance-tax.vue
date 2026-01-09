@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
-import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 import AdvanceTaxTimeline from "@/components/tax/AdvanceTaxTimeline.vue";
 import AdvanceTaxPaymentForm from "@/components/tax/AdvanceTaxPaymentForm.vue";
 import InterestCalculator from "@/components/tax/InterestCalculator.vue";
@@ -186,9 +185,6 @@ function getQuarterLabel(quarter: number) {
           hide-details
           prepend-inner-icon="mdi-calendar"
         />
-      </v-col>
-      <v-col cols="12" sm="6" md="4">
-        <FamilyToggle />
       </v-col>
       <v-col cols="12" md="4" class="text-md-end">
         <v-btn

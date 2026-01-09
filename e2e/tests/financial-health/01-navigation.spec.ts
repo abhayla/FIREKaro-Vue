@@ -77,9 +77,11 @@ test.describe("Financial Health Navigation", () => {
 
     await page.goto("/dashboard/financial-health/net-worth");
     await page.waitForLoadState("domcontentloaded");
+    // Wait for tabs to update their state after route change
+    await page.waitForTimeout(500);
 
     const netWorthTab = page.getByRole("tab", { name: "Net Worth" });
-    await expect(netWorthTab).toHaveAttribute("aria-selected", "true");
-    await expect(healthScoreTab).toHaveAttribute("aria-selected", "false");
+    await expect(netWorthTab).toHaveAttribute("aria-selected", "true", { timeout: 5000 });
+    await expect(healthScoreTab).toHaveAttribute("aria-selected", "false", { timeout: 5000 });
   });
 });

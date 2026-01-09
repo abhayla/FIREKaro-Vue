@@ -90,12 +90,20 @@ async function globalSetup(config: FullConfig) {
   // Verify authentication by checking API session
   console.log("Verifying authentication via API...");
   const sessionResponse = await page.evaluate(async () => {
-    const res = await fetch("/api/auth/get-session", { credentials: "include" });
-    return res.json();
+    try {
+      const res = await fetch("/api/auth/get-session", { credentials: "include" });
+      const text = await res.text();
+      if (!text) return { empty: true };
+      return JSON.parse(text);
+    } catch (e) {
+      return { error: String(e) };
+    }
   });
 
   if (sessionResponse?.user) {
     console.log(`✓ Authenticated as: ${sessionResponse.user.email}`);
+  } else if (sessionResponse?.empty) {
+    console.log("ℹ Session API returned empty response (dev mode may bypass auth)");
   } else {
     console.warn("⚠ API session check returned no user");
     console.log("Session response:", JSON.stringify(sessionResponse));

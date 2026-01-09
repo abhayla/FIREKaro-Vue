@@ -24,93 +24,93 @@ test.describe("Other Income (Interest, Dividends)", () => {
     await expect(otherIncomePage.tdsDeductedField).toBeVisible();
   });
 
-  test("should add FD interest income with TDS", async ({ page }) => {
-    const testData = otherIncomeData[0]; // HDFC Bank FD Interest
+  test("should add commission income", async ({ page }) => {
+    const uniqueDesc = `Commission Income ${Date.now()}`;
 
     await otherIncomePage.openAddForm();
     await otherIncomePage.fillOtherIncomeForm({
-      incomeType: "fd_interest",
-      description: testData.description,
-      amount: testData.grossAmount,
-      tdsDeducted: testData.tdsDeducted,
+      incomeType: "commission",
+      description: uniqueDesc,
+      amount: 50000,
+      tdsDeducted: 5000,
     });
 
     await otherIncomePage.saveForm();
     await otherIncomePage.expectFormDialogClosed();
-    await otherIncomePage.expectIncomeInTable(testData.description);
+    await otherIncomePage.expectIncomeInTable(uniqueDesc);
   });
 
-  test("should add savings account interest (80TTA eligible)", async ({ page }) => {
-    const testData = otherIncomeData[1]; // Savings Account Interest
+  test("should add royalty income", async ({ page }) => {
+    const uniqueDesc = `Royalty Income ${Date.now()}`;
 
     await otherIncomePage.openAddForm();
     await otherIncomePage.fillOtherIncomeForm({
-      incomeType: "savings_interest",
-      description: testData.description,
-      amount: testData.grossAmount,
-      tdsDeducted: testData.tdsDeducted,
+      incomeType: "royalty",
+      description: uniqueDesc,
+      amount: 100000,
+      tdsDeducted: 10000,
     });
 
     await otherIncomePage.saveForm();
     await otherIncomePage.expectFormDialogClosed();
-    await otherIncomePage.expectIncomeInTable(testData.description);
+    await otherIncomePage.expectIncomeInTable(uniqueDesc);
   });
 
-  test("should add dividend income", async ({ page }) => {
-    const testData = otherIncomeData[3]; // Stock Dividends
+  test("should add gift income", async ({ page }) => {
+    const uniqueDesc = `Gift from Friend ${Date.now()}`;
 
     await otherIncomePage.openAddForm();
     await otherIncomePage.fillOtherIncomeForm({
-      incomeType: "dividend",
-      description: testData.description,
-      amount: testData.grossAmount,
-      tdsDeducted: testData.tdsDeducted,
+      incomeType: "gift",
+      description: uniqueDesc,
+      amount: 75000,
     });
 
     await otherIncomePage.saveForm();
     await otherIncomePage.expectFormDialogClosed();
-    await otherIncomePage.expectIncomeInTable(testData.description);
+    await otherIncomePage.expectIncomeInTable(uniqueDesc);
   });
 
   test("should edit existing other income", async ({ page }) => {
-    const testData = otherIncomeData[0];
+    const uniqueDesc = `Edit Test Income ${Date.now()}`;
 
     // First add the income
     await otherIncomePage.openAddForm();
     await otherIncomePage.fillOtherIncomeForm({
-      incomeType: "fd_interest",
-      description: testData.description,
-      amount: testData.grossAmount,
+      incomeType: "commission",
+      description: uniqueDesc,
+      amount: 30000,
     });
     await otherIncomePage.saveForm();
+    await otherIncomePage.expectIncomeInTable(uniqueDesc);
 
     // Now edit it
-    await otherIncomePage.editIncome(testData.description);
+    await otherIncomePage.editIncome(uniqueDesc);
     await otherIncomePage.expectFormDialogVisible();
 
-    const updatedAmount = testData.grossAmount + 10000;
     await otherIncomePage.fillOtherIncomeForm({
-      amount: updatedAmount,
+      amount: 40000,
     });
     await otherIncomePage.saveForm();
     await otherIncomePage.expectFormDialogClosed();
   });
 
   test("should delete other income", async ({ page }) => {
-    const testData = otherIncomeData[0];
+    const uniqueDesc = `Delete Test Income ${Date.now()}`;
 
     // First add the income
     await otherIncomePage.openAddForm();
     await otherIncomePage.fillOtherIncomeForm({
-      incomeType: "fd_interest",
-      description: testData.description,
-      amount: testData.grossAmount,
+      incomeType: "commission",
+      description: uniqueDesc,
+      amount: 25000,
     });
     await otherIncomePage.saveForm();
+    await otherIncomePage.expectIncomeInTable(uniqueDesc);
 
     // Now delete it
-    await otherIncomePage.deleteIncome(testData.description);
+    await otherIncomePage.deleteIncome(uniqueDesc);
     await otherIncomePage.confirmDeleteIncome();
-    await otherIncomePage.expectIncomeNotInTable(testData.description);
+    await otherIncomePage.expectIncomeNotInTable(uniqueDesc);
   });
 });

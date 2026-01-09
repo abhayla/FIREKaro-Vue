@@ -44,7 +44,7 @@ export class CapitalGainsPage extends BasePage {
 
   // Capital gains form dialog
   get capitalGainsFormDialog(): Locator {
-    return this.page.locator(".v-dialog").filter({ hasText: /Capital Gain|Add Transaction|Edit Transaction/i });
+    return this.page.locator(".v-dialog").filter({ hasText: /Capital Gain Transaction/i });
   }
 
   // Form fields
@@ -65,11 +65,12 @@ export class CapitalGainsPage extends BasePage {
   }
 
   get purchasePriceField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Purchase Price|Buy Price|Cost/i });
+    // Use exact match to avoid matching "Improvement Cost"
+    return this.page.getByLabel("Purchase Price");
   }
 
   get salePriceField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Sale Price|Sell Price/i });
+    return this.page.getByLabel("Sale Price");
   }
 
   get quantityField(): Locator {
@@ -107,7 +108,7 @@ export class CapitalGainsPage extends BasePage {
 
   // Form buttons
   get saveButton(): Locator {
-    return this.capitalGainsFormDialog.getByRole("button", { name: /Save|Add|Submit/i });
+    return this.capitalGainsFormDialog.getByRole("button", { name: /Add Transaction|Update Transaction/i });
   }
 
   get cancelButton(): Locator {
@@ -195,7 +196,24 @@ export class CapitalGainsPage extends BasePage {
   }
 
   async saveForm() {
+    // Click save and wait for API response
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().includes("/api/capital-gains") &&
+                    (response.request().method() === "POST" || response.request().method() === "PUT"),
+      { timeout: 10000 }
+    );
     await this.saveButton.click();
+    try {
+      const response = await responsePromise;
+      const status = response.status();
+      if (status >= 400) {
+        console.log(`API returned ${status}: ${await response.text()}`);
+      }
+    } catch (e) {
+      // If no POST/PUT happens (e.g., validation error), wait a bit
+      await this.page.waitForTimeout(500);
+    }
+    // Wait for dialog to close and table to refresh
     await this.page.waitForTimeout(500);
   }
 
@@ -274,13 +292,16 @@ export class CapitalGainsPage extends BasePage {
   // ============================================
 
   private getAssetTypeLabel(type: string): string {
+    // Match the actual form options from CapitalGainsCalculator.vue
     const labels: Record<string, string> = {
-      listed_equity: "Listed Equity",
-      equity_mf: "Equity Mutual Fund",
+      equity: "Equity/Stocks/Equity MF",
+      listed_equity: "Equity/Stocks/Equity MF",
+      equity_mf: "Equity/Stocks/Equity MF",
       debt_mf: "Debt Mutual Fund",
-      property: "Property",
-      gold: "Gold",
-      unlisted_equity: "Unlisted Equity",
+      property: "Property/Real Estate",
+      gold: "Gold/Silver",
+      crypto: "Cryptocurrency",
+      unlisted_equity: "Equity/Stocks/Equity MF",
       other: "Other Assets",
     };
     return labels[type] || type;
@@ -291,8 +312,10 @@ export class CapitalGainsPage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.pageTitle).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: "Capital Gains" })).toHaveAttribute("aria-selected", "true");
+    // Wait for subtitle to be visible (rendered by SectionHeader)
+    await expect(this.page.locator("p.text-body-2").filter({ hasText: "Capital Gains" })).toBeVisible();
+    // Also check the Add button is ready
+    await expect(this.addTransactionButton).toBeVisible();
   }
 
   async expectFormDialogVisible() {

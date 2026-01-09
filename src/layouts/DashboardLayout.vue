@@ -4,6 +4,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useUiStore } from "@/stores/ui";
 import { useUserStore } from "@/stores/user";
 import AlertNotificationBell from "@/components/shared/AlertNotificationBell.vue";
+import AppBarFamilyToggle from "@/components/shared/AppBarFamilyToggle.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -283,19 +284,7 @@ const handleSignOut = async () => {
       <v-spacer />
 
       <!-- Family View Toggle -->
-      <v-btn
-        :icon="uiStore.isFamilyView ? 'mdi-account-group' : 'mdi-account'"
-        :color="uiStore.isFamilyView ? 'primary' : 'default'"
-        variant="text"
-        @click="uiStore.toggleFamilyView"
-      >
-        <v-icon>{{
-          uiStore.isFamilyView ? "mdi-account-group" : "mdi-account"
-        }}</v-icon>
-        <v-tooltip activator="parent" location="bottom">
-          {{ uiStore.isFamilyView ? "Family View" : "Personal View" }}
-        </v-tooltip>
-      </v-btn>
+      <AppBarFamilyToggle />
 
       <!-- Dark Mode Toggle -->
       <v-btn

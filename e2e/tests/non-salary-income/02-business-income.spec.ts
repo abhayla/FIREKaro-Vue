@@ -5,6 +5,23 @@ import { businessIncomeData, nonSalaryIncomeSummary } from "../../fixtures/non-s
 test.describe("Business Income (44AD/44ADA)", () => {
   let businessPage: BusinessIncomePage;
 
+  // Clean up test data before all tests
+  test.beforeAll(async ({ request }) => {
+    // Delete all business income for test user via API
+    // This ensures tests start with a clean slate
+    try {
+      const businesses = await request.get("/api/business-income?fy=2025-26");
+      const data = await businesses.json();
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          await request.delete(`/api/business-income/${item.id}`);
+        }
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+  });
+
   test.beforeEach(async ({ page }) => {
     businessPage = new BusinessIncomePage(page);
     await businessPage.navigateTo();
@@ -84,22 +101,24 @@ test.describe("Business Income (44AD/44ADA)", () => {
   });
 
   test("should delete business income", async ({ page }) => {
-    const testData = businessIncomeData[0];
+    // Use unique name to avoid conflicts with other tests
+    const uniqueName = `Delete Test Business ${Date.now()}`;
 
     // First add the business
     await businessPage.openAddForm();
     await businessPage.fillBusinessForm({
-      businessName: testData.businessName,
-      businessType: testData.businessType as any,
-      grossReceipts: testData.grossReceipts,
+      businessName: uniqueName,
+      businessType: "freelance",
+      grossReceipts: 100000,
     });
     await businessPage.saveForm();
+    await businessPage.expectBusinessInTable(uniqueName);
 
     // Now delete it
-    await businessPage.deleteBusiness(testData.businessName);
+    await businessPage.deleteBusiness(uniqueName);
     await businessPage.expectDeleteDialogVisible();
     await businessPage.confirmDeleteBusiness();
-    await businessPage.expectBusinessNotInTable(testData.businessName);
+    await businessPage.expectBusinessNotInTable(uniqueName);
   });
 
   test("should cancel delete operation", async ({ page }) => {

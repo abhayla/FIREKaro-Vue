@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import DebtToIncomeGauge from '@/components/liabilities/DebtToIncomeGauge.vue'
 import PayoffProgressChart from '@/components/liabilities/PayoffProgressChart.vue'
 import LoanCard from '@/components/liabilities/LoanCard.vue'
@@ -101,8 +100,6 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || ove
       icon="mdi-credit-card-outline"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Loading State -->
     <template v-if="isLoading">

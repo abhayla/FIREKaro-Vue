@@ -9,34 +9,58 @@ const app = new Hono()
 // Apply auth middleware to all routes
 app.use('*', authMiddleware)
 
-// Validation schema for business income
+// Validation schema for business income - matching frontend types
 const businessIncomeSchema = z.object({
-  fiscalYear: z.string(),
+  financialYear: z.string(),
   businessName: z.string().min(1, 'Business name is required'),
-  businessType: z.enum(['PROPRIETORSHIP', 'PARTNERSHIP', 'LLP']),
-  taxationScheme: z.enum(['44AD', '44ADA', 'REGULAR']),
-  natureOfBusiness: z.string().optional(),
+  businessType: z.enum(['proprietorship', 'partnership', 'freelance', 'commission_agent']),
+  taxationMethod: z.enum(['44AD', '44ADA', 'regular_books']),
   grossReceipts: z.number().min(0),
-  digitalPaymentPct: z.number().min(0).max(100).default(50),
-  deemedProfitRate: z.number().min(0).max(100),
-  taxableProfit: z.number(),
-  gstRegistered: z.boolean().default(false),
-  gstNumber: z.string().optional(),
-  gstFilingFreq: z.enum(['MONTHLY', 'QUARTERLY']).optional(),
-  pan: z.string().optional(),
-  schemeStartYear: z.string().optional(),
-  yearsOnScheme: z.number().int().min(1).default(1),
+  digitalPaymentPercentage: z.number().min(0).max(100).default(50),
+  totalExpenses: z.number().optional(),
+  depreciation: z.number().optional(),
+  isGstRegistered: z.boolean().default(false),
+  gstin: z.string().optional(),
 })
+
+// Helper to calculate deemed profit
+function calculateDeemedProfit(
+  taxationMethod: string,
+  grossReceipts: number,
+  digitalPaymentPercentage: number,
+  totalExpenses?: number,
+  depreciation?: number
+): { deemedProfit: number; deemedProfitRate: number } {
+  if (taxationMethod === '44AD') {
+    // 8% for cash, 6% for digital payments
+    const digitalPortion = grossReceipts * (digitalPaymentPercentage / 100)
+    const cashPortion = grossReceipts - digitalPortion
+    const deemedProfit = cashPortion * 0.08 + digitalPortion * 0.06
+    const deemedProfitRate = grossReceipts > 0 ? deemedProfit / grossReceipts : 0
+    return { deemedProfit, deemedProfitRate }
+  } else if (taxationMethod === '44ADA') {
+    // 50% deemed profit for professionals
+    const deemedProfit = grossReceipts * 0.5
+    return { deemedProfit, deemedProfitRate: 0.5 }
+  } else {
+    // Regular books - actual profit
+    const expenses = (totalExpenses || 0) + (depreciation || 0)
+    const deemedProfit = grossReceipts - expenses
+    const deemedProfitRate = grossReceipts > 0 ? deemedProfit / grossReceipts : 0
+    return { deemedProfit, deemedProfitRate }
+  }
+}
 
 // GET /api/business-income - List all business income records
 app.get('/', async (c) => {
   const userId = c.get('userId')
-  const financialYear = c.req.query('financialYear')
+  // Support both 'fy' and 'financialYear' query params
+  const financialYear = c.req.query('fy') || c.req.query('financialYear')
 
   try {
-    const whereClause: { userId: string; fiscalYear?: string } = { userId }
+    const whereClause: { userId: string; financialYear?: string } = { userId }
     if (financialYear) {
-      whereClause.fiscalYear = financialYear
+      whereClause.financialYear = financialYear
     }
 
     const records = await prisma.businessIncome.findMany({
@@ -44,22 +68,11 @@ app.get('/', async (c) => {
       orderBy: [{ createdAt: 'desc' }],
     })
 
-    // Calculate summary
-    const summary = {
-      totalGrossReceipts: records.reduce((sum, r) => sum + r.grossReceipts, 0),
-      totalTaxableProfit: records.reduce((sum, r) => sum + r.taxableProfit, 0),
-      businessCount: records.length,
-      scheme44ADCount: records.filter((r) => r.taxationScheme === '44AD').length,
-      scheme44ADACount: records.filter((r) => r.taxationScheme === '44ADA').length,
-    }
-
-    return c.json({
-      success: true,
-      data: { records, summary },
-    })
+    // Return array directly (frontend expects this format)
+    return c.json(records)
   } catch (error) {
     console.error('Error fetching business income:', error)
-    return c.json({ success: false, error: 'Failed to fetch business income' }, 500)
+    return c.json([], 500)
   }
 })
 
@@ -74,13 +87,13 @@ app.get('/:id', async (c) => {
     })
 
     if (!record) {
-      return c.json({ success: false, error: 'Business income not found' }, 404)
+      return c.json({ message: 'Business income not found' }, 404)
     }
 
-    return c.json({ success: true, data: record })
+    return c.json(record)
   } catch (error) {
     console.error('Error fetching business income:', error)
-    return c.json({ success: false, error: 'Failed to fetch business income' }, 500)
+    return c.json({ message: 'Failed to fetch business income' }, 500)
   }
 })
 
@@ -90,43 +103,38 @@ app.post('/', zValidator('json', businessIncomeSchema), async (c) => {
   const data = c.req.valid('json')
 
   try {
-    // Calculate deemed profit based on scheme
-    let calculatedProfit = data.taxableProfit
-    if (data.taxationScheme === '44AD') {
-      // 8% for non-digital, 6% for digital payments
-      const digitalPortion = data.grossReceipts * (data.digitalPaymentPct / 100)
-      const nonDigitalPortion = data.grossReceipts - digitalPortion
-      calculatedProfit = nonDigitalPortion * 0.08 + digitalPortion * 0.06
-    } else if (data.taxationScheme === '44ADA') {
-      // 50% deemed profit for professionals
-      calculatedProfit = data.grossReceipts * 0.5
-    }
+    // Calculate deemed profit based on taxation method
+    const { deemedProfit, deemedProfitRate } = calculateDeemedProfit(
+      data.taxationMethod,
+      data.grossReceipts,
+      data.digitalPaymentPercentage,
+      data.totalExpenses,
+      data.depreciation
+    )
 
     const record = await prisma.businessIncome.create({
       data: {
         userId,
-        fiscalYear: data.fiscalYear,
+        financialYear: data.financialYear,
         businessName: data.businessName,
         businessType: data.businessType,
-        taxationScheme: data.taxationScheme,
-        natureOfBusiness: data.natureOfBusiness,
+        taxationMethod: data.taxationMethod,
         grossReceipts: data.grossReceipts,
-        digitalPaymentPct: data.digitalPaymentPct,
-        deemedProfitRate: data.deemedProfitRate,
-        taxableProfit: calculatedProfit,
-        gstRegistered: data.gstRegistered,
-        gstNumber: data.gstNumber,
-        gstFilingFreq: data.gstFilingFreq,
-        pan: data.pan,
-        schemeStartYear: data.schemeStartYear,
-        yearsOnScheme: data.yearsOnScheme,
+        digitalPaymentPercentage: data.digitalPaymentPercentage,
+        totalExpenses: data.totalExpenses,
+        depreciation: data.depreciation,
+        deemedProfit,
+        deemedProfitRate,
+        isGstRegistered: data.isGstRegistered,
+        gstin: data.gstin,
       },
     })
 
-    return c.json({ success: true, data: record }, 201)
+    return c.json(record, 201)
   } catch (error) {
     console.error('Error creating business income:', error)
-    return c.json({ success: false, error: 'Failed to create business income' }, 500)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return c.json({ message: 'Failed to create business income', details: errorMessage }, 500)
   }
 })
 
@@ -142,34 +150,37 @@ app.put('/:id', zValidator('json', businessIncomeSchema.partial()), async (c) =>
     })
 
     if (!existing) {
-      return c.json({ success: false, error: 'Business income not found' }, 404)
+      return c.json({ message: 'Business income not found' }, 404)
     }
 
-    // Recalculate profit if gross receipts or scheme changed
-    let updateData = { ...data }
-    if (data.grossReceipts !== undefined || data.taxationScheme !== undefined) {
-      const grossReceipts = data.grossReceipts ?? existing.grossReceipts
-      const scheme = data.taxationScheme ?? existing.taxationScheme
-      const digitalPct = data.digitalPaymentPct ?? existing.digitalPaymentPct
+    // Recalculate profit if relevant fields changed
+    const grossReceipts = data.grossReceipts ?? existing.grossReceipts
+    const taxationMethod = data.taxationMethod ?? existing.taxationMethod
+    const digitalPct = data.digitalPaymentPercentage ?? existing.digitalPaymentPercentage
+    const totalExpenses = data.totalExpenses ?? existing.totalExpenses
+    const depreciation = data.depreciation ?? existing.depreciation
 
-      if (scheme === '44AD') {
-        const digitalPortion = grossReceipts * (digitalPct / 100)
-        const nonDigitalPortion = grossReceipts - digitalPortion
-        updateData.taxableProfit = nonDigitalPortion * 0.08 + digitalPortion * 0.06
-      } else if (scheme === '44ADA') {
-        updateData.taxableProfit = grossReceipts * 0.5
-      }
-    }
+    const { deemedProfit, deemedProfitRate } = calculateDeemedProfit(
+      taxationMethod,
+      grossReceipts,
+      digitalPct,
+      totalExpenses ?? undefined,
+      depreciation ?? undefined
+    )
 
     const record = await prisma.businessIncome.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...data,
+        deemedProfit,
+        deemedProfitRate,
+      },
     })
 
-    return c.json({ success: true, data: record })
+    return c.json(record)
   } catch (error) {
     console.error('Error updating business income:', error)
-    return c.json({ success: false, error: 'Failed to update business income' }, 500)
+    return c.json({ message: 'Failed to update business income' }, 500)
   }
 })
 
@@ -184,17 +195,17 @@ app.delete('/:id', async (c) => {
     })
 
     if (!existing) {
-      return c.json({ success: false, error: 'Business income not found' }, 404)
+      return c.json({ message: 'Business income not found' }, 404)
     }
 
     await prisma.businessIncome.delete({
       where: { id },
     })
 
-    return c.json({ success: true, message: 'Business income deleted successfully' })
+    return c.json({ message: 'Business income deleted successfully' })
   } catch (error) {
     console.error('Error deleting business income:', error)
-    return c.json({ success: false, error: 'Failed to delete business income' }, 500)
+    return c.json({ message: 'Failed to delete business income' }, 500)
   }
 })
 

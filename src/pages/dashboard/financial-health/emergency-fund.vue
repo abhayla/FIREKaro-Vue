@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import EmergencyFundProgress from '@/components/financial-health/EmergencyFundProgress.vue'
 import EmergencyFundCalculator from '@/components/financial-health/EmergencyFundCalculator.vue'
 import { useEmergencyFund, useCashFlow, formatINR } from '@/composables/useFinancialHealth'
@@ -34,8 +33,6 @@ const tabs2 = [
       icon="mdi-heart-pulse"
       :tabs="tabs"
     />
-    <FamilyToggle class="mb-6" />
-
     <!-- Quick Stats -->
     <v-row class="mb-6">
       <v-col cols="12" sm="4">

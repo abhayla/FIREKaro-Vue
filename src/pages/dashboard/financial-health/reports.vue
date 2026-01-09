@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import HealthScoreGauge from '@/components/financial-health/HealthScoreGauge.vue'
 import { useFinancialHealthScore, useNetWorth, useCashFlow, useEmergencyFund, formatINR } from '@/composables/useFinancialHealth'
 
@@ -84,8 +83,6 @@ const handleExport = (format: 'pdf' | 'excel') => {
       icon="mdi-heart-pulse"
       :tabs="tabs"
     />
-    <FamilyToggle class="mb-6" />
-
     <v-row>
       <!-- Report Selection -->
       <v-col cols="12" md="4">

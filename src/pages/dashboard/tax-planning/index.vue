@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
-import FamilyToggle from "@/components/shared/FamilyToggle.vue";
 import TaxComparisonCard from "@/components/tax/TaxComparisonCard.vue";
 import TaxSavingsRecommendations from "@/components/tax/TaxSavingsRecommendations.vue";
 import {
@@ -62,9 +61,6 @@ const taxSavings = computed(() => comparison.value?.savingsAmount || 0);
           hide-details
           prepend-inner-icon="mdi-calendar"
         />
-      </v-col>
-      <v-col cols="12" sm="6" md="4">
-        <FamilyToggle />
       </v-col>
     </v-row>
 

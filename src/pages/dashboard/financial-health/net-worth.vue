@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import NetWorthChart from '@/components/financial-health/NetWorthChart.vue'
 import NetWorthBreakdown from '@/components/financial-health/NetWorthBreakdown.vue'
 import NetWorthMilestones from '@/components/financial-health/NetWorthMilestones.vue'
@@ -26,8 +25,6 @@ const { data: netWorth, isLoading, isError } = useNetWorth()
       icon="mdi-heart-pulse"
       :tabs="tabs"
     />
-    <FamilyToggle class="mb-6" />
-
     <!-- Loading State -->
     <div v-if="isLoading" class="text-center py-8">
       <v-progress-circular indeterminate color="primary" size="48" />

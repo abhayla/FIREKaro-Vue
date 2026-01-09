@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import BankAccountCard from '@/components/financial-health/BankAccountCard.vue'
 import BankAccountForm from '@/components/financial-health/BankAccountForm.vue'
 import {
@@ -107,8 +106,6 @@ const handleDeleteAccount = async () => {
       icon="mdi-heart-pulse"
       :tabs="tabs"
     />
-    <FamilyToggle class="mb-6" />
-
     <!-- Summary Cards -->
     <v-row class="mb-6">
       <v-col cols="12" sm="4">

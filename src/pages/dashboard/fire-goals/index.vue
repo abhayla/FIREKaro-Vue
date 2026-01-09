@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import FreedomScoreCard from '@/components/fire/FreedomScoreCard.vue'
 import CrossoverPointChart from '@/components/fire/CrossoverPointChart.vue'
 import ExpenseCoverageGrid from '@/components/fire/ExpenseCoverageGrid.vue'
@@ -47,8 +46,6 @@ const yearsToFIRE = computed(() => {
       icon="mdi-fire"
       :tabs="tabs"
     />
-    <FamilyToggle class="mb-6" />
-
     <!-- Quick Stats -->
     <v-row class="mb-6">
       <v-col cols="6" sm="3">

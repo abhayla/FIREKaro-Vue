@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import FamilyToggle from '@/components/shared/FamilyToggle.vue'
 import CreditCardCard from '@/components/liabilities/CreditCardCard.vue'
 import CreditCardForm from '@/components/liabilities/CreditCardForm.vue'
 import {
@@ -132,8 +131,6 @@ const submitPayment = async () => {
       icon="mdi-credit-card-outline"
       :tabs="tabs"
     />
-
-    <FamilyToggle class="mb-6" />
 
     <!-- Summary Cards -->
     <v-row class="mb-6">
