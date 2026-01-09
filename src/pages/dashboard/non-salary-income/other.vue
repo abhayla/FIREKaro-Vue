@@ -2,6 +2,9 @@
 import { ref, computed } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
 import OtherIncomeForm from "@/components/income/OtherIncomeForm.vue";
+import CommissionWizard from "@/components/income/CommissionWizard.vue";
+import GiftExemptionCalc from "@/components/income/GiftExemptionCalc.vue";
+import LotteryTaxCalc from "@/components/income/LotteryTaxCalc.vue";
 import {
   useOtherIncome,
   useAddOtherIncome,
@@ -20,10 +23,9 @@ const tabs = [
   { title: "Overview", route: "/dashboard/non-salary-income" },
   { title: "Business", route: "/dashboard/non-salary-income/business" },
   { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  {
-    title: "Capital Gains",
-    route: "/dashboard/non-salary-income/capital-gains",
-  },
+  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
+  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
   { title: "Other", route: "/dashboard/non-salary-income/other" },
   { title: "Reports", route: "/dashboard/non-salary-income/reports" },
 ];
@@ -46,6 +48,9 @@ const editingItem = ref<OtherIncome | null>(null);
 const defaultCategory = ref<OtherIncome["category"]>("interest");
 const deleteDialog = ref(false);
 const deletingId = ref<string | null>(null);
+
+// Tools tab
+const activeToolTab = ref("commission");
 
 // Summary stats
 const totalInterest = computed(() => interestSummary.value?.totalInterest || 0);
@@ -328,6 +333,39 @@ function getCategoryIcon(category: string) {
             </div>
           </v-card-text>
         </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Tools Section -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <v-expansion-panels>
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-2" color="primary">mdi-calculator-variant</v-icon>
+              <span class="font-weight-medium">Income Classification Tools & Calculators</span>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-tabs v-model="activeToolTab" color="primary" class="mb-4">
+                <v-tab value="commission">Commission Wizard</v-tab>
+                <v-tab value="gift">Gift Exemption</v-tab>
+                <v-tab value="lottery">Lottery/Winnings Tax</v-tab>
+              </v-tabs>
+
+              <v-tabs-window v-model="activeToolTab">
+                <v-tabs-window-item value="commission">
+                  <CommissionWizard />
+                </v-tabs-window-item>
+                <v-tabs-window-item value="gift">
+                  <GiftExemptionCalc />
+                </v-tabs-window-item>
+                <v-tabs-window-item value="lottery">
+                  <LotteryTaxCalc />
+                </v-tabs-window-item>
+              </v-tabs-window>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-col>
     </v-row>
 

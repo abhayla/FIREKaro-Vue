@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
 import BusinessIncomeForm from "@/components/income/BusinessIncomeForm.vue";
+import LockInTracker from "@/components/income/LockInTracker.vue";
 import {
   useBusinessIncome,
   useAddBusinessIncome,
@@ -19,10 +20,9 @@ const tabs = [
   { title: "Overview", route: "/dashboard/non-salary-income" },
   { title: "Business", route: "/dashboard/non-salary-income/business" },
   { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  {
-    title: "Capital Gains",
-    route: "/dashboard/non-salary-income/capital-gains",
-  },
+  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
+  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
   { title: "Other", route: "/dashboard/non-salary-income/other" },
   { title: "Reports", route: "/dashboard/non-salary-income/reports" },
 ];
@@ -214,6 +214,26 @@ function getBusinessTypeLabel(type: string) {
             </div>
           </v-card-text>
         </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- 5-Year Lock-in Tracker -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <v-expansion-panels>
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-2" color="warning">mdi-lock-clock</v-icon>
+              <span class="font-weight-medium">5-Year Lock-in Tracker (44AD/44ADA)</span>
+              <v-chip class="ml-2" size="x-small" color="warning" variant="tonal">
+                Important
+              </v-chip>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <LockInTracker />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-col>
     </v-row>
 

@@ -38,6 +38,14 @@ export class NonSalaryOverviewPage extends BasePage {
     return this.page.locator(".v-card").filter({ hasText: /Capital Gains/i });
   }
 
+  get interestIncomeCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Interest Income/i });
+  }
+
+  get dividendIncomeCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Dividend Income/i });
+  }
+
   get otherIncomeCard(): Locator {
     return this.page.locator(".v-card").filter({ hasText: /Other Income/i });
   }
@@ -62,6 +70,14 @@ export class NonSalaryOverviewPage extends BasePage {
 
   get capitalGainsTab(): Locator {
     return this.page.getByRole("tab", { name: "Capital Gains" });
+  }
+
+  get interestTab(): Locator {
+    return this.page.getByRole("tab", { name: "Interest" });
+  }
+
+  get dividendsTab(): Locator {
+    return this.page.getByRole("tab", { name: "Dividends" });
   }
 
   get otherTab(): Locator {
@@ -101,6 +117,16 @@ export class NonSalaryOverviewPage extends BasePage {
     await this.page.waitForTimeout(300);
   }
 
+  async clickInterestTab() {
+    await this.interestTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async clickDividendsTab() {
+    await this.dividendsTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
   async clickOtherTab() {
     await this.otherTab.click();
     await this.page.waitForTimeout(300);
@@ -120,7 +146,7 @@ export class NonSalaryOverviewPage extends BasePage {
     await this.page.waitForTimeout(300);
   }
 
-  async selectIncomeType(type: "business" | "rental" | "capital-gains" | "other") {
+  async selectIncomeType(type: "business" | "rental" | "capital-gains" | "interest" | "dividends" | "other") {
     await this.clickAddIncome();
     await this.incomeTypeDialog.waitFor({ state: "visible" });
 
@@ -128,6 +154,8 @@ export class NonSalaryOverviewPage extends BasePage {
       business: "Business/Profession",
       rental: "Rental Income",
       "capital-gains": "Capital Gains",
+      interest: "Interest Income",
+      dividends: "Dividend Income",
       other: "Other Income",
     };
 
@@ -151,6 +179,16 @@ export class NonSalaryOverviewPage extends BasePage {
 
   async getCapitalGainsTotal(): Promise<string> {
     const valueElement = this.capitalGainsCard.locator(".text-h5, .text-h6, .text-currency").first();
+    return (await valueElement.textContent()) || "₹0";
+  }
+
+  async getInterestIncomeTotal(): Promise<string> {
+    const valueElement = this.interestIncomeCard.locator(".text-h5, .text-h6, .text-currency").first();
+    return (await valueElement.textContent()) || "₹0";
+  }
+
+  async getDividendIncomeTotal(): Promise<string> {
+    const valueElement = this.dividendIncomeCard.locator(".text-h5, .text-h6, .text-currency").first();
     return (await valueElement.textContent()) || "₹0";
   }
 
@@ -182,6 +220,14 @@ export class NonSalaryOverviewPage extends BasePage {
 
   async expectCapitalGainsCardVisible() {
     await expect(this.capitalGainsCard).toBeVisible();
+  }
+
+  async expectInterestIncomeCardVisible() {
+    await expect(this.interestIncomeCard).toBeVisible();
+  }
+
+  async expectDividendIncomeCardVisible() {
+    await expect(this.dividendIncomeCard).toBeVisible();
   }
 
   async expectOtherIncomeCardVisible() {

@@ -12,6 +12,12 @@ import type {
   OtherIncome,
   OtherIncomeInput,
   IncomeSummary,
+  InterestIncome,
+  InterestIncomeInput,
+  InterestIncomeSummary,
+  DividendIncome,
+  DividendIncomeInput,
+  DividendIncomeSummary,
 } from "@/types/income";
 import {
   useFinancialYear,
@@ -599,7 +605,254 @@ export function useIncomeSummary(financialYear?: string) {
 }
 
 // ============================================
-// Other Income by Category
+// Interest Income (Dedicated API)
+// ============================================
+
+interface InterestIncomeResponse {
+  success: boolean;
+  data: {
+    records: InterestIncome[];
+    summary: InterestIncomeSummary;
+  };
+}
+
+export function useInterestIncomeAPI(financialYear?: string) {
+  const { selectedFinancialYear } = useFinancialYear();
+  const fy = financialYear || selectedFinancialYear.value;
+
+  return useQuery({
+    queryKey: ["income", "interest", fy],
+    queryFn: async (): Promise<InterestIncomeResponse["data"]> => {
+      const res = await fetch(`/api/interest-income?financialYear=${fy}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch interest income");
+      }
+      const json: InterestIncomeResponse = await res.json();
+      return json.data;
+    },
+  });
+}
+
+export function useAddInterestIncome() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: InterestIncomeInput): Promise<InterestIncome> => {
+      const res = await fetch("/api/interest-income", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to add interest income");
+      }
+      const json = await res.json();
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["income", "interest"] });
+      queryClient.invalidateQueries({ queryKey: ["income", "summary"] });
+    },
+  });
+}
+
+export function useUpdateInterestIncome() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<InterestIncomeInput>;
+    }): Promise<InterestIncome> => {
+      const res = await fetch(`/api/interest-income/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update interest income");
+      }
+      const json = await res.json();
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["income", "interest"] });
+      queryClient.invalidateQueries({ queryKey: ["income", "summary"] });
+    },
+  });
+}
+
+export function useDeleteInterestIncome() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const res = await fetch(`/api/interest-income/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete interest income");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["income", "interest"] });
+      queryClient.invalidateQueries({ queryKey: ["income", "summary"] });
+    },
+  });
+}
+
+// FD Maturity Calendar
+interface CalendarRecord {
+  id: string;
+  sourceType: string;
+  institutionName: string;
+  accountNumber?: string;
+  principalAmount?: number;
+  interestRate?: number;
+  maturityDate: string;
+  maturityAmount?: number;
+  isAutoRenew: boolean;
+}
+
+interface CalendarResponse {
+  success: boolean;
+  data: {
+    records: CalendarRecord[];
+    byMonth: Record<string, CalendarRecord[]>;
+  };
+}
+
+export function useFDMaturityCalendar(startDate?: string, endDate?: string) {
+  return useQuery({
+    queryKey: ["income", "interest", "calendar", startDate, endDate],
+    queryFn: async (): Promise<CalendarResponse["data"]> => {
+      const params = new URLSearchParams();
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+
+      const res = await fetch(`/api/interest-income/calendar?${params}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch FD maturity calendar");
+      }
+      const json: CalendarResponse = await res.json();
+      return json.data;
+    },
+  });
+}
+
+// ============================================
+// Dividend Income (Dedicated API)
+// ============================================
+
+interface DividendIncomeResponse {
+  success: boolean;
+  data: {
+    records: DividendIncome[];
+    summary: DividendIncomeSummary;
+  };
+}
+
+export function useDividendIncomeAPI(financialYear?: string) {
+  const { selectedFinancialYear } = useFinancialYear();
+  const fy = financialYear || selectedFinancialYear.value;
+
+  return useQuery({
+    queryKey: ["income", "dividend", fy],
+    queryFn: async (): Promise<DividendIncomeResponse["data"]> => {
+      const res = await fetch(`/api/dividend-income?financialYear=${fy}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch dividend income");
+      }
+      const json: DividendIncomeResponse = await res.json();
+      return json.data;
+    },
+  });
+}
+
+export function useAddDividendIncome() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: DividendIncomeInput): Promise<DividendIncome> => {
+      const res = await fetch("/api/dividend-income", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to add dividend income");
+      }
+      const json = await res.json();
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["income", "dividend"] });
+      queryClient.invalidateQueries({ queryKey: ["income", "summary"] });
+    },
+  });
+}
+
+export function useUpdateDividendIncome() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<DividendIncomeInput>;
+    }): Promise<DividendIncome> => {
+      const res = await fetch(`/api/dividend-income/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update dividend income");
+      }
+      const json = await res.json();
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["income", "dividend"] });
+      queryClient.invalidateQueries({ queryKey: ["income", "summary"] });
+    },
+  });
+}
+
+export function useDeleteDividendIncome() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const res = await fetch(`/api/dividend-income/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete dividend income");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["income", "dividend"] });
+      queryClient.invalidateQueries({ queryKey: ["income", "summary"] });
+    },
+  });
+}
+
+// ============================================
+// Legacy: Other Income by Category (filters from other-income API)
+// NOTE: These are kept for backwards compatibility with the 'other' income page
+// For dedicated pages, use useInterestIncomeAPI and useDividendIncomeAPI
 // ============================================
 
 export function useInterestIncome(financialYear?: string) {

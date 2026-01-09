@@ -440,3 +440,210 @@ export function calculateSection24Deductions(
     totalDeduction,
   };
 }
+
+// ============================================================================
+// Interest Income (Dedicated API - FD, RD, Savings, P2P, Bonds)
+// ============================================================================
+
+export type InterestSourceType =
+  | "FD"
+  | "RD"
+  | "SAVINGS"
+  | "P2P"
+  | "BONDS"
+  | "NSC"
+  | "SCSS"
+  | "PPF"
+  | "OTHER";
+
+export interface InterestIncome {
+  id: string;
+  fiscalYear: string;
+  sourceType: InterestSourceType;
+  institutionName: string;
+  accountNumber?: string;
+  branchName?: string;
+
+  // Interest Details
+  principalAmount?: number;
+  interestRate?: number;
+  interestEarned: number;
+  accruedInterest?: number;
+
+  // TDS
+  tdsDeducted: number;
+  tdsRate?: number;
+  form16AReceived: boolean;
+
+  // Maturity (for FD/RD)
+  depositDate?: string;
+  maturityDate?: string;
+  maturityAmount?: number;
+  tenureMonths?: number;
+  isAutoRenew: boolean;
+
+  // 80TTA/80TTB Eligibility
+  is80TTAEligible: boolean;
+  is80TTBEligible: boolean;
+  deductionClaimed: number;
+
+  // For P2P Lending
+  platformName?: string;
+  borrowerCount?: number;
+  defaultAmount?: number;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InterestIncomeInput {
+  fiscalYear: string;
+  sourceType: InterestSourceType;
+  institutionName: string;
+  accountNumber?: string;
+  branchName?: string;
+  principalAmount?: number;
+  interestRate?: number;
+  interestEarned: number;
+  accruedInterest?: number;
+  tdsDeducted?: number;
+  tdsRate?: number;
+  form16AReceived?: boolean;
+  depositDate?: string;
+  maturityDate?: string;
+  maturityAmount?: number;
+  tenureMonths?: number;
+  isAutoRenew?: boolean;
+  is80TTAEligible?: boolean;
+  is80TTBEligible?: boolean;
+  platformName?: string;
+  borrowerCount?: number;
+  defaultAmount?: number;
+}
+
+export interface InterestIncomeSummary {
+  totalInterest: number;
+  totalTDS: number;
+  netInterest: number;
+  deduction80TTA: number;
+  deduction80TTB: number;
+  taxableInterest: number;
+  recordCount: number;
+  bySourceType: Array<{
+    type: InterestSourceType;
+    interest: number;
+    tds: number;
+    count: number;
+  }>;
+  upcomingMaturities: Array<{
+    id: string;
+    institutionName: string;
+    sourceType: InterestSourceType;
+    maturityDate: string;
+    maturityAmount?: number;
+    principalAmount?: number;
+  }>;
+}
+
+// 80TTA/80TTB Limits
+export const INTEREST_DEDUCTION_LIMITS = {
+  "80TTA": {
+    limit: 10000, // ₹10,000 for savings account interest
+    eligible: ["SAVINGS"],
+    description: "Savings account interest deduction for non-seniors",
+  },
+  "80TTB": {
+    limit: 50000, // ₹50,000 for senior citizens (60+)
+    eligible: ["FD", "RD", "SAVINGS", "BONDS", "NSC", "SCSS"],
+    description: "Interest deduction for senior citizens on all deposits",
+  },
+};
+
+// ============================================================================
+// Dividend Income (Dedicated API - Stocks, Mutual Funds, REITs)
+// ============================================================================
+
+export type DividendSourceType = "STOCK" | "MUTUAL_FUND" | "REIT" | "INVIT";
+export type DividendType = "INTERIM" | "FINAL" | "SPECIAL";
+
+export interface DividendIncome {
+  id: string;
+  fiscalYear: string;
+  sourceType: DividendSourceType;
+  companyOrFundName: string;
+  symbol?: string;
+  isin?: string;
+  folioNumber?: string;
+
+  // Dividend Details
+  dividendType?: DividendType;
+  recordDate?: string;
+  exDividendDate?: string;
+  paymentDate: string;
+  dividendPerShare?: number;
+  numberOfShares?: number;
+  dividendAmount: number;
+
+  // TDS (10% above Rs 5,000)
+  tdsDeducted: number;
+  tdsRate?: number;
+
+  // For yield calculation
+  investmentValue?: number;
+  dividendYield?: number;
+
+  // Source tracking
+  dematAccount?: string;
+  brokerName?: string;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DividendIncomeInput {
+  fiscalYear: string;
+  sourceType: DividendSourceType;
+  companyOrFundName: string;
+  symbol?: string;
+  isin?: string;
+  folioNumber?: string;
+  dividendType?: DividendType;
+  recordDate?: string;
+  exDividendDate?: string;
+  paymentDate: string;
+  dividendPerShare?: number;
+  numberOfShares?: number;
+  dividendAmount: number;
+  tdsDeducted?: number;
+  tdsRate?: number;
+  investmentValue?: number;
+  dematAccount?: string;
+  brokerName?: string;
+}
+
+export interface DividendIncomeSummary {
+  totalDividend: number;
+  totalTDS: number;
+  netDividend: number;
+  recordCount: number;
+  avgYield: number | null;
+  bySourceType: Array<{
+    type: DividendSourceType;
+    dividend: number;
+    tds: number;
+    count: number;
+  }>;
+  companiesAboveThreshold: Array<{
+    company: string;
+    amount: number;
+    expectedTDS: number;
+  }>;
+  tdsThresholdAlert: boolean;
+}
+
+// TDS threshold for dividends
+export const DIVIDEND_TDS_THRESHOLD = {
+  threshold: 5000, // ₹5,000 per company
+  tdsRate: 0.10, // 10% TDS above threshold
+  description: "TDS at 10% if dividend from a company exceeds ₹5,000",
+};

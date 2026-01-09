@@ -2,6 +2,8 @@
 import { ref, computed } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
 import RentalIncomeForm from "@/components/income/RentalIncomeForm.vue";
+import PreConstructionInterest from "@/components/income/PreConstructionInterest.vue";
+import CoOwnerSplit from "@/components/income/CoOwnerSplit.vue";
 import {
   useRentalIncome,
   useAddRentalIncome,
@@ -19,10 +21,9 @@ const tabs = [
   { title: "Overview", route: "/dashboard/non-salary-income" },
   { title: "Business", route: "/dashboard/non-salary-income/business" },
   { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  {
-    title: "Capital Gains",
-    route: "/dashboard/non-salary-income/capital-gains",
-  },
+  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
+  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
   { title: "Other", route: "/dashboard/non-salary-income/other" },
   { title: "Reports", route: "/dashboard/non-salary-income/reports" },
 ];
@@ -42,6 +43,9 @@ const showForm = ref(false);
 const editingItem = ref<RentalIncome | null>(null);
 const deleteDialog = ref(false);
 const deletingId = ref<string | null>(null);
+
+// Tools tab
+const activeToolTab = ref("pre-construction");
 
 // Summary stats
 const totalGrossRent = computed(
@@ -243,6 +247,35 @@ function getPropertyTypeColor(type: string) {
             </div>
           </v-card-text>
         </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Tools Section -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <v-expansion-panels>
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-2" color="secondary">mdi-calculator-variant</v-icon>
+              <span class="font-weight-medium">Rental Income Tools & Calculators</span>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-tabs v-model="activeToolTab" color="primary" class="mb-4">
+                <v-tab value="pre-construction">Pre-Construction Interest</v-tab>
+                <v-tab value="co-owner">Co-Owner Split Calculator</v-tab>
+              </v-tabs>
+
+              <v-tabs-window v-model="activeToolTab">
+                <v-tabs-window-item value="pre-construction">
+                  <PreConstructionInterest />
+                </v-tabs-window-item>
+                <v-tabs-window-item value="co-owner">
+                  <CoOwnerSplit />
+                </v-tabs-window-item>
+              </v-tabs-window>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-col>
     </v-row>
 

@@ -2,6 +2,8 @@
 import { ref, computed } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
 import CapitalGainsCalculator from "@/components/income/CapitalGainsCalculator.vue";
+import PropertyLTCGCalculator from "@/components/income/PropertyLTCGCalculator.vue";
+import Section54Dashboard from "@/components/income/Section54Dashboard.vue";
 import {
   useCapitalGains,
   useAddCapitalGain,
@@ -19,10 +21,9 @@ const tabs = [
   { title: "Overview", route: "/dashboard/non-salary-income" },
   { title: "Business", route: "/dashboard/non-salary-income/business" },
   { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  {
-    title: "Capital Gains",
-    route: "/dashboard/non-salary-income/capital-gains",
-  },
+  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
+  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
   { title: "Other", route: "/dashboard/non-salary-income/other" },
   { title: "Reports", route: "/dashboard/non-salary-income/reports" },
 ];
@@ -43,6 +44,9 @@ const showForm = ref(false);
 const editingItem = ref<CapitalGain | null>(null);
 const deleteDialog = ref(false);
 const deletingId = ref<string | null>(null);
+
+// Tools tab
+const activeToolTab = ref("ltcg");
 
 // Table headers
 const headers = [
@@ -238,6 +242,38 @@ function formatDate(dateStr: string) {
             </div>
           </v-card-text>
         </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Tools Section -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <v-expansion-panels>
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-2" color="secondary">mdi-calculator-variant</v-icon>
+              <span class="font-weight-medium">Capital Gains Tools & Calculators</span>
+              <v-chip class="ml-2" size="x-small" color="info" variant="tonal">
+                Budget 2024
+              </v-chip>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-tabs v-model="activeToolTab" color="primary" class="mb-4">
+                <v-tab value="ltcg">Property LTCG Calculator</v-tab>
+                <v-tab value="exemptions">Section 54/54F Tracker</v-tab>
+              </v-tabs>
+
+              <v-tabs-window v-model="activeToolTab">
+                <v-tabs-window-item value="ltcg">
+                  <PropertyLTCGCalculator />
+                </v-tabs-window-item>
+                <v-tabs-window-item value="exemptions">
+                  <Section54Dashboard />
+                </v-tabs-window-item>
+              </v-tabs-window>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-col>
     </v-row>
 

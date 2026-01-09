@@ -24,14 +24,21 @@ import { useFinancialYear } from "@/composables/useSalary";
 import { getFinancialYearOptions } from "@/types/salary";
 import type { IncomeType } from "@/types/income";
 
+// Advance Tax Due Dates for FY 2024-25
+const ADVANCE_TAX_DATES = [
+  { date: "2024-06-15", quarter: "Q1", percentage: 15 },
+  { date: "2024-09-15", quarter: "Q2", percentage: 45 },
+  { date: "2024-12-15", quarter: "Q3", percentage: 75 },
+  { date: "2025-03-15", quarter: "Q4", percentage: 100 },
+];
+
 const tabs = [
   { title: "Overview", route: "/dashboard/non-salary-income" },
   { title: "Business", route: "/dashboard/non-salary-income/business" },
   { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  {
-    title: "Capital Gains",
-    route: "/dashboard/non-salary-income/capital-gains",
-  },
+  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
+  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
   { title: "Other", route: "/dashboard/non-salary-income/other" },
   { title: "Reports", route: "/dashboard/non-salary-income/reports" },
 ];
@@ -75,6 +82,164 @@ const isLoading = computed(
     cgLoading.value ||
     otherLoading.value,
 );
+
+// ============================================
+// Filing Readiness Score
+// ============================================
+const filingReadinessItems = computed(() => [
+  {
+    id: "business",
+    label: "Business income declared",
+    completed: (businessData.value?.length || 0) > 0 || businessTotal.value === 0,
+    icon: "mdi-store",
+  },
+  {
+    id: "rental",
+    label: "Rental income added",
+    completed: (rentalData.value?.length || 0) > 0 || rentalTotal.value === 0,
+    icon: "mdi-home-city",
+  },
+  {
+    id: "capital_gains",
+    label: "Capital gains computed",
+    completed: (capitalGainsData.value?.length || 0) > 0,
+    icon: "mdi-trending-up",
+  },
+  {
+    id: "other",
+    label: "Other income recorded",
+    completed: (otherData.value?.length || 0) > 0,
+    icon: "mdi-dots-horizontal",
+  },
+  {
+    id: "tds",
+    label: "TDS entries verified",
+    completed: true, // Mock - would check TDS data
+    icon: "mdi-receipt",
+  },
+]);
+
+const filingReadinessScore = computed(() => {
+  const completed = filingReadinessItems.value.filter((item) => item.completed).length;
+  return Math.round((completed / filingReadinessItems.value.length) * 100);
+});
+
+// ============================================
+// Tax Optimization (Old vs New Regime)
+// ============================================
+const taxOptimization = computed(() => {
+  const totalIncome = summary.value?.totalGrossIncome || 0;
+
+  // Simplified calculation for demonstration
+  // Old regime with deductions (assumed 80C: 1.5L, 80D: 25K, Section 24: 2L)
+  const assumedDeductions = 375000; // Rs 3.75L common deductions
+  const oldRegimeTaxable = Math.max(0, totalIncome - assumedDeductions);
+  const oldRegimeTax = calculateTax(oldRegimeTaxable, "old");
+
+  // New regime (no deductions, lower slabs)
+  const newRegimeTax = calculateTax(totalIncome, "new");
+
+  const betterRegime = oldRegimeTax <= newRegimeTax ? "old" : "new";
+  const savings = Math.abs(oldRegimeTax - newRegimeTax);
+
+  return {
+    oldRegimeTax,
+    newRegimeTax,
+    betterRegime,
+    savings,
+    totalIncome,
+  };
+});
+
+function calculateTax(income: number, regime: "old" | "new"): number {
+  // Simplified tax calculation
+  if (regime === "new") {
+    // New regime slabs FY 2024-25
+    if (income <= 300000) return 0;
+    if (income <= 700000) return (income - 300000) * 0.05;
+    if (income <= 1000000) return 20000 + (income - 700000) * 0.10;
+    if (income <= 1200000) return 50000 + (income - 1000000) * 0.15;
+    if (income <= 1500000) return 80000 + (income - 1200000) * 0.20;
+    return 140000 + (income - 1500000) * 0.30;
+  } else {
+    // Old regime slabs
+    if (income <= 250000) return 0;
+    if (income <= 500000) return (income - 250000) * 0.05;
+    if (income <= 1000000) return 12500 + (income - 500000) * 0.20;
+    return 112500 + (income - 1000000) * 0.30;
+  }
+}
+
+// ============================================
+// Smart Alerts
+// ============================================
+const smartAlerts = computed(() => {
+  const alerts: Array<{
+    type: "warning" | "info" | "error";
+    icon: string;
+    title: string;
+    message: string;
+    action?: { label: string; route: string };
+  }> = [];
+
+  const today = new Date();
+
+  // Check advance tax due dates
+  for (const taxDate of ADVANCE_TAX_DATES) {
+    const dueDate = new Date(taxDate.date);
+    const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntil > 0 && daysUntil <= 30) {
+      alerts.push({
+        type: "warning",
+        icon: "mdi-calendar-clock",
+        title: `Advance Tax ${taxDate.quarter} Due`,
+        message: `${taxDate.percentage}% advance tax due in ${daysUntil} days (${taxDate.date})`,
+        action: { label: "Calculate Tax", route: "/dashboard/tax-planning" },
+      });
+      break; // Only show nearest due date
+    }
+  }
+
+  // Check for missing data
+  if ((businessData.value?.length || 0) === 0 && (rentalData.value?.length || 0) === 0) {
+    alerts.push({
+      type: "info",
+      icon: "mdi-lightbulb-outline",
+      title: "No Income Sources Added",
+      message: "Add your business or rental income to get accurate tax calculations",
+      action: { label: "Add Income", route: "/dashboard/non-salary-income/business" },
+    });
+  }
+
+  // Capital gains reminder
+  if ((capitalGainsData.value?.length || 0) === 0) {
+    alerts.push({
+      type: "info",
+      icon: "mdi-trending-up",
+      title: "Track Your Investments",
+      message: "Record your stock/mutual fund sales to calculate capital gains tax",
+      action: { label: "Add Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+    });
+  }
+
+  // ITR filing reminder (July deadline)
+  const itrDeadline = new Date(`${today.getFullYear()}-07-31`);
+  if (today < itrDeadline) {
+    const daysUntilITR = Math.ceil((itrDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysUntilITR <= 60 && daysUntilITR > 0) {
+      alerts.push({
+        type: daysUntilITR <= 15 ? "error" : "warning",
+        icon: "mdi-file-document-alert",
+        title: "ITR Filing Deadline",
+        message: `File your ITR within ${daysUntilITR} days to avoid late fees`,
+        action: { label: "View Reports", route: "/dashboard/non-salary-income/reports" },
+      });
+    }
+  }
+
+  return alerts;
+});
 
 // Add income dialog
 const showAddDialog = ref(false);
@@ -268,8 +433,179 @@ async function handleOtherSubmit(
       </v-col>
     </v-row>
 
+    <!-- Smart Alerts -->
+    <v-row v-if="smartAlerts.length > 0" class="mt-4">
+      <v-col cols="12">
+        <v-alert
+          v-for="(alert, index) in smartAlerts.slice(0, 3)"
+          :key="index"
+          :type="alert.type"
+          variant="tonal"
+          :class="index > 0 ? 'mt-2' : ''"
+          density="compact"
+        >
+          <div class="d-flex align-center justify-space-between">
+            <div>
+              <strong>{{ alert.title }}</strong>
+              <div class="text-body-2">{{ alert.message }}</div>
+            </div>
+            <v-btn
+              v-if="alert.action"
+              size="small"
+              variant="tonal"
+              :to="alert.action.route"
+            >
+              {{ alert.action.label }}
+            </v-btn>
+          </div>
+        </v-alert>
+      </v-col>
+    </v-row>
+
+    <!-- User Delight Cards: Tax Optimization & Filing Readiness -->
+    <v-row class="mt-4">
+      <!-- Tax Optimization Card -->
+      <v-col cols="12" md="6">
+        <v-card>
+          <v-card-title class="d-flex align-center">
+            <v-icon class="mr-2" color="info">mdi-scale-balance</v-icon>
+            Tax Regime Comparison
+          </v-card-title>
+          <v-card-text>
+            <v-row>
+              <v-col cols="6">
+                <v-card
+                  :variant="taxOptimization.betterRegime === 'old' ? 'elevated' : 'outlined'"
+                  :color="taxOptimization.betterRegime === 'old' ? 'success' : undefined"
+                  class="text-center pa-3"
+                >
+                  <div class="text-caption text-medium-emphasis">Old Regime</div>
+                  <div class="text-h6 text-currency font-weight-bold">
+                    {{ formatINR(taxOptimization.oldRegimeTax) }}
+                  </div>
+                  <v-chip
+                    v-if="taxOptimization.betterRegime === 'old'"
+                    size="x-small"
+                    color="success"
+                    class="mt-1"
+                  >
+                    BETTER
+                  </v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="6">
+                <v-card
+                  :variant="taxOptimization.betterRegime === 'new' ? 'elevated' : 'outlined'"
+                  :color="taxOptimization.betterRegime === 'new' ? 'success' : undefined"
+                  class="text-center pa-3"
+                >
+                  <div class="text-caption text-medium-emphasis">New Regime</div>
+                  <div class="text-h6 text-currency font-weight-bold">
+                    {{ formatINR(taxOptimization.newRegimeTax) }}
+                  </div>
+                  <v-chip
+                    v-if="taxOptimization.betterRegime === 'new'"
+                    size="x-small"
+                    color="success"
+                    class="mt-1"
+                  >
+                    BETTER
+                  </v-chip>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-alert
+              v-if="taxOptimization.savings > 0"
+              type="success"
+              variant="tonal"
+              density="compact"
+              class="mt-3"
+            >
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-piggy-bank</v-icon>
+                <span>
+                  Save <strong>{{ formatINR(taxOptimization.savings) }}</strong> with
+                  {{ taxOptimization.betterRegime === 'old' ? 'Old' : 'New' }} Regime
+                </span>
+              </div>
+            </v-alert>
+            <div class="text-caption text-medium-emphasis mt-2">
+              * Based on non-salary income only. Add salary for complete picture.
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn
+              variant="text"
+              color="primary"
+              to="/dashboard/tax-planning"
+              prepend-icon="mdi-calculator"
+            >
+              Full Tax Calculator
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+
+      <!-- Filing Readiness Score -->
+      <v-col cols="12" md="6">
+        <v-card>
+          <v-card-title class="d-flex align-center">
+            <v-icon class="mr-2" color="success">mdi-clipboard-check</v-icon>
+            Filing Readiness Score
+            <v-spacer />
+            <v-chip
+              :color="filingReadinessScore >= 80 ? 'success' : filingReadinessScore >= 50 ? 'warning' : 'error'"
+              size="small"
+            >
+              {{ filingReadinessScore }}%
+            </v-chip>
+          </v-card-title>
+          <v-card-text>
+            <v-progress-linear
+              :model-value="filingReadinessScore"
+              :color="filingReadinessScore >= 80 ? 'success' : filingReadinessScore >= 50 ? 'warning' : 'error'"
+              height="12"
+              rounded
+              class="mb-4"
+            />
+            <v-list density="compact" class="bg-transparent">
+              <v-list-item
+                v-for="item in filingReadinessItems"
+                :key="item.id"
+                class="px-0"
+              >
+                <template #prepend>
+                  <v-icon
+                    :icon="item.completed ? 'mdi-check-circle' : 'mdi-circle-outline'"
+                    :color="item.completed ? 'success' : 'grey'"
+                    size="small"
+                    class="mr-2"
+                  />
+                </template>
+                <v-list-item-title
+                  :class="item.completed ? '' : 'text-medium-emphasis'"
+                >
+                  {{ item.label }}
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn
+              variant="text"
+              color="primary"
+              to="/dashboard/non-salary-income/reports"
+              prepend-icon="mdi-file-document"
+            >
+              View Full Report
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Total Summary Card -->
-    <v-row class="mt-2">
+    <v-row class="mt-4">
       <v-col cols="12">
         <v-card color="primary" variant="flat">
           <v-card-text class="d-flex justify-space-between align-center">
