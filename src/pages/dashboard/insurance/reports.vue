@@ -12,15 +12,15 @@ import {
   getDaysUntil,
   getInsuranceTypeIcon,
   getInsuranceTypeColor,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/protection' },
-  { title: 'Life', route: '/dashboard/protection/life' },
-  { title: 'Health', route: '/dashboard/protection/health' },
-  { title: 'Other', route: '/dashboard/protection/other' },
-  { title: 'Calculator', route: '/dashboard/protection/calculator' },
-  { title: 'Reports', route: '/dashboard/protection/reports' },
+  { title: 'Overview', route: '/dashboard/insurance' },
+  { title: 'Life', route: '/dashboard/insurance/life' },
+  { title: 'Health', route: '/dashboard/insurance/health' },
+  { title: 'Other', route: '/dashboard/insurance/other' },
+  { title: 'Calculator', route: '/dashboard/insurance/calculator' },
+  { title: 'Reports', route: '/dashboard/insurance/reports' },
 ]
 
 // Fetch data
@@ -128,7 +128,7 @@ const printReport = () => {
 <template>
   <div>
     <SectionHeader
-      title="Protection"
+      title="Insurance"
       subtitle="Insurance Reports"
       icon="mdi-shield-check"
       :tabs="tabs"

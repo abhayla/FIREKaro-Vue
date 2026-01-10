@@ -10,7 +10,7 @@ export const DASHBOARD_SECTIONS = {
   expenses: "/dashboard/expenses",
   investments: "/dashboard/investments",
   liabilities: "/dashboard/liabilities",
-  protection: "/dashboard/protection",
+  insurance: "/dashboard/insurance",
   "financial-health": "/dashboard/financial-health",
   "fire-goals": "/dashboard/fire-goals",
 } as const;

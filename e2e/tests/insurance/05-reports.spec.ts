@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { ProtectionReportsPage } from "../../pages/protection";
+import { InsuranceReportsPage } from "../../pages/insurance";
 
-test.describe("Protection Reports", () => {
-  let reportsPage: ProtectionReportsPage;
+test.describe("Insurance Reports", () => {
+  let reportsPage: InsuranceReportsPage;
 
   test.beforeEach(async ({ page }) => {
-    reportsPage = new ProtectionReportsPage(page);
+    reportsPage = new InsuranceReportsPage(page);
     await reportsPage.navigateTo();
   });
 

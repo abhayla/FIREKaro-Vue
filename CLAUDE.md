@@ -2,52 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Session Continuity
+
+**Check `NEXT-SESSION-PROMPT.md` at session start** for recent changes, uncommitted work, and priorities. This file is updated at the end of each session.
+
 ## Project Overview
 
 FIREKaro is an Indian financial planning SPA built with Vue 3 + Vite + Vuetify 3. It helps users track income, expenses, investments, liabilities, and plan for FIRE (Financial Independence, Retire Early).
 
-## Clarification Workflow
+### Data & Scope Disclaimer
 
-For ambiguous or underspecified tasks, ask clarifying questions before proceeding. Do NOT apply this to clear, straightforward requests.
+**FIREKaro is a personal financial planning tool, not a source of truth.**
 
-### When to Clarify
-Ask questions when you lack confidence about:
-- **Scope**: What exactly needs to change or be built
-- **Affected files**: Which files/components will be modified
-- **Expected outcome**: What the end result should look like or do
-
-Guiding principle: Be confident enough to complete the task without making assumptions about user intent.
-
-### How to Clarify
-1. **Estimate**: State the expected number of questions upfront (e.g., "I have 3 questions")
-2. **Progressive**: Ask one question at a time, starting with the most critical
-3. **Options**: Provide 2-4 concrete options for each question (reduces cognitive load)
-   - Always include your recommendation with rationale
-   - User can always provide a custom answer beyond the listed options
-4. **Research**: Before recommending, search the internet for best practices and standards
-5. **Adapt**: After each answer, check relevant code/docs, then reassess remaining questions
-
-### Question Format
-```
-**Question N of M:**
-[Clear, specific question]
-
-**Options:**
-- A) Option one
-- B) Option two
-- C) Option three (if needed)
-
-**My Recommendation:** Option [X] - [reason based on best practices/standards]
-```
-
-### Limits
-- **Soft limit**: Aim for 3 questions maximum; prioritize the most important uncertainties
-- **User override**: Respect phrases like "just proceed", "use your judgment", or "skip questions" to bypass clarification
-
-### Skip Clarification For
-- Simple, unambiguous tasks (typo fixes, single-line changes)
-- Tasks with explicit, detailed instructions
-- When the user says to proceed or use judgment
+- **User-provided data only**: All financial data (salary, investments, insurance, liabilities, etc.) must be manually entered by the user or synced from external sources. This app does not connect to banks, employers, or government systems.
+- **Planning & tracking, not execution**: This app helps you visualize, plan, and track your FIRE journey. It does not facilitate income tax filing, investment transactions, insurance purchases, or any financial operations.
+- **No financial advice**: All calculations, projections, and insights are based solely on user-provided data. Users should verify information against official sources (Form 16, CAS statements, policy documents) and consult qualified professionals for financial decisions.
 
 ## Architecture
 
@@ -61,8 +30,12 @@ Guiding principle: Be confident enough to complete the task without making assum
 - **API Types**: OpenAPI spec (`@hono/zod-openapi`) + `openapi-typescript` for type generation
 - **Dev Mode**: Auth bypass enabled when `DEV_BYPASS_AUTH=true` or when backend auth check fails (returns mock user)
 
+### Path Aliases & Proxy
+- Import alias: `@` resolves to `src/` (e.g., `import { formatINR } from '@/utils/formatters'`)
+- API proxy: Frontend requests to `/api/*` are proxied to `http://localhost:3000` (configured in `vite.config.ts`)
+
 ### Dashboard Sections (9 total)
-`salary` | `non-salary-income` | `tax-planning` | `expenses` | `investments` | `liabilities` | `protection` | `financial-health` | `fire-goals`
+`salary` | `non-salary-income` | `tax-planning` | `expenses` | `investments` | `liabilities` | `insurance` | `financial-health` | `fire-goals`
 
 ## Commands
 
@@ -114,23 +87,29 @@ server/
 ├── index.ts               # Hono app entry point (registers all routes)
 ├── lib/                   # prisma.ts, auth.ts
 ├── middleware/            # Auth middleware (session validation)
-├── routes/                # 20+ route files (CRUD per domain)
+├── routes/                # 29 route files (CRUD per domain)
 └── services/              # Business logic (sync.service.ts)
 
 prisma/schema.prisma       # Database models (~30 core models)
 e2e/                       # Playwright tests (Page Object Model pattern)
 ```
 
-### Backend Routes
+### Backend Routes & API Paths
 Routes are organized by domain. Each file in `server/routes/` exports a Hono app:
-- **Salary**: `salary.ts`, `salary-history.ts`, `salary-components.ts`, `income-sources.ts`
-- **Investments**: `investments.ts`, `epf.ts`, `ppf.ts`, `nps.ts`, `esop.ts`, `investment-reports.ts`
-- **Non-Salary Income**: `business-income.ts`, `rental-income.ts`, `capital-gains.ts`, `interest-income.ts`, `dividend-income.ts`, `other-income.ts`
-- **Expenses**: `expenses.ts`, `budgets.ts`, `expenses-ai.ts`, `expense-rules.ts`
-- **Tax Planning**: `advance-tax.ts`, `tax-scenarios.ts`, `tax-reports.ts`
-- **Liabilities**: `loans.ts`, `credit-cards.ts`, `liabilities.ts`, `liabilities-reports.ts`
-- **Protection**: `insurance.ts`
-- **Other**: `alerts.ts`
+
+| Domain | Route Files | API Paths |
+|--------|------------|-----------|
+| **Auth** | Better Auth handles | `/api/auth/*` |
+| **Health** | (inline in index.ts) | `/api/health` |
+| **Salary** | `salary.ts`, `salary-history.ts`, `salary-components.ts`, `income-sources.ts` | `/api/salary`, `/api/salary-history`, `/api/salary-components`, `/api/income-sources` |
+| **Investments** | `investments.ts`, `epf.ts`, `ppf.ts`, `nps.ts`, `esop.ts`, `investment-reports.ts` | `/api/investments`, `/api/epf`, `/api/ppf`, `/api/nps`, `/api/esop`, `/api/investment-reports` |
+| **Family** | (via query params on most routes) | `?familyView=true&memberId=...` |
+| **Non-Salary Income** | `business-income.ts`, `rental-income.ts`, `capital-gains.ts`, `interest-income.ts`, `dividend-income.ts`, `other-income.ts` | `/api/business-income`, `/api/rental-income`, `/api/capital-gains`, `/api/interest-income`, `/api/dividend-income`, `/api/other-income` |
+| **Expenses** | `expenses.ts`, `budgets.ts`, `expenses-ai.ts`, `expense-rules.ts` | `/api/expenses`, `/api/budgets`, `/api/expenses/ai`, `/api/expense-rules` |
+| **Tax Planning** | `advance-tax.ts`, `tax-scenarios.ts`, `tax-reports.ts` | `/api/advance-tax`, `/api/tax-planning/scenarios`, `/api/tax-planning/reports` |
+| **Liabilities** | `loans.ts`, `credit-cards.ts`, `liabilities.ts`, `liabilities-reports.ts` | `/api/loans`, `/api/credit-cards`, `/api/liabilities`, `/api/liabilities/reports` |
+| **Insurance** | `insurance.ts` | `/api/insurance` |
+| **Other** | `alerts.ts` | `/api/alerts` |
 
 ### Frontend Composables
 Main data-fetching composables in `src/composables/`:
@@ -139,7 +118,7 @@ Main data-fetching composables in `src/composables/`:
 - `useExpenses.ts` - Expenses, budgets, AI categorization
 - `useInvestments.ts` - All investment types (EPF, PPF, NPS, ESOP, etc.)
 - `useLiabilities.ts` - Loans, credit cards, liabilities overview
-- `useProtection.ts` - Insurance policies
+- `useInsurance.ts` - Insurance policies
 - `useTax.ts` - Tax scenarios, advance tax, tax reports
 - `useFinancialHealth.ts` - Aggregated financial health metrics
 - `useFIRE.ts` - FIRE goal calculations and projections
@@ -289,6 +268,7 @@ Tests use Page Object Model pattern:
 - `e2e/global-setup.ts` - Auth setup (stores session in `e2e/.auth/user.json`)
 
 Playwright auto-starts the dev server before tests. Tests run in headed Chrome by default.
+Timeouts: 60s test, 15s expect, 15s action, 30s navigation.
 
 ```typescript
 // Common BasePage helpers available in all page objects
@@ -372,16 +352,32 @@ git commit -m "fix(section): description"
 # Examples: feat(investments), fix(liabilities), feat(tax)
 ```
 
-## Session Continuity
-
-For detailed session context and current task status, see `NEXT-SESSION-PROMPT.md`. This file tracks recent changes, working/broken sections, and immediate priorities.
-
 ## Documentation
 
-See `docs/` folder for detailed implementation plans per section:
-- `Salary-Section-Plan.md`, `Non-Salary-Income-Plan.md`, `Tax-Planning-Section-Plan.md`
-- `Expenses-Section-Plan.md`, `Investments-Section-Plan.md`, `Liabilities-Section-Plan.md`
-- `Protection-Section-Plan.md`
-- `STYLING-GUIDE.md` - UI patterns and Vuetify conventions
-- `Parallel-Implementation-Guide.md` - Multi-section implementation workflows
-- `START-IMPLEMENTATION.md`, `POST-IMPLEMENTATION.md` - Session workflow guides
+Key docs in `docs/` folder:
+- **Section Plans** (`*-Section-Plan.md`) - Feature requirements and implementation details per dashboard section
+- **STYLING-GUIDE.md** - UI patterns, Vuetify conventions, theme usage
+- **Parallel-Implementation-Guide.md** - Multi-section workflow coordination
+
+## Development Workflow
+
+### Adding a New Feature
+1. Check relevant `docs/*-Section-Plan.md` for requirements
+2. Add Prisma model if needed → `npm run db:push`
+3. Create route in `server/routes/` → register in `server/index.ts`
+4. Create/update composable in `src/composables/`
+5. Add page/components in `src/pages/dashboard/{section}/`
+6. Add E2E tests in `e2e/tests/{section}/`
+
+### Testing a Backend Route
+```bash
+# Start the dev server
+npm run dev
+
+# In another terminal, test endpoints
+curl http://localhost:3000/api/health
+curl -b cookies.txt http://localhost:3000/api/salary
+```
+
+### Debug Mode
+The app runs with `DEV_BYPASS_AUTH=true` in development, so auth is bypassed and a mock user is returned. This allows testing without logging in.

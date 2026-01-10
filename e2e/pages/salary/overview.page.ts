@@ -2,8 +2,8 @@ import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
 /**
- * Page Object for Salary Overview page (/dashboard/salary)
- * Updated for new employer cards and summary metric cards layout
+ * Page Object for Salary Overview Tab (/dashboard/salary)
+ * Updated for new 2-tab structure (Overview + Salary Details)
  */
 export class SalaryOverviewPage extends BasePage {
   constructor(page: Page) {
@@ -18,167 +18,170 @@ export class SalaryOverviewPage extends BasePage {
 
   // Page elements
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: "Salary" });
+    return this.page.getByText("Salary", { exact: true }).first();
   }
 
-  // Summary metric cards container
-  get summaryMetricsContainer(): Locator {
-    return this.page.locator(".summary-metric-cards, [data-testid='summary-metrics']");
+  // Tab elements - use v-tab class instead of role
+  get overviewTab(): Locator {
+    return this.page.locator(".v-tab").filter({ hasText: "Overview" });
   }
 
-  // Individual summary cards - look for text content
-  get monthlyGrossCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Monthly Gross/i });
+  get salaryDetailsTab(): Locator {
+    return this.page.locator(".v-tab").filter({ hasText: "Salary Details" });
   }
 
-  get monthlyNetCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Monthly Net/i });
+  // Summary metric cards - look for text content
+  get fyGrossCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /FY Gross/i });
   }
 
-  get annualGrossCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Annual Gross/i });
+  get fyNetCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /FY Net/i });
   }
 
-  get tdsYtdCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /TDS/i });
+  get tdsPaidCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /TDS Paid/i });
   }
 
-  // Employer cards section
-  get employerCardsSection(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Salary Sources/i });
+  get epfVpfCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /EPF.*VPF/i });
   }
 
-  get employerCards(): Locator {
-    return this.page.locator("[data-testid='employer-card']");
+  // Data completion section
+  get dataCompletionSection(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /DATA COMPLETION/i });
   }
 
-  get addEmployerButton(): Locator {
-    return this.employerCardsSection.getByRole("button", { name: /Add Employer/i });
+  get dataCompletionChip(): Locator {
+    return this.dataCompletionSection.locator(".v-chip");
   }
 
-  // Data completion progress card
-  get dataCompletionCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Data Completion/i });
+  get dataCompletionGrid(): Locator {
+    // The month cells are contained within the data completion section
+    return this.dataCompletionSection.locator("[class*='month'], [class*='cell']").or(
+      this.dataCompletionSection.locator("text=Apr").locator("..")
+    );
   }
 
-  get dataCompletionProgressBar(): Locator {
-    return this.dataCompletionCard.locator(".v-progress-linear");
+  // Charts section
+  get monthlySalaryTrendCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /MONTHLY SALARY TREND/i });
   }
 
-  // Salary chart section
   get salaryChart(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Salary Trend|chart/i }).first();
+    return this.monthlySalaryTrendCard.locator("canvas");
   }
 
-  // YoY comparison card
-  get comparisonCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Comparison|YoY|Year.*over/i });
+  // YoY Comparison section
+  get yoyComparisonCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /YEAR-ON-YEAR COMPARISON/i });
   }
 
-  // Quick actions section
-  get quickActionsSection(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Quick Actions/i });
+  // Employer Breakdown section
+  get employerBreakdownCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /EMPLOYER BREAKDOWN/i });
   }
 
-  get addSalaryEntryButton(): Locator {
-    return this.quickActionsSection.getByRole("button", { name: /Add Salary Entry/i });
+  // Deductions Breakdown section
+  get deductionsBreakdownCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /DEDUCTIONS BREAKDOWN/i });
   }
 
-  get viewBreakdownButton(): Locator {
-    return this.quickActionsSection.getByRole("button", { name: /View Breakdown/i });
+  // Empty state
+  get emptyStateCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /No salary data/i });
   }
 
-  get generateReportButton(): Locator {
-    return this.quickActionsSection.getByRole("button", { name: /Generate Report/i });
+  get goToSalaryDetailsButton(): Locator {
+    return this.page.getByRole("button", { name: /Go to Salary Details/i });
   }
 
-  // Monthly grid dialog
-  get monthlyGridDialog(): Locator {
-    return this.page.locator(".v-dialog").filter({ hasText: /Monthly Breakdown/i });
+  // FY Navigation
+  get fySelector(): Locator {
+    return this.page.locator(".v-select").first();
   }
 
-  // Quick action buttons (legacy)
-  get viewHistoryButton(): Locator {
-    return this.page.getByRole("button", { name: /view.*history/i });
+  get prevFYButton(): Locator {
+    return this.page.locator("button[title='Previous Financial Year']");
   }
 
-  get addSalaryButton(): Locator {
-    return this.page.getByRole("button", { name: /add.*(?:salary|month|employer)/i });
+  get nextFYButton(): Locator {
+    return this.page.locator("button[title='Next Financial Year']");
   }
 
-  // Tabs
-  async clickHistoryTab() {
-    await this.clickTab("Salary History");
+  // Actions
+  async clickSalaryDetailsTab() {
+    await this.salaryDetailsTab.click();
+    await this.page.waitForTimeout(300);
   }
 
-  async clickCurrentTab() {
-    await this.clickTab("Current Salary");
-  }
-
-  async clickReportsTab() {
-    await this.clickTab("Reports");
-  }
-
-  // Get card values
-  async getMonthlyGross(): Promise<string> {
-    return (
-      (await this.monthlyGrossCard.locator(".text-h5, .text-h6, .text-h4").textContent()) ||
-      ""
-    );
-  }
-
-  async getMonthlyNet(): Promise<string> {
-    return (
-      (await this.monthlyNetCard.locator(".text-h5, .text-h6, .text-h4").textContent()) ||
-      ""
-    );
-  }
-
-  // Employer card actions
-  async getEmployerCardCount(): Promise<number> {
-    const cards = this.page.locator("[data-testid='employer-card']");
-    const count = await cards.count();
-    // If no data-testid cards, check for EmployerCard components in employer section
-    if (count === 0) {
-      return await this.employerCardsSection.locator(".v-card .v-card").count();
-    }
-    return count;
-  }
-
-  async clickViewBreakdownOnEmployer(employerName: string) {
-    const employerCard = this.page.locator(".v-card").filter({ hasText: employerName });
-    await employerCard.getByRole("button", { name: /View.*Breakdown|Breakdown/i }).click();
+  async selectFinancialYear(fy: string) {
+    await this.fySelector.click();
+    await this.page.getByRole("option", { name: fy }).click();
     await this.page.waitForTimeout(500);
   }
 
-  // Data completion
-  async getDataCompletionPercent(): Promise<number> {
-    const chipText = await this.dataCompletionCard.locator(".v-chip").textContent();
-    const match = chipText?.match(/(\d+)\/12/);
-    return match ? Math.round((parseInt(match[1]) / 12) * 100) : 0;
+  async goToPreviousFY() {
+    await this.prevFYButton.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  async goToNextFY() {
+    await this.nextFYButton.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  // Get values
+  async getFYGrossValue(): Promise<string> {
+    return (await this.fyGrossCard.locator(".text-h5, .text-h6, .metric-value").textContent()) || "";
+  }
+
+  async getFYNetValue(): Promise<string> {
+    return (await this.fyNetCard.locator(".text-h5, .text-h6, .metric-value").textContent()) || "";
+  }
+
+  async getDataCompletionCount(): Promise<string> {
+    return (await this.dataCompletionChip.textContent()) || "";
   }
 
   // Assertions
   async expectOverviewTabSelected() {
-    await expect(
-      this.page.getByRole("tab", { name: "Overview" })
-    ).toHaveAttribute("aria-selected", "true");
+    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
   }
 
   async expectDataLoaded() {
-    // Check that summary cards are visible (using text content)
-    await expect(this.page.getByText(/Monthly Gross|Monthly Net/i)).toBeVisible();
+    // Check that summary cards are visible
+    await expect(this.fyGrossCard).toBeVisible();
+    await expect(this.fyNetCard).toBeVisible();
   }
 
-  async expectEmployerCardsVisible() {
-    await expect(this.employerCardsSection).toBeVisible();
+  async expectDataCompletionVisible() {
+    await expect(this.dataCompletionSection).toBeVisible();
+    await expect(this.dataCompletionChip).toBeVisible();
   }
 
-  async expectMonthlyGridDialogOpen() {
-    await expect(this.monthlyGridDialog).toBeVisible();
+  async expectChartsVisible() {
+    await expect(this.monthlySalaryTrendCard).toBeVisible();
   }
 
-  async expectMonthlyGridDialogClosed() {
-    await expect(this.monthlyGridDialog).not.toBeVisible();
+  async expectYoYComparisonVisible() {
+    await expect(this.yoyComparisonCard).toBeVisible();
+  }
+
+  async expectEmployerBreakdownVisible() {
+    await expect(this.employerBreakdownCard).toBeVisible();
+  }
+
+  async expectDeductionsBreakdownVisible() {
+    await expect(this.deductionsBreakdownCard).toBeVisible();
+  }
+
+  async expectEmptyState() {
+    await expect(this.emptyStateCard).toBeVisible();
+    await expect(this.goToSalaryDetailsButton).toBeVisible();
+  }
+
+  async expectINRFormattedValues() {
+    await expect(this.page.getByText(/₹[\d,]+/)).toBeVisible();
   }
 }

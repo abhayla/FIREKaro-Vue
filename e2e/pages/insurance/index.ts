@@ -1,13 +1,13 @@
 /**
- * Protection (Insurance) Page Objects
+ * Insurance Page Objects
  * Updated to match backend API schema (January 2026)
  */
 
 import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
-export class ProtectionOverviewPage extends BasePage {
-  readonly url = "/dashboard/protection";
+export class InsuranceOverviewPage extends BasePage {
+  readonly url = "/dashboard/insurance";
 
   constructor(page: Page) {
     super(page);
@@ -91,7 +91,7 @@ export class ProtectionOverviewPage extends BasePage {
 }
 
 export class LifeInsurancePage extends BasePage {
-  readonly url = "/dashboard/protection/life";
+  readonly url = "/dashboard/insurance/life";
 
   constructor(page: Page) {
     super(page);
@@ -261,7 +261,7 @@ export class LifeInsurancePage extends BasePage {
 }
 
 export class HealthInsurancePage extends BasePage {
-  readonly url = "/dashboard/protection/health";
+  readonly url = "/dashboard/insurance/health";
 
   constructor(page: Page) {
     super(page);
@@ -425,8 +425,8 @@ export class HealthInsurancePage extends BasePage {
   }
 }
 
-export class ProtectionReportsPage extends BasePage {
-  readonly url = "/dashboard/protection/reports";
+export class InsuranceReportsPage extends BasePage {
+  readonly url = "/dashboard/insurance/reports";
 
   constructor(page: Page) {
     super(page);
@@ -483,8 +483,8 @@ export class ProtectionReportsPage extends BasePage {
   }
 }
 
-export class ProtectionCalculatorPage extends BasePage {
-  readonly url = "/dashboard/protection/calculator";
+export class InsuranceCalculatorPage extends BasePage {
+  readonly url = "/dashboard/insurance/calculator";
 
   constructor(page: Page) {
     super(page);

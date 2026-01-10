@@ -6,7 +6,7 @@ import {
   calculateHLV,
   formatINR,
   formatINRCompact,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const props = defineProps<{
   modelValue: boolean

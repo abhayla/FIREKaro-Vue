@@ -5,7 +5,7 @@ import {
   type CreatePolicyInput,
   type InsuranceType,
   type PaymentFrequency,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const props = defineProps<{
   modelValue: boolean

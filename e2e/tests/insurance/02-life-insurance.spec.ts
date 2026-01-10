@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { LifeInsurancePage } from "../../pages/protection";
-import { lifeInsuranceData, sampleLifePolicy } from "../../fixtures/protection-data";
+import { LifeInsurancePage } from "../../pages/insurance";
+import { lifeInsuranceData, sampleLifePolicy } from "../../fixtures/insurance-data";
 
 test.describe("Life Insurance", () => {
   let lifePage: LifeInsurancePage;

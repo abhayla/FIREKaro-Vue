@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { HealthInsurancePage } from "../../pages/protection";
-import { healthInsuranceData, sampleHealthPolicy } from "../../fixtures/protection-data";
+import { HealthInsurancePage } from "../../pages/insurance";
+import { healthInsuranceData, sampleHealthPolicy } from "../../fixtures/insurance-data";
 
 test.describe("Health Insurance", () => {
   let healthPage: HealthInsurancePage;

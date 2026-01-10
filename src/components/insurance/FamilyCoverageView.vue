@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatINRCompact } from '@/composables/useProtection'
+import { formatINRCompact } from '@/composables/useInsurance'
 
 interface FamilyMember {
   id: string

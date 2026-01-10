@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { ProtectionOverviewPage, ProtectionCalculatorPage } from "../../pages/protection";
-import { coverageSummary, coverageNeedCalculation } from "../../fixtures/protection-data";
+import { InsuranceOverviewPage, InsuranceCalculatorPage } from "../../pages/insurance";
+import { coverageSummary, coverageNeedCalculation } from "../../fixtures/insurance-data";
 
-test.describe("Protection Calculations", () => {
+test.describe("Insurance Calculations", () => {
   test("should show coverage cards or empty state on overview page", async ({ page }) => {
-    const overview = new ProtectionOverviewPage(page);
+    const overview = new InsuranceOverviewPage(page);
     await overview.navigateTo();
 
     // Either shows coverage cards (with data) or empty state (No Insurance Policies)
@@ -16,7 +16,7 @@ test.describe("Protection Calculations", () => {
   });
 
   test("should show premium or coverage info on overview page", async ({ page }) => {
-    const overview = new ProtectionOverviewPage(page);
+    const overview = new InsuranceOverviewPage(page);
     await overview.navigateTo();
 
     // The overview page shows various coverage/premium related text
@@ -30,13 +30,13 @@ test.describe("Protection Calculations", () => {
   });
 
   test("should display calculator page", async ({ page }) => {
-    const calculatorPage = new ProtectionCalculatorPage(page);
+    const calculatorPage = new InsuranceCalculatorPage(page);
     await calculatorPage.navigateTo();
     await calculatorPage.expectPageLoaded();
   });
 
   test("should show wizard/stepper on calculator page", async ({ page }) => {
-    const calculatorPage = new ProtectionCalculatorPage(page);
+    const calculatorPage = new InsuranceCalculatorPage(page);
     await calculatorPage.navigateTo();
 
     // Calculator should have some form of step indicator or wizard
@@ -44,7 +44,7 @@ test.describe("Protection Calculations", () => {
   });
 
   test("should have calculate or next button on calculator", async ({ page }) => {
-    const calculatorPage = new ProtectionCalculatorPage(page);
+    const calculatorPage = new InsuranceCalculatorPage(page);
     await calculatorPage.navigateTo();
 
     // Either calculate button, next button, or Open Calculator button should be visible
@@ -53,7 +53,7 @@ test.describe("Protection Calculations", () => {
   });
 
   test("should show coverage summary cards on overview", async ({ page }) => {
-    const overview = new ProtectionOverviewPage(page);
+    const overview = new InsuranceOverviewPage(page);
     await overview.navigateTo();
 
     // At minimum, the overview should show some cards (coverage cards or empty state card)

@@ -4,7 +4,7 @@ import {
   type CoverageAnalysis,
   calculateHLV,
   formatINRCompact,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const props = defineProps<{
   existingLifeCover?: number

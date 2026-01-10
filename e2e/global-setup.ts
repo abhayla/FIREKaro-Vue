@@ -109,9 +109,9 @@ async function globalSetup(config: FullConfig) {
     console.log("Session response:", JSON.stringify(sessionResponse));
   }
 
-  // Navigate to protection page to verify data access works
+  // Navigate to insurance page to verify data access works
   console.log("Verifying data access...");
-  await page.goto(`${baseURL}/dashboard/protection`);
+  await page.goto(`${baseURL}/dashboard/insurance`);
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(1000);
 

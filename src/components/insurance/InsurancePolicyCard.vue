@@ -8,7 +8,7 @@ import {
   getInsuranceTypeIcon,
   getInsuranceTypeColor,
   getStatusColor,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const props = defineProps<{
   policy: InsurancePolicy

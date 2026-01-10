@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import {
   type CoverageAnalysis,
   formatINRCompact,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const props = defineProps<{
   analysis: CoverageAnalysis | null | undefined

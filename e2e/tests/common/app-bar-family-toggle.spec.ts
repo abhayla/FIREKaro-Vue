@@ -177,7 +177,7 @@ test.describe("App Bar Family Toggle", () => {
       "/dashboard/non-salary-income",
       "/dashboard/salary",
       "/dashboard/expenses",
-      "/dashboard/protection",
+      "/dashboard/insurance",
       "/dashboard/fire-goals",
     ];
 

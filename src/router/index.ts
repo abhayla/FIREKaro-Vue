@@ -23,26 +23,11 @@ const router = createRouter({
           name: "dashboard",
           component: () => import("@/pages/dashboard/index.vue"),
         },
-        // Section 1: Salary
+        // Section 1: Salary (Single page with 2 tabs: Overview + Salary Details)
         {
           path: "salary",
           name: "salary",
           component: () => import("@/pages/dashboard/salary/index.vue"),
-        },
-        {
-          path: "salary/current",
-          name: "salary-current",
-          component: () => import("@/pages/dashboard/salary/current.vue"),
-        },
-        {
-          path: "salary/history",
-          name: "salary-history",
-          component: () => import("@/pages/dashboard/salary/history.vue"),
-        },
-        {
-          path: "salary/reports",
-          name: "salary-reports",
-          component: () => import("@/pages/dashboard/salary/reports.vue"),
         },
         // Section 2: Non-Salary Income
         {
@@ -200,37 +185,37 @@ const router = createRouter({
           name: "liabilities-reports",
           component: () => import("@/pages/dashboard/liabilities/reports.vue"),
         },
-        // Section 7: Protection
+        // Section 7: Insurance
         {
-          path: "protection",
-          name: "protection",
-          component: () => import("@/pages/dashboard/protection/index.vue"),
+          path: "insurance",
+          name: "insurance",
+          component: () => import("@/pages/dashboard/insurance/index.vue"),
         },
         {
-          path: "protection/life",
-          name: "protection-life",
-          component: () => import("@/pages/dashboard/protection/life.vue"),
+          path: "insurance/life",
+          name: "insurance-life",
+          component: () => import("@/pages/dashboard/insurance/life.vue"),
         },
         {
-          path: "protection/health",
-          name: "protection-health",
-          component: () => import("@/pages/dashboard/protection/health.vue"),
+          path: "insurance/health",
+          name: "insurance-health",
+          component: () => import("@/pages/dashboard/insurance/health.vue"),
         },
         {
-          path: "protection/other",
-          name: "protection-other",
-          component: () => import("@/pages/dashboard/protection/other.vue"),
+          path: "insurance/other",
+          name: "insurance-other",
+          component: () => import("@/pages/dashboard/insurance/other.vue"),
         },
         {
-          path: "protection/calculator",
-          name: "protection-calculator",
+          path: "insurance/calculator",
+          name: "insurance-calculator",
           component: () =>
-            import("@/pages/dashboard/protection/calculator.vue"),
+            import("@/pages/dashboard/insurance/calculator.vue"),
         },
         {
-          path: "protection/reports",
-          name: "protection-reports",
-          component: () => import("@/pages/dashboard/protection/reports.vue"),
+          path: "insurance/reports",
+          name: "insurance-reports",
+          component: () => import("@/pages/dashboard/insurance/reports.vue"),
         },
         // Section 8: Financial Health
         {
@@ -306,6 +291,19 @@ const router = createRouter({
       ],
     },
     // Legacy URL Redirects
+    // Salary section - old sub-pages redirect to main salary page
+    {
+      path: "/dashboard/salary/current",
+      redirect: "/dashboard/salary",
+    },
+    {
+      path: "/dashboard/salary/history",
+      redirect: "/dashboard/salary",
+    },
+    {
+      path: "/dashboard/salary/reports",
+      redirect: "/dashboard/salary",
+    },
     {
       path: "/portfolio",
       redirect: "/dashboard/investments",

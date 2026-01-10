@@ -49,24 +49,24 @@ The PROTECTION section is **fully implemented** with complete frontend and backe
 
 | Page | Location | Status |
 |------|----------|--------|
-| Overview | `src/pages/dashboard/protection/index.vue` | ✅ Complete |
-| Life Insurance | `src/pages/dashboard/protection/life.vue` | ✅ Complete |
-| Health Insurance | `src/pages/dashboard/protection/health.vue` | ✅ Complete |
-| Other Insurance | `src/pages/dashboard/protection/other.vue` | ✅ Complete |
-| Calculator | `src/pages/dashboard/protection/calculator.vue` | ✅ Complete |
-| Reports | `src/pages/dashboard/protection/reports.vue` | ✅ Complete |
+| Overview | `src/pages/dashboard/insurance/index.vue` | ✅ Complete |
+| Life Insurance | `src/pages/dashboard/insurance/life.vue` | ✅ Complete |
+| Health Insurance | `src/pages/dashboard/insurance/health.vue` | ✅ Complete |
+| Other Insurance | `src/pages/dashboard/insurance/other.vue` | ✅ Complete |
+| Calculator | `src/pages/dashboard/insurance/calculator.vue` | ✅ Complete |
+| Reports | `src/pages/dashboard/insurance/reports.vue` | ✅ Complete |
 
 ### Frontend - Components ✅
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `InsurancePolicyForm.vue` | `src/components/protection/` | Add/Edit policy dialog |
-| `CoverageAdequacyWizard.vue` | `src/components/protection/` | 4-step HLV calculator |
-| `PolicyCard.vue` | `src/components/protection/` | Policy display card |
-| `CoverageSummary.vue` | `src/components/protection/` | Coverage overview |
-| `PremiumChart.vue` | `src/components/protection/` | Premium visualization |
-| `RenewalCalendar.vue` | `src/components/protection/` | Upcoming renewals |
-| `TaxBenefitSummary.vue` | `src/components/protection/` | 80C/80D breakdown |
+| `InsurancePolicyForm.vue` | `src/components/insurance/` | Add/Edit policy dialog |
+| `CoverageAdequacyWizard.vue` | `src/components/insurance/` | 4-step HLV calculator |
+| `PolicyCard.vue` | `src/components/insurance/` | Policy display card |
+| `CoverageSummary.vue` | `src/components/insurance/` | Coverage overview |
+| `PremiumChart.vue` | `src/components/insurance/` | Premium visualization |
+| `RenewalCalendar.vue` | `src/components/insurance/` | Upcoming renewals |
+| `TaxBenefitSummary.vue` | `src/components/insurance/` | 80C/80D breakdown |
 
 ### Frontend - Composable ✅
 
@@ -85,15 +85,15 @@ The PROTECTION section is **fully implemented** with complete frontend and backe
 | `05-reports.spec.ts` | 7 tests | ✅ Updated |
 | **Total** | **40 tests** | ✅ All passing |
 
-**Test Fixtures**: `e2e/fixtures/protection-data.ts` - Updated to match API schema
-**Page Objects**: `e2e/pages/protection/index.ts` - 5 page object classes
+**Test Fixtures**: `e2e/fixtures/insurance-data.ts` - Updated to match API schema
+**Page Objects**: `e2e/pages/insurance/index.ts` - 5 page object classes
 
 ---
 
 ## Current URL Structure ✅
 
 ```
-/dashboard/protection/           ← Overview page (summary cards, quick stats)
+/dashboard/insurance/           ← Overview page (summary cards, quick stats)
 ├── life/                        ← Life insurance policies (Term, ULIP, Endowment)
 ├── health/                      ← Health insurance policies (Floater, Super Top-up, CI)
 ├── other/                       ← Motor/Home/Travel combined
@@ -275,15 +275,15 @@ model InsuranceNominee {
 | File | Purpose |
 |------|---------|
 | `server/routes/insurance.ts` | Complete API implementation |
-| `e2e/fixtures/protection-data.ts` | Test data matching API schema |
-| `e2e/pages/protection/index.ts` | 5 page object classes |
+| `e2e/fixtures/insurance-data.ts` | Test data matching API schema |
+| `e2e/pages/insurance/index.ts` | 5 page object classes |
 
 ### Modified Files
 | File | Changes |
 |------|---------|
 | `prisma/schema.prisma` | Added InsurancePolicy, InsuranceNominee, 4 enums |
 | `server/index.ts` | Registered `/api/insurance` route |
-| `e2e/tests/protection/*.spec.ts` | Updated all 5 test files |
+| `e2e/tests/insurance/*.spec.ts` | Updated all 5 test files |
 
 ---
 

@@ -4,7 +4,7 @@ import {
   type InsuranceSummary,
   formatINR,
   formatINRCompact,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const props = defineProps<{
   summary: InsuranceSummary | null | undefined

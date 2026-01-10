@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import InsuranceSummaryCard from '@/components/protection/InsuranceSummaryCard.vue'
-import CoverageGapAlert from '@/components/protection/CoverageGapAlert.vue'
-import FamilyCoverageView from '@/components/protection/FamilyCoverageView.vue'
-import InsurancePolicyCard from '@/components/protection/InsurancePolicyCard.vue'
-import InsurancePolicyForm from '@/components/protection/InsurancePolicyForm.vue'
-import CoverageAdequacyWizard from '@/components/protection/CoverageAdequacyWizard.vue'
+import InsuranceSummaryCard from '@/components/insurance/InsuranceSummaryCard.vue'
+import CoverageGapAlert from '@/components/insurance/CoverageGapAlert.vue'
+import FamilyCoverageView from '@/components/insurance/FamilyCoverageView.vue'
+import InsurancePolicyCard from '@/components/insurance/InsurancePolicyCard.vue'
+import InsurancePolicyForm from '@/components/insurance/InsurancePolicyForm.vue'
+import CoverageAdequacyWizard from '@/components/insurance/CoverageAdequacyWizard.vue'
 import {
   useInsurancePolicies,
   useInsuranceSummary,
@@ -17,18 +17,18 @@ import {
   formatINRCompact,
   getInsuranceTypeIcon,
   getInsuranceTypeColor,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/protection' },
-  { title: 'Life', route: '/dashboard/protection/life' },
-  { title: 'Health', route: '/dashboard/protection/health' },
-  { title: 'Other', route: '/dashboard/protection/other' },
-  { title: 'Calculator', route: '/dashboard/protection/calculator' },
-  { title: 'Reports', route: '/dashboard/protection/reports' },
+  { title: 'Overview', route: '/dashboard/insurance' },
+  { title: 'Life', route: '/dashboard/insurance/life' },
+  { title: 'Health', route: '/dashboard/insurance/health' },
+  { title: 'Other', route: '/dashboard/insurance/other' },
+  { title: 'Calculator', route: '/dashboard/insurance/calculator' },
+  { title: 'Reports', route: '/dashboard/insurance/reports' },
 ]
 
 // Data fetching
@@ -84,11 +84,11 @@ const handleDeletePolicy = async (policy: InsurancePolicy) => {
 // Navigate to type-specific page
 const viewPoliciesByType = (type: string) => {
   if (type === 'life') {
-    router.push('/dashboard/protection/life')
+    router.push('/dashboard/insurance/life')
   } else if (type === 'health') {
-    router.push('/dashboard/protection/health')
+    router.push('/dashboard/insurance/health')
   } else {
-    router.push('/dashboard/protection/other')
+    router.push('/dashboard/insurance/other')
   }
 }
 
@@ -116,7 +116,7 @@ const coverageStats = computed(() => {
 <template>
   <div>
     <SectionHeader
-      title="Protection"
+      title="Insurance"
       subtitle="Insurance coverage analysis"
       icon="mdi-shield-check"
       :tabs="tabs"
@@ -125,7 +125,7 @@ const coverageStats = computed(() => {
     <!-- Loading State -->
     <div v-if="isLoading && summaryLoading" class="text-center py-8">
       <v-progress-circular indeterminate color="primary" size="48" />
-      <p class="mt-4 text-medium-emphasis">Loading protection data...</p>
+      <p class="mt-4 text-medium-emphasis">Loading insurance data...</p>
     </div>
 
     <template v-else>
@@ -134,7 +134,7 @@ const coverageStats = computed(() => {
         :summary="summary"
         :is-loading="summaryLoading"
         class="mb-6"
-        @view-renewals="router.push('/dashboard/protection/life')"
+        @view-renewals="router.push('/dashboard/insurance/life')"
       />
 
       <v-row>
@@ -144,7 +144,7 @@ const coverageStats = computed(() => {
             :analysis="coverageAnalysis"
             :is-loading="analysisLoading"
             @calculate="showCalculator = true"
-            @view-recommendations="router.push('/dashboard/protection/calculator')"
+            @view-recommendations="router.push('/dashboard/insurance/calculator')"
           />
         </v-col>
 
@@ -210,7 +210,7 @@ const coverageStats = computed(() => {
               Policies Requiring Attention
             </h3>
             <v-spacer />
-            <v-btn variant="text" size="small" to="/dashboard/protection/life">
+            <v-btn variant="text" size="small" to="/dashboard/insurance/life">
               View All
               <v-icon icon="mdi-chevron-right" class="ml-1" />
             </v-btn>
@@ -225,7 +225,7 @@ const coverageStats = computed(() => {
             >
               <InsurancePolicyCard
                 :policy="policy"
-                @view="router.push(`/dashboard/protection/${policy.type === 'motor' || policy.type === 'home' || policy.type === 'travel' ? 'other' : policy.type}`)"
+                @view="router.push(`/dashboard/insurance/${policy.type === 'motor' || policy.type === 'home' || policy.type === 'travel' ? 'other' : policy.type}`)"
                 @edit="editingPolicy = $event; showPolicyForm = true"
                 @delete="handleDeletePolicy"
               />
@@ -249,7 +249,7 @@ const coverageStats = computed(() => {
                   <v-icon icon="mdi-calculator" class="mr-2" />
                   Check Adequacy
                 </v-btn>
-                <v-btn variant="tonal" to="/dashboard/protection/reports">
+                <v-btn variant="tonal" to="/dashboard/insurance/reports">
                   <v-icon icon="mdi-chart-bar" class="mr-2" />
                   View Reports
                 </v-btn>

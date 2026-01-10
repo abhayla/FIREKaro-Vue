@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { ProtectionOverviewPage, LifeInsurancePage, HealthInsurancePage, ProtectionReportsPage, ProtectionCalculatorPage } from "../../pages/protection";
+import { InsuranceOverviewPage, LifeInsurancePage, HealthInsurancePage, InsuranceReportsPage, InsuranceCalculatorPage } from "../../pages/insurance";
 
-test.describe("Protection Navigation", () => {
+test.describe("Insurance Navigation", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/protection");
+    await page.goto("/dashboard/insurance");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   });
 
-  test("should load protection overview page", async ({ page }) => {
-    const overview = new ProtectionOverviewPage(page);
+  test("should load insurance overview page", async ({ page }) => {
+    const overview = new InsuranceOverviewPage(page);
     await expect(overview.pageTitle).toBeVisible();
     await expect(page).toHaveURL(/\/dashboard\/protection$/);
   });
@@ -38,21 +38,21 @@ test.describe("Protection Navigation", () => {
   });
 
   test("should navigate to Other Insurance page", async ({ page }) => {
-    await page.goto("/dashboard/protection/other");
+    await page.goto("/dashboard/insurance/other");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
     await expect(page).toHaveURL(/\/dashboard\/protection\/other/);
   });
 
   test("should navigate to Calculator page", async ({ page }) => {
-    const calculatorPage = new ProtectionCalculatorPage(page);
+    const calculatorPage = new InsuranceCalculatorPage(page);
     await calculatorPage.navigateTo();
     await expect(page).toHaveURL(/\/dashboard\/protection\/calculator/);
     await calculatorPage.expectPageLoaded();
   });
 
   test("should navigate to Reports page", async ({ page }) => {
-    const reportsPage = new ProtectionReportsPage(page);
+    const reportsPage = new InsuranceReportsPage(page);
     await reportsPage.navigateTo();
     await expect(page).toHaveURL(/\/dashboard\/protection\/reports/);
     await reportsPage.expectPageLoaded();
@@ -64,7 +64,7 @@ test.describe("Protection Navigation", () => {
   });
 
   test("should show correct active tab indicator when navigating to life page", async ({ page }) => {
-    await page.goto("/dashboard/protection/life");
+    await page.goto("/dashboard/insurance/life");
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(500); // Wait for tab state to update
 
@@ -73,7 +73,7 @@ test.describe("Protection Navigation", () => {
   });
 
   test("should show summary cards on overview page", async ({ page }) => {
-    const overview = new ProtectionOverviewPage(page);
+    const overview = new InsuranceOverviewPage(page);
     await overview.expectHasSummaryCards();
   });
 

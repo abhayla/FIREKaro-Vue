@@ -20,12 +20,7 @@ const sections = [
     title: "Salary",
     icon: "mdi-cash-multiple",
     route: "/dashboard/salary",
-    children: [
-      { title: "Overview", route: "/dashboard/salary" },
-      { title: "Current Salary", route: "/dashboard/salary/current" },
-      { title: "Salary History", route: "/dashboard/salary/history" },
-      { title: "Reports", route: "/dashboard/salary/reports" },
-    ],
+    // Single page with 2 tabs (Overview + Salary Details) - no sub-pages needed
   },
   {
     title: "Non-Salary Income",
@@ -96,19 +91,19 @@ const sections = [
     ],
   },
   {
-    title: "Protection",
+    title: "Insurance",
     icon: "mdi-shield-check",
-    route: "/dashboard/protection",
+    route: "/dashboard/insurance",
     children: [
-      { title: "Overview", route: "/dashboard/protection" },
-      { title: "Life Insurance", route: "/dashboard/protection/life" },
-      { title: "Health Insurance", route: "/dashboard/protection/health" },
-      { title: "Other Insurance", route: "/dashboard/protection/other" },
+      { title: "Overview", route: "/dashboard/insurance" },
+      { title: "Life Insurance", route: "/dashboard/insurance/life" },
+      { title: "Health Insurance", route: "/dashboard/insurance/health" },
+      { title: "Other Insurance", route: "/dashboard/insurance/other" },
       {
         title: "Coverage Calculator",
-        route: "/dashboard/protection/calculator",
+        route: "/dashboard/insurance/calculator",
       },
-      { title: "Reports", route: "/dashboard/protection/reports" },
+      { title: "Reports", route: "/dashboard/insurance/reports" },
     ],
   },
   {
@@ -145,22 +140,9 @@ const sections = [
   },
 ];
 
-// Track expanded sections
-const expandedSections = ref<string[]>([]);
-
 // Check if a section is active
 const isSectionActive = (section: (typeof sections)[0]) => {
   return route.path.startsWith(section.route);
-};
-
-// Toggle section expansion
-const toggleSection = (title: string) => {
-  const index = expandedSections.value.indexOf(title);
-  if (index === -1) {
-    expandedSections.value.push(title);
-  } else {
-    expandedSections.value.splice(index, 1);
-  }
 };
 
 // Navigate to route
@@ -206,7 +188,7 @@ const handleSignOut = async () => {
       <v-divider />
 
       <!-- Navigation List -->
-      <v-list density="compact" nav>
+      <v-list density="compact" nav open-strategy="single">
         <!-- Dashboard Home -->
         <v-list-item
           prepend-icon="mdi-view-dashboard"

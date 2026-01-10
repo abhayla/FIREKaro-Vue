@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import SectionHeader from '@/components/shared/SectionHeader.vue'
-import InsurancePolicyCard from '@/components/protection/InsurancePolicyCard.vue'
-import InsurancePolicyForm from '@/components/protection/InsurancePolicyForm.vue'
+import InsurancePolicyCard from '@/components/insurance/InsurancePolicyCard.vue'
+import InsurancePolicyForm from '@/components/insurance/InsurancePolicyForm.vue'
 import {
   useInsurancePolicies,
   type InsurancePolicy,
@@ -12,15 +12,15 @@ import {
   formatINRCompact,
   getInsuranceTypeIcon,
   getInsuranceTypeColor,
-} from '@/composables/useProtection'
+} from '@/composables/useInsurance'
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/protection' },
-  { title: 'Life', route: '/dashboard/protection/life' },
-  { title: 'Health', route: '/dashboard/protection/health' },
-  { title: 'Other', route: '/dashboard/protection/other' },
-  { title: 'Calculator', route: '/dashboard/protection/calculator' },
-  { title: 'Reports', route: '/dashboard/protection/reports' },
+  { title: 'Overview', route: '/dashboard/insurance' },
+  { title: 'Life', route: '/dashboard/insurance/life' },
+  { title: 'Health', route: '/dashboard/insurance/health' },
+  { title: 'Other', route: '/dashboard/insurance/other' },
+  { title: 'Calculator', route: '/dashboard/insurance/calculator' },
+  { title: 'Reports', route: '/dashboard/insurance/reports' },
 ]
 
 // Other insurance types
@@ -135,7 +135,7 @@ const filteredPolicies = computed(() => {
 <template>
   <div>
     <SectionHeader
-      title="Protection"
+      title="Insurance"
       subtitle="Motor, Home & Travel Insurance"
       icon="mdi-shield-check"
       :tabs="tabs"
