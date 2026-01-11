@@ -23,15 +23,15 @@ import { usePortfolio, formatINR, formatINRCompact, formatPercentage } from '@/c
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler)
 
 const tabs = [
-  { title: 'Portfolio', route: '/dashboard/investments' },
-  { title: 'Stocks', route: '/dashboard/investments/stocks' },
-  { title: 'Mutual Funds', route: '/dashboard/investments/mutual-funds' },
-  { title: 'EPF', route: '/dashboard/investments/epf' },
-  { title: 'PPF', route: '/dashboard/investments/ppf' },
-  { title: 'NPS', route: '/dashboard/investments/nps' },
-  { title: 'ESOPs', route: '/dashboard/investments/esop' },
-  { title: 'Property', route: '/dashboard/investments/property' },
-  { title: 'Reports', route: '/dashboard/investments/reports' },
+  { title: 'Portfolio', route: '/investments' },
+  { title: 'Stocks', route: '/investments/stocks' },
+  { title: 'Mutual Funds', route: '/investments/mutual-funds' },
+  { title: 'EPF', route: '/investments/epf' },
+  { title: 'PPF', route: '/investments/ppf' },
+  { title: 'NPS', route: '/investments/nps' },
+  { title: 'ESOPs', route: '/investments/esop' },
+  { title: 'Property', route: '/investments/property' },
+  { title: 'Reports', route: '/investments/reports' },
 ]
 
 // Data fetching
