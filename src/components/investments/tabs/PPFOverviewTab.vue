@@ -19,6 +19,7 @@ import {
   calculatePPFMaturity,
   type PPFData,
 } from "@/composables/useInvestments";
+import DataCompletionGrid from "@/components/shared/DataCompletionGrid.vue";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -144,6 +145,14 @@ const yearsToMaturity = computed(() => {
   if (!ppf.value.openingDate) return PPF_CONFIG.TENURE_YEARS;
   return Math.max(0, PPF_CONFIG.TENURE_YEARS - accountAge.value);
 });
+
+// Data completion for FY - tracks which months have deposit data
+// TODO: Replace with actual data from API when available
+const fyDataCompletion = computed(() => {
+  // Mock data: PPF deposits are less frequent (quarterly or annual)
+  // In production, this would come from the PPF deposit history API
+  return [true, false, false, true, false, false, true, false, false, true, false, false];
+});
 </script>
 
 <template>
@@ -200,8 +209,25 @@ const yearsToMaturity = computed(() => {
         </v-col>
       </v-row>
 
-      <!-- Account Status + Eligibility -->
+      <!-- Data Completion + Account Status + Eligibility -->
       <v-row class="mb-6">
+        <v-col cols="12" md="4">
+          <DataCompletionGrid
+            :completion="fyDataCompletion"
+            :title="`FY ${financialYear} Deposits`"
+            icon="mdi-calendar-check"
+          />
+          <v-btn
+            color="primary"
+            variant="tonal"
+            block
+            prepend-icon="mdi-pencil"
+            class="mt-3"
+            @click="emit('go-to-details')"
+          >
+            View/Edit Details
+          </v-btn>
+        </v-col>
         <v-col cols="12" md="4">
           <v-card variant="outlined" class="h-100">
             <v-card-title class="text-subtitle-1">
@@ -223,70 +249,48 @@ const yearsToMaturity = computed(() => {
                   {{ new Date(ppf.maturityDate).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) }}
                 </span>
               </div>
-              <v-divider class="my-3" />
-              <v-btn
-                color="primary"
-                variant="tonal"
-                block
-                prepend-icon="mdi-pencil"
-                @click="emit('go-to-details')"
-              >
-                View/Edit Details
-              </v-btn>
             </v-card-text>
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="8">
+        <v-col cols="12" md="4">
           <v-card variant="outlined" class="h-100">
             <v-card-title class="text-subtitle-1">
               <v-icon icon="mdi-shield-check" class="mr-2" color="success" />
               Eligibility Status
             </v-card-title>
             <v-card-text>
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-card
-                    :color="canWithdraw ? 'success' : 'warning'"
-                    variant="tonal"
-                    class="pa-3 text-center"
-                  >
-                    <v-icon :icon="canWithdraw ? 'mdi-check-circle' : 'mdi-lock'" size="24" class="mb-1" />
-                    <div class="text-subtitle-2 font-weight-bold">Partial Withdrawal</div>
-                    <div class="text-caption">
-                      {{ canWithdraw ? "Eligible (Year 7+)" : `Available in ${7 - accountAge} years` }}
-                    </div>
-                  </v-card>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-card
-                    :color="loanEligibility.eligible ? 'success' : 'grey'"
-                    variant="tonal"
-                    class="pa-3 text-center"
-                  >
-                    <v-icon :icon="loanEligibility.eligible ? 'mdi-check-circle' : 'mdi-lock'" size="24" class="mb-1" />
-                    <div class="text-subtitle-2 font-weight-bold">Loan Facility</div>
-                    <div class="text-caption">
-                      {{
-                        loanEligibility.eligible
-                          ? `Up to ${formatINRCompact(loanEligibility.maxAmount)}`
-                          : accountAge < 3
-                          ? `Available in ${3 - accountAge} years`
-                          : "Not available (Year 3-6 only)"
-                      }}
-                    </div>
-                  </v-card>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-card color="primary" variant="tonal" class="pa-3 text-center">
-                    <v-icon icon="mdi-infinity" size="24" class="mb-1" />
-                    <div class="text-subtitle-2 font-weight-bold">Extension</div>
-                    <div class="text-caption">
-                      {{ ppf.isExtended ? "Extended by 5 years" : "Extendable at maturity" }}
-                    </div>
-                  </v-card>
-                </v-col>
-              </v-row>
+              <div class="d-flex flex-column gap-3">
+                <v-card
+                  :color="canWithdraw ? 'success' : 'warning'"
+                  variant="tonal"
+                  class="pa-2 text-center"
+                >
+                  <v-icon :icon="canWithdraw ? 'mdi-check-circle' : 'mdi-lock'" size="20" class="mb-1" />
+                  <div class="text-caption font-weight-bold">Withdrawal</div>
+                  <div class="text-caption">
+                    {{ canWithdraw ? "Year 7+" : `In ${7 - accountAge}y` }}
+                  </div>
+                </v-card>
+                <v-card
+                  :color="loanEligibility.eligible ? 'success' : 'grey'"
+                  variant="tonal"
+                  class="pa-2 text-center"
+                >
+                  <v-icon :icon="loanEligibility.eligible ? 'mdi-check-circle' : 'mdi-lock'" size="20" class="mb-1" />
+                  <div class="text-caption font-weight-bold">Loan</div>
+                  <div class="text-caption">
+                    {{ loanEligibility.eligible ? "Available" : accountAge < 3 ? `In ${3 - accountAge}y` : "N/A" }}
+                  </div>
+                </v-card>
+                <v-card color="primary" variant="tonal" class="pa-2 text-center">
+                  <v-icon icon="mdi-infinity" size="20" class="mb-1" />
+                  <div class="text-caption font-weight-bold">Extension</div>
+                  <div class="text-caption">
+                    {{ ppf.isExtended ? "Extended" : "At maturity" }}
+                  </div>
+                </v-card>
+              </div>
             </v-card-text>
           </v-card>
         </v-col>

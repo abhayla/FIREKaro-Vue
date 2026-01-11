@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { formatINRCompact, formatINR } from "@/composables/useInvestments";
+import InvestmentCopyDataDialog, {
+  type InvestmentCopyMode,
+  type InvestmentCopyOptions,
+} from "@/components/investments/shared/InvestmentCopyDataDialog.vue";
 
 const props = defineProps<{
   financialYear: string;
@@ -13,6 +17,11 @@ const emit = defineEmits<{
 // Edit mode state
 const isEditMode = ref(false);
 const hasUnsavedChanges = ref(false);
+
+// Copy dialog state
+const showCopyDialog = ref(false);
+const copyDialogMode = ref<InvestmentCopyMode>("copy-to-remaining");
+const isCopying = ref(false);
 
 // PPF Config
 const PPF_CONFIG = {
@@ -83,6 +92,31 @@ const saveChanges = async () => {
   isEditMode.value = false;
   hasUnsavedChanges.value = false;
 };
+
+// Open copy dialog
+const openCopyDialog = (mode: InvestmentCopyMode) => {
+  copyDialogMode.value = mode;
+  showCopyDialog.value = true;
+};
+
+// Handle copy confirmation
+const handleCopyConfirm = async (options: InvestmentCopyOptions) => {
+  isCopying.value = true;
+
+  try {
+    // TODO: Implement copy logic based on options.mode
+    // For now, simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    console.log("PPF copy operation:", options);
+
+    // Close dialog
+    showCopyDialog.value = false;
+    hasUnsavedChanges.value = true;
+  } finally {
+    isCopying.value = false;
+  }
+};
 </script>
 
 <template>
@@ -128,6 +162,43 @@ const saveChanges = async () => {
             Edit Mode
           </v-btn>
         </template>
+
+        <!-- Copy Menu -->
+        <v-menu>
+          <template #activator="{ props: menuProps }">
+            <v-btn
+              v-bind="menuProps"
+              color="secondary"
+              variant="tonal"
+              size="small"
+              prepend-icon="mdi-content-copy"
+            >
+              Copy
+              <v-icon icon="mdi-chevron-down" size="small" class="ml-1" />
+            </v-btn>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+              prepend-icon="mdi-arrow-right-bold"
+              title="Copy to remaining months"
+              subtitle="Apply current month value to empty months"
+              @click="openCopyDialog('copy-to-remaining')"
+            />
+            <v-list-item
+              prepend-icon="mdi-history"
+              title="Import from previous FY"
+              subtitle="Copy data from previous financial year"
+              @click="openCopyDialog('import-prev-fy')"
+            />
+            <v-divider />
+            <v-list-item
+              prepend-icon="mdi-eraser"
+              title="Clear selected months"
+              subtitle="Reset data for selected months"
+              @click="openCopyDialog('clear')"
+            />
+          </v-list>
+        </v-menu>
 
         <v-btn icon="mdi-download" variant="text" size="small" title="Export" />
       </div>
@@ -296,6 +367,16 @@ const saveChanges = async () => {
         Deposit before 5th to maximize interest for that month.
       </div>
     </v-alert>
+
+    <!-- Copy Data Dialog -->
+    <InvestmentCopyDataDialog
+      v-model="showCopyDialog"
+      :mode="copyDialogMode"
+      :financial-year="financialYear"
+      investment-type="PPF"
+      :loading="isCopying"
+      @confirm="handleCopyConfirm"
+    />
   </div>
 </template>
 

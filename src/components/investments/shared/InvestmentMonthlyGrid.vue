@@ -220,15 +220,15 @@ const getRowClass = (row: GridRow): string => {
 .monthly-grid {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1200px;
+  min-width: 1100px;
   font-size: 0.8125rem;
 }
 
-/* Headers */
+/* Headers - matched with SalaryMonthlyGrid */
 .component-header,
 .month-header,
 .total-header {
-  padding: 12px 8px;
+  padding: 12px 10px;
   text-align: center;
   font-weight: 600;
   font-size: 0.75rem;
@@ -240,7 +240,8 @@ const getRowClass = (row: GridRow): string => {
 
 .component-header {
   text-align: left;
-  min-width: 180px;
+  min-width: 160px;
+  padding: 12px;
 }
 
 .month-header {
@@ -256,10 +257,12 @@ const getRowClass = (row: GridRow): string => {
   background: rgba(var(--v-theme-primary), 0.08);
 }
 
-/* Cells */
+/* Cells - aligned with SalaryMonthlyGrid */
 .component-cell {
   text-align: left;
   padding: 10px 12px;
+  font-size: 0.8125rem;
+  min-width: 160px;
   background: rgb(var(--v-theme-surface));
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
@@ -267,22 +270,24 @@ const getRowClass = (row: GridRow): string => {
 .sticky-column {
   position: sticky;
   left: 0;
-  z-index: 2;
+  z-index: 1;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
 .value-cell {
   text-align: right;
-  padding: 6px 8px;
+  padding: 8px 10px;
+  font-size: 0.8125rem;
   font-family: "Roboto Mono", monospace;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .total-cell {
   text-align: right;
-  padding: 6px 8px;
+  padding: 8px 10px;
+  font-size: 0.8125rem;
   font-family: "Roboto Mono", monospace;
-  background: rgba(var(--v-theme-primary), 0.02);
+  background: rgba(var(--v-theme-primary), 0.04);
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
@@ -290,9 +295,9 @@ const getRowClass = (row: GridRow): string => {
   background: rgba(var(--v-theme-primary), 0.06);
 }
 
-/* Section Headers */
+/* Section Headers - matched with SalaryMonthlyGrid */
 .section-header-row .section-header {
-  padding: 10px 12px;
+  padding: 12px;
   font-weight: 600;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -322,11 +327,15 @@ const getRowClass = (row: GridRow): string => {
   background: rgba(var(--v-theme-info), 0.04);
 }
 
+.row-warning {
+  background: rgba(var(--v-theme-warning), 0.04);
+}
+
 .row-primary {
   background: rgba(var(--v-theme-primary), 0.08);
 }
 
-/* Data Rows Hover */
+/* Data Rows Hover - matched with SalaryMonthlyGrid */
 .data-row:hover {
   background: rgba(var(--v-theme-primary), 0.02);
 }

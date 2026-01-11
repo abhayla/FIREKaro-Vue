@@ -19,6 +19,7 @@ import {
   calculateEPFProjection,
   type EPFData,
 } from "@/composables/useInvestments";
+import DataCompletionGrid from "@/components/shared/DataCompletionGrid.vue";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -151,9 +152,13 @@ const chartOptions = {
   },
 };
 
-// Data completion for FY (mock for now)
-const fyMonthsCompleted = ref(8);
-const fyCompletionPercent = computed(() => Math.round((fyMonthsCompleted.value / 12) * 100));
+// Data completion for FY - tracks which months have contribution data
+// TODO: Replace with actual data from API when available
+const fyDataCompletion = computed(() => {
+  // Mock data: true for months with data, false for missing
+  // In production, this would come from the EPF monthly contributions API
+  return [true, true, true, true, true, true, true, true, false, false, false, false];
+});
 </script>
 
 <template>
@@ -213,37 +218,21 @@ const fyCompletionPercent = computed(() => Math.round((fyMonthsCompleted.value /
       <!-- Data Completion + Contribution Breakdown -->
       <v-row class="mb-6">
         <v-col cols="12" md="4">
-          <v-card variant="outlined" class="h-100">
-            <v-card-title class="text-subtitle-1">
-              <v-icon icon="mdi-calendar-check" class="mr-2" color="primary" />
-              FY {{ financialYear }} Data
-            </v-card-title>
-            <v-card-text>
-              <div class="d-flex align-center mb-4">
-                <v-progress-circular
-                  :model-value="fyCompletionPercent"
-                  :size="80"
-                  :width="8"
-                  color="primary"
-                >
-                  {{ fyMonthsCompleted }}/12
-                </v-progress-circular>
-                <div class="ml-4">
-                  <div class="text-h6">{{ fyCompletionPercent }}%</div>
-                  <div class="text-body-2 text-medium-emphasis">Months completed</div>
-                </div>
-              </div>
-              <v-btn
-                color="primary"
-                variant="tonal"
-                block
-                prepend-icon="mdi-pencil"
-                @click="emit('go-to-details')"
-              >
-                View/Edit Details
-              </v-btn>
-            </v-card-text>
-          </v-card>
+          <DataCompletionGrid
+            :completion="fyDataCompletion"
+            :title="`FY ${financialYear} Data`"
+            icon="mdi-calendar-check"
+          />
+          <v-btn
+            color="primary"
+            variant="tonal"
+            block
+            prepend-icon="mdi-pencil"
+            class="mt-3"
+            @click="emit('go-to-details')"
+          >
+            View/Edit Details
+          </v-btn>
         </v-col>
 
         <v-col cols="12" md="8">

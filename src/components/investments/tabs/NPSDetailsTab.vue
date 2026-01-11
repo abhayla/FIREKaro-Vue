@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import InvestmentMonthlyGrid from "@/components/investments/shared/InvestmentMonthlyGrid.vue";
+import InvestmentCopyDataDialog, {
+  type InvestmentCopyMode,
+  type InvestmentCopyOptions,
+} from "@/components/investments/shared/InvestmentCopyDataDialog.vue";
 import { useNPS, formatINR, formatINRCompact, type NPSData } from "@/composables/useInvestments";
 import { getCalendarMonthYear } from "@/composables/useSalary";
 
@@ -38,6 +42,11 @@ const nps = computed(() => npsData.value ?? mockNPSData);
 
 // Edit mode
 const isEditMode = ref(false);
+
+// Copy dialog state
+const showCopyDialog = ref(false);
+const copyDialogMode = ref<InvestmentCopyMode>("copy-to-remaining");
+const isCopying = ref(false);
 
 // Month names for the financial year
 const monthNames = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
@@ -184,6 +193,30 @@ const saveChanges = () => {
   console.log("Saving NPS data:", monthlyData.value);
   isEditMode.value = false;
 };
+
+// Open copy dialog
+const openCopyDialog = (mode: InvestmentCopyMode) => {
+  copyDialogMode.value = mode;
+  showCopyDialog.value = true;
+};
+
+// Handle copy confirmation
+const handleCopyConfirm = async (options: InvestmentCopyOptions) => {
+  isCopying.value = true;
+
+  try {
+    // TODO: Implement copy logic based on options.mode
+    // For now, simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    console.log("NPS copy operation:", options);
+
+    // Close dialog
+    showCopyDialog.value = false;
+  } finally {
+    isCopying.value = false;
+  }
+};
 </script>
 
 <template>
@@ -227,6 +260,47 @@ const saveChanges = () => {
             <v-btn color="success" variant="flat" prepend-icon="mdi-plus" @click="emit('add-contribution')">
               Add Contribution
             </v-btn>
+            <!-- Copy Menu -->
+            <v-menu>
+              <template #activator="{ props: menuProps }">
+                <v-btn
+                  v-bind="menuProps"
+                  color="secondary"
+                  variant="tonal"
+                  prepend-icon="mdi-content-copy"
+                >
+                  Copy
+                  <v-icon icon="mdi-chevron-down" size="small" class="ml-1" />
+                </v-btn>
+              </template>
+              <v-list density="compact">
+                <v-list-item
+                  prepend-icon="mdi-arrow-right-bold"
+                  title="Copy to remaining months"
+                  subtitle="Apply current month value to empty months"
+                  @click="openCopyDialog('copy-to-remaining')"
+                />
+                <v-list-item
+                  prepend-icon="mdi-arrow-left"
+                  title="Copy from previous month"
+                  subtitle="Copy values from previous month"
+                  @click="openCopyDialog('copy-from-prev')"
+                />
+                <v-list-item
+                  prepend-icon="mdi-history"
+                  title="Import from previous FY"
+                  subtitle="Copy data from previous financial year"
+                  @click="openCopyDialog('import-prev-fy')"
+                />
+                <v-divider />
+                <v-list-item
+                  prepend-icon="mdi-eraser"
+                  title="Clear selected months"
+                  subtitle="Reset data for selected months"
+                  @click="openCopyDialog('clear')"
+                />
+              </v-list>
+            </v-menu>
           </div>
         </v-card-text>
       </v-card>
@@ -378,6 +452,16 @@ const saveChanges = () => {
           </v-table>
         </v-card-text>
       </v-card>
+
+      <!-- Copy Data Dialog -->
+      <InvestmentCopyDataDialog
+        v-model="showCopyDialog"
+        :mode="copyDialogMode"
+        :financial-year="financialYear"
+        investment-type="NPS"
+        :loading="isCopying"
+        @confirm="handleCopyConfirm"
+      />
     </template>
   </div>
 </template>

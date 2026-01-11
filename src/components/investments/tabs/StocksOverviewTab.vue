@@ -385,16 +385,8 @@ const sectorAllocation = computed(() => [
             <v-card-text>
               <v-list density="compact">
                 <v-list-item v-for="sector in sectorAllocation" :key="sector.sector" class="px-0">
-                  <v-list-item-title>{{ sector.sector }}</v-list-item-title>
-                  <template #append>
-                    <div class="text-right">
-                      <div class="text-body-2 font-weight-medium text-currency">
-                        {{ formatINRCompact(sector.value) }}
-                      </div>
-                      <div class="text-caption text-medium-emphasis">{{ sector.percentage }}%</div>
-                    </div>
-                  </template>
-                  <template #default>
+                  <template #title>{{ sector.sector }}</template>
+                  <template #subtitle>
                     <v-progress-linear
                       :model-value="sector.percentage"
                       color="teal"
@@ -402,6 +394,14 @@ const sectorAllocation = computed(() => [
                       rounded
                       class="mt-1"
                     />
+                  </template>
+                  <template #append>
+                    <div class="text-right">
+                      <div class="text-body-2 font-weight-medium text-currency">
+                        {{ formatINRCompact(sector.value) }}
+                      </div>
+                      <div class="text-caption text-medium-emphasis">{{ sector.percentage }}%</div>
+                    </div>
                   </template>
                 </v-list-item>
               </v-list>

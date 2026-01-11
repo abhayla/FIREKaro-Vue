@@ -2,6 +2,10 @@
 import { ref, computed } from "vue";
 import { FY_MONTHS } from "@/types/salary";
 import { formatINRCompact, formatINR } from "@/composables/useInvestments";
+import InvestmentCopyDataDialog, {
+  type InvestmentCopyMode,
+  type InvestmentCopyOptions,
+} from "@/components/investments/shared/InvestmentCopyDataDialog.vue";
 
 const props = defineProps<{
   financialYear: string;
@@ -148,6 +152,63 @@ const summaryTotals = computed(() => ({
 const monthsWithData = computed(() =>
   mockMonthlyData.value.filter((r) => r.employeePF !== null).length
 );
+
+// Copy Data Dialog
+const showCopyDialog = ref(false);
+const copyDialogMode = ref<InvestmentCopyMode>("copy-to-remaining");
+
+// Get the first month with data for copy operations
+const firstMonthWithData = computed(() => {
+  const index = mockMonthlyData.value.findIndex((r) => r.employeePF !== null);
+  return index >= 0 ? FY_MONTHS[index]?.shortLabel : null;
+});
+
+// Open copy dialog with specific mode
+const openCopyDialog = (mode: InvestmentCopyMode) => {
+  copyDialogMode.value = mode;
+  showCopyDialog.value = true;
+};
+
+// Handle copy confirmation
+const handleCopyConfirm = (options: InvestmentCopyOptions) => {
+  // TODO: Implement copy logic based on options.mode
+  console.log("Copy confirmed with options:", options);
+
+  if (options.mode === "copy-to-remaining") {
+    // Copy first month's data to selected months
+    const firstRecord = mockMonthlyData.value.find((r) => r.employeePF !== null);
+    if (firstRecord) {
+      options.selectedMonths.forEach((monthIndex) => {
+        if (options.includeEmployeeContribution) {
+          mockMonthlyData.value[monthIndex].employeePF = firstRecord.employeePF;
+        }
+        if (options.includeEmployerContribution) {
+          mockMonthlyData.value[monthIndex].employerPF = firstRecord.employerPF;
+          mockMonthlyData.value[monthIndex].employerEPS = firstRecord.employerEPS;
+        }
+        if (options.includeVpf) {
+          mockMonthlyData.value[monthIndex].vpf = firstRecord.vpf;
+        }
+        // Recalculate total
+        const record = mockMonthlyData.value[monthIndex];
+        record.totalContribution =
+          (record.employeePF || 0) + (record.employerPF || 0) + (record.vpf || 0);
+      });
+      hasUnsavedChanges.value = true;
+    }
+  } else if (options.mode === "clear") {
+    // Clear selected months
+    options.selectedMonths.forEach((monthIndex) => {
+      mockMonthlyData.value[monthIndex].employeePF = null;
+      mockMonthlyData.value[monthIndex].employerPF = null;
+      mockMonthlyData.value[monthIndex].employerEPS = null;
+      mockMonthlyData.value[monthIndex].vpf = null;
+      mockMonthlyData.value[monthIndex].totalContribution = null;
+      mockMonthlyData.value[monthIndex].runningBalance = null;
+    });
+    hasUnsavedChanges.value = true;
+  }
+};
 </script>
 
 <template>
@@ -175,6 +236,38 @@ const monthsWithData = computed(() =>
             Edit Mode
           </v-btn>
         </template>
+
+        <!-- Copy Data Menu -->
+        <v-menu>
+          <template #activator="{ props: menuProps }">
+            <v-btn
+              v-bind="menuProps"
+              variant="tonal"
+              size="small"
+              prepend-icon="mdi-content-copy"
+            >
+              Copy
+            </v-btn>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+              prepend-icon="mdi-arrow-right-bold"
+              title="Copy to remaining months"
+              @click="openCopyDialog('copy-to-remaining')"
+            />
+            <v-list-item
+              prepend-icon="mdi-file-import"
+              title="Import from previous FY"
+              @click="openCopyDialog('import-prev-fy')"
+            />
+            <v-divider />
+            <v-list-item
+              prepend-icon="mdi-eraser"
+              title="Clear selected months"
+              @click="openCopyDialog('clear')"
+            />
+          </v-list>
+        </v-menu>
 
         <v-btn
           icon="mdi-refresh"
@@ -320,6 +413,16 @@ const monthsWithData = computed(() =>
         VPF can be edited manually. Use "Sync from Salary" to pull latest data.
       </div>
     </v-alert>
+
+    <!-- Copy Data Dialog -->
+    <InvestmentCopyDataDialog
+      v-model="showCopyDialog"
+      :mode="copyDialogMode"
+      investment-type="EPF"
+      :source-month="firstMonthWithData || 'Apr'"
+      :financial-year="financialYear"
+      @confirm="handleCopyConfirm"
+    />
   </div>
 </template>
 
