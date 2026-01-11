@@ -66,29 +66,7 @@ const router = createRouter({
           component: () =>
             import("@/pages/dashboard/non-salary-income/reports.vue"),
         },
-        // Section 3: Tax Planning
-        {
-          path: "tax-planning",
-          name: "tax-planning",
-          component: () => import("@/pages/dashboard/tax-planning/index.vue"),
-        },
-        {
-          path: "tax-planning/calculator",
-          name: "tax-planning-calculator",
-          component: () =>
-            import("@/pages/dashboard/tax-planning/calculator.vue"),
-        },
-        {
-          path: "tax-planning/deductions",
-          name: "tax-planning-deductions",
-          component: () =>
-            import("@/pages/dashboard/tax-planning/deductions.vue"),
-        },
-        {
-          path: "tax-planning/reports",
-          name: "tax-planning-reports",
-          component: () => import("@/pages/dashboard/tax-planning/reports.vue"),
-        },
+        // Section 3: Tax Planning - MOVED to top-level /tax-planning route
         // Section 4: Expenses
         {
           path: "expenses",
@@ -287,6 +265,19 @@ const router = createRouter({
           path: "fire-goals/reports",
           name: "fire-goals-reports",
           component: () => import("@/pages/dashboard/fire-goals/reports.vue"),
+        },
+      ],
+    },
+    // Tax Planning - Top-level route (uses DashboardLayout for consistency)
+    {
+      path: "/tax-planning",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "tax-planning",
+          component: () => import("@/pages/dashboard/tax-planning/index.vue"),
         },
       ],
     },
