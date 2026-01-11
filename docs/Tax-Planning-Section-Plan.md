@@ -409,9 +409,8 @@ npm run dev
 ## Related Plan Documents
 
 1. `docs/Plans/Feature-Reorganization-Plan.md` - Master navigation
-2. `docs/Salary-Section-Plan.md` - Salary component tracking
-3. `docs/Non-Salary-Income-Plan.md` - Income section plan
-4. **`docs/Tax-Planning-Section-Plan.md`** - This plan (COMPLETE)
+2. `docs/Income-Section-Plan.md` - Income section (Salary + Non-Salary)
+3. **`docs/Tax-Planning-Section-Plan.md`** - This plan (COMPLETE)
 
 ---
 
