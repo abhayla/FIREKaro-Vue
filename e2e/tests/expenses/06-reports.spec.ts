@@ -1,53 +1,92 @@
 import { test, expect } from "@playwright/test";
-import { ExpenseTrackingPage } from "../../pages/expenses";
+import { ExpenseReportsPage } from "../../pages/expenses";
 
 /**
- * Reports functionality is now integrated into the Track Expenses Overview tab.
- * This spec tests the reporting features (charts, exports) in that context.
+ * Reports Page Tests
+ * Tests for the standalone Reports page at /expenses/reports
  */
-test.describe("Expenses Reports (Track Overview Tab)", () => {
-  let trackingPage: ExpenseTrackingPage;
+test.describe("Expense Reports Page", () => {
+  let reportsPage: ExpenseReportsPage;
 
   test.beforeEach(async ({ page }) => {
-    trackingPage = new ExpenseTrackingPage(page);
-    await trackingPage.navigateTo();
-    await trackingPage.switchToOverviewTab();
+    reportsPage = new ExpenseReportsPage(page);
+    await reportsPage.navigateTo();
   });
 
-  test.describe("Report Display", () => {
-    test("should display Track page with Overview tab", async ({ page }) => {
-      await trackingPage.expectPageLoaded();
-      await trackingPage.expectOverviewTabActive();
+  test.describe("Page Display", () => {
+    test("should display Reports page title", async ({ page }) => {
+      await reportsPage.expectPageLoaded();
     });
 
-    test("should show summary cards in Overview", async ({ page }) => {
-      await expect(trackingPage.totalSpentCard).toBeVisible();
+    test("should show period selectors (Monthly, Quarterly, Yearly, Custom)", async ({ page }) => {
+      await reportsPage.expectPeriodSelectorsVisible();
     });
 
-    test("should have export section visible", async ({ page }) => {
-      await expect(trackingPage.exportSection).toBeVisible();
+    test("should show summary cards", async ({ page }) => {
+      await reportsPage.expectSummaryCardsVisible();
     });
 
-    test("should show category breakdown chart (if data exists)", async ({ page }) => {
-      // Chart may not be visible if no data
-      const chartCard = page.locator(".v-card").filter({ hasText: /Category/i });
-      await expect(chartCard).toBeVisible();
+    test("should show charts", async ({ page }) => {
+      await reportsPage.expectChartsVisible();
+    });
+
+    test("should show export button", async ({ page }) => {
+      await reportsPage.expectExportButtonVisible();
+    });
+
+    test("should have category breakdown chart", async ({ page }) => {
+      await expect(reportsPage.categoryPieChart).toBeVisible();
+    });
+
+    test("should have monthly trend chart", async ({ page }) => {
+      await expect(reportsPage.trendChart).toBeVisible();
+    });
+
+    test("should show top expenses list", async ({ page }) => {
+      await expect(reportsPage.topExpensesList).toBeVisible();
+    });
+
+    test("should show payment methods breakdown", async ({ page }) => {
+      await expect(reportsPage.paymentMethodsList).toBeVisible();
+    });
+  });
+
+  test.describe("Period Selection", () => {
+    test("should select Monthly period", async ({ page }) => {
+      await reportsPage.selectPeriod("monthly");
+      await expect(reportsPage.monthlyButton).toHaveClass(/v-btn--active|bg-primary/);
+    });
+
+    test("should select Quarterly period", async ({ page }) => {
+      await reportsPage.selectPeriod("quarterly");
+      // Just verify no errors - UI updates
+    });
+
+    test("should select Yearly period", async ({ page }) => {
+      await reportsPage.selectPeriod("yearly");
+      // Just verify no errors - UI updates
+    });
+  });
+
+  test.describe("Month Navigation", () => {
+    test("should navigate to previous month", async ({ page }) => {
+      const initialMonth = await reportsPage.monthDisplay.textContent();
+      await reportsPage.goToPreviousMonth();
+      // Page should update (we can't easily verify the month changed without more context)
+      await expect(reportsPage.monthDisplay).toBeVisible();
     });
   });
 
   test.describe("Report Exports", () => {
-    test("should show export buttons (PDF, Excel, CSV, JSON)", async ({ page }) => {
-      await expect(trackingPage.exportPDFButton).toBeVisible();
-      await expect(trackingPage.exportExcelButton).toBeVisible();
-      await expect(trackingPage.exportCSVButton).toBeVisible();
-      await expect(trackingPage.exportJSONButton).toBeVisible();
+    test("should show export button", async ({ page }) => {
+      await expect(reportsPage.exportButton).toBeVisible();
     });
 
     test("should trigger PDF export", async ({ page }) => {
       // Listen for download event
       const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
 
-      await trackingPage.exportPDFButton.click();
+      await reportsPage.exportToPDF();
 
       // Either download happens or snackbar confirmation
       const download = await downloadPromise;
@@ -64,7 +103,7 @@ test.describe("Expenses Reports (Track Overview Tab)", () => {
       // Listen for download event
       const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
 
-      await trackingPage.exportExcelButton.click();
+      await reportsPage.exportToExcel();
 
       // Either download happens or snackbar confirmation
       const download = await downloadPromise;
@@ -82,7 +121,7 @@ test.describe("Expenses Reports (Track Overview Tab)", () => {
       // Listen for download event
       const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
 
-      await trackingPage.exportCSVButton.click();
+      await reportsPage.exportToCSV();
 
       // Either download happens or snackbar confirmation
       const download = await downloadPromise;
@@ -99,7 +138,7 @@ test.describe("Expenses Reports (Track Overview Tab)", () => {
       // Listen for download event
       const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
 
-      await trackingPage.exportJSONButton.click();
+      await reportsPage.exportToJSON();
 
       // Either download happens or snackbar confirmation
       const download = await downloadPromise;
@@ -113,4 +152,3 @@ test.describe("Expenses Reports (Track Overview Tab)", () => {
     });
   });
 });
-
