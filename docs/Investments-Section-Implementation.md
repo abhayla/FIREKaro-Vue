@@ -1,7 +1,7 @@
 # Investments Section - Implementation Documentation
 
-> **Version**: 2.0
-> **Last Updated**: January 10, 2026
+> **Version**: 2.2
+> **Last Updated**: January 11, 2026
 > **Status**: Implemented
 
 ---
@@ -15,22 +15,36 @@ The Investments section has been restructured to follow the Salary section's two
 ## URL Structure
 
 ```
-/dashboard/investments                    → Portfolio (landing page, no tabs)
-/dashboard/investments/stocks            → Overview | Item Details tabs
-/dashboard/investments/mutual-funds      → Overview | Item Details tabs
-/dashboard/investments/epf               → Overview | Item Details tabs (NEW)
-/dashboard/investments/ppf               → Overview | Item Details tabs (NEW)
-/dashboard/investments/nps               → Overview | Item Details tabs
-/dashboard/investments/esop              → Overview | Item Details tabs
-/dashboard/investments/property          → Overview | Item Details tabs
-/dashboard/investments/reports           → Reports page (no tabs)
+/investments                    → Portfolio (landing page, no tabs)
+/investments/stocks            → Overview | Item Details tabs
+/investments/mutual-funds      → Overview | Item Details tabs
+/investments/epf               → Overview | Item Details tabs (EPF + VPF tracked separately)
+/investments/ppf               → Overview | Item Details tabs (separate from EPF)
+/investments/nps               → Overview | Item Details tabs
+/investments/esop              → Overview | Item Details tabs
+/investments/property          → Overview | Item Details tabs
+/investments/reports           → Reports page (no tabs)
 ```
+
+> **Note**: Investments section uses `/investments/*` URLs (without `/dashboard` prefix) as of v2.2.
+
+### Sidebar Navigation
+
+The sidebar shows EPF and PPF as **separate** menu items:
+- **EPF** → `/investments/epf` (includes VPF tracking within the same page)
+- **PPF** → `/investments/ppf` (Public Provident Fund - independent of EPF)
 
 ### Legacy Redirects
 
 | Old Path | Redirects To |
 |----------|--------------|
-| `/dashboard/investments/epf-ppf` | `/dashboard/investments/epf` |
+| `/investments/epf-ppf` | `/investments/epf` |
+| `/portfolio` | `/investments` |
+| `/epf` | `/investments/epf` |
+| `/ppf` | `/investments/ppf` |
+| `/nps` | `/investments/nps` |
+| `/stocks` | `/investments/stocks` |
+| `/mutual-funds` | `/investments/mutual-funds` |
 
 ---
 
@@ -70,7 +84,12 @@ src/
 │   │
 │   └── shared/                      # Shared components
 │       ├── InvestmentMonthlyGrid.vue
-│       └── InvestmentDataTable.vue
+│       ├── InvestmentDataTable.vue
+│       └── InvestmentCopyDataDialog.vue  # Copy/Import dialog (NEW)
+│
+├── components/shared/               # Cross-section shared components
+│   ├── DataCompletionGrid.vue       # Month completion indicator (NEW)
+│   └── EditableGridCell.vue         # Inline editable cell (NEW)
 ```
 
 ### Tab Pattern
@@ -87,15 +106,15 @@ import XXXDetailsTab from "@/components/investments/tabs/XXXDetailsTab.vue";
 import { useFinancialYear } from "@/composables/useSalary";
 
 const tabs = [
-  { title: "Portfolio", route: "/dashboard/investments" },
-  { title: "Stocks", route: "/dashboard/investments/stocks" },
-  { title: "Mutual Funds", route: "/dashboard/investments/mutual-funds" },
-  { title: "EPF", route: "/dashboard/investments/epf" },
-  { title: "PPF", route: "/dashboard/investments/ppf" },
-  { title: "NPS", route: "/dashboard/investments/nps" },
-  { title: "ESOPs", route: "/dashboard/investments/esop" },
-  { title: "Property", route: "/dashboard/investments/property" },
-  { title: "Reports", route: "/dashboard/investments/reports" },
+  { title: "Portfolio", route: "/investments" },
+  { title: "Stocks", route: "/investments/stocks" },
+  { title: "Mutual Funds", route: "/investments/mutual-funds" },
+  { title: "EPF", route: "/investments/epf" },
+  { title: "PPF", route: "/investments/ppf" },
+  { title: "NPS", route: "/investments/nps" },
+  { title: "ESOPs", route: "/investments/esop" },
+  { title: "Property", route: "/investments/property" },
+  { title: "Reports", route: "/investments/reports" },
 ];
 
 const activeTab = ref("overview");
@@ -346,6 +365,80 @@ defineEmits<{
 
 A reusable data table component for displaying investment holdings (used by Stocks, MF, Property).
 
+### DataCompletionGrid (NEW - v2.1)
+
+A shared component showing 12-month FY data completion status (used by EPF, PPF, NPS Overview tabs).
+
+**Props**:
+```typescript
+interface Props {
+  completion: boolean[];      // 12-element array for each FY month
+  title?: string;            // Default: "Data Completion"
+  icon?: string;             // Default: "mdi-calendar-check"
+  showProgress?: boolean;    // Default: true
+  iconSize?: number | string; // Default: "small"
+}
+```
+
+**Features**:
+- Visual month-by-month completion indicators (checkmarks)
+- Progress bar with percentage
+- Color-coded chip showing "X/12 months"
+- Follows SalaryOverviewTab data completion pattern
+
+### InvestmentCopyDataDialog (NEW - v2.1)
+
+A dialog component for bulk copy/import operations (used by EPF, PPF, NPS Details tabs).
+
+**Props**:
+```typescript
+interface Props {
+  modelValue: boolean;           // v-model for dialog visibility
+  mode: InvestmentCopyMode;      // 'copy-to-remaining' | 'copy-from-prev' | 'import-prev-fy' | 'clear'
+  financialYear: string;
+  investmentType: 'EPF' | 'PPF' | 'NPS';
+  loading?: boolean;
+}
+```
+
+**Features**:
+- Four copy modes with different behaviors
+- Month selection via chip group
+- Contribution type checkboxes (employee, employer, VPF, interest)
+- Preview text showing what will happen
+- Loading state during async operations
+
+**Copy Modes**:
+| Mode | Description |
+|------|-------------|
+| `copy-to-remaining` | Apply last entered month's values to all empty months |
+| `copy-from-prev` | Copy values from the previous month |
+| `import-prev-fy` | Import data from previous financial year |
+| `clear` | Clear data for selected months |
+
+### EditableGridCell (NEW - v2.1)
+
+A reusable inline-editable cell component following AG Grid patterns.
+
+**Props**:
+```typescript
+interface Props {
+  modelValue: number | string | null;
+  type?: 'number' | 'text' | 'currency';  // Default: 'currency'
+  editable?: boolean;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  formatFn?: (value: any) => string;
+}
+```
+
+**Features**:
+- v-model support for two-way binding
+- `markAsPending` pattern for async save feedback
+- Multiple input types (currency, number, text)
+- Exposed focus method for programmatic control
+
 ---
 
 ## Data Fetching
@@ -407,24 +500,28 @@ formatPercentage(-5.2)      // "-5.20%"
 ```typescript
 // src/router/index.ts
 
-// New EPF route
+// Investments section - top-level route (not under /dashboard)
 {
-  path: "investments/epf",
-  name: "investments-epf",
-  component: () => import("@/pages/dashboard/investments/epf.vue"),
-},
-
-// New PPF route
-{
-  path: "investments/ppf",
-  name: "investments-ppf",
-  component: () => import("@/pages/dashboard/investments/ppf.vue"),
+  path: "/investments",
+  component: () => import("@/layouts/DashboardLayout.vue"),
+  meta: { requiresAuth: true },
+  children: [
+    { path: "", name: "investments", component: () => import("@/pages/dashboard/investments/index.vue") },
+    { path: "stocks", name: "investments-stocks", component: () => import("@/pages/dashboard/investments/stocks.vue") },
+    { path: "mutual-funds", name: "investments-mutual-funds", component: () => import("@/pages/dashboard/investments/mutual-funds.vue") },
+    { path: "epf", name: "investments-epf", component: () => import("@/pages/dashboard/investments/epf.vue") },
+    { path: "ppf", name: "investments-ppf", component: () => import("@/pages/dashboard/investments/ppf.vue") },
+    { path: "nps", name: "investments-nps", component: () => import("@/pages/dashboard/investments/nps.vue") },
+    { path: "esop", name: "investments-esop", component: () => import("@/pages/dashboard/investments/esop.vue") },
+    { path: "property", name: "investments-property", component: () => import("@/pages/dashboard/investments/property.vue") },
+    { path: "reports", name: "investments-reports", component: () => import("@/pages/dashboard/investments/reports.vue") },
+  ],
 },
 
 // Legacy redirect
 {
-  path: "/dashboard/investments/epf-ppf",
-  redirect: "/dashboard/investments/epf",
+  path: "/investments/epf-ppf",
+  redirect: "/investments/epf",
 },
 ```
 
@@ -449,8 +546,10 @@ const propertiesList = computed(() => {
 
 | Decision | Implementation |
 |----------|---------------|
+| URL Structure | `/investments/*` (top-level, not under `/dashboard`) |
+| Sidebar Navigation | EPF and PPF shown as separate items |
 | Tab Pattern | Client-side `v-tabs` + `v-window` (no URL change) |
-| EPF/PPF Split | Separate pages, EPF includes VPF display |
+| EPF/PPF Split | Separate pages - EPF includes VPF, PPF is independent |
 | Monthly Grid | EPF, PPF, NPS use InvestmentMonthlyGrid |
 | Data Tables | Stocks, MF, Property use v-data-table |
 | ESOP Display | Grant cards with expansion panels |
@@ -461,16 +560,16 @@ const propertiesList = computed(() => {
 
 ## Files Created/Modified
 
-### New Files (14 tab components + 2 shared)
+### New Files (14 tab components + 5 shared)
 
 | File | Purpose |
 |------|---------|
-| `EPFOverviewTab.vue` | EPF summary, 80C status, charts |
-| `EPFDetailsTab.vue` | Monthly contribution grid |
-| `PPFOverviewTab.vue` | PPF balance, maturity, projection |
-| `PPFDetailsTab.vue` | Yearly contribution grid |
-| `NPSOverviewTab.vue` | Tier 1/2 balances, allocation |
-| `NPSDetailsTab.vue` | Monthly contribution grid |
+| `EPFOverviewTab.vue` | EPF summary, 80C status, charts, DataCompletionGrid |
+| `EPFDetailsTab.vue` | Monthly contribution grid, CopyDataDialog |
+| `PPFOverviewTab.vue` | PPF balance, maturity, projection, DataCompletionGrid |
+| `PPFDetailsTab.vue` | Yearly contribution grid, CopyDataDialog |
+| `NPSOverviewTab.vue` | Tier 1/2 balances, allocation, DataCompletionGrid |
+| `NPSDetailsTab.vue` | Monthly contribution grid, CopyDataDialog |
 | `StocksOverviewTab.vue` | Portfolio summary, top performers |
 | `StocksDetailsTab.vue` | Holdings data table |
 | `MutualFundsOverviewTab.vue` | Category allocation, SIPs |
@@ -481,6 +580,9 @@ const propertiesList = computed(() => {
 | `ESOPDetailsTab.vue` | Individual grant cards |
 | `InvestmentMonthlyGrid.vue` | Shared monthly grid component |
 | `InvestmentDataTable.vue` | Shared data table component |
+| `InvestmentCopyDataDialog.vue` | Copy/Import dialog (v2.1) |
+| `DataCompletionGrid.vue` | Month completion indicator (v2.1) |
+| `EditableGridCell.vue` | Inline editable cell (v2.1) |
 
 ### New Page Files
 
@@ -510,29 +612,37 @@ const propertiesList = computed(() => {
 
 ## Testing
 
-### E2E Test Files (to be created/updated)
+### E2E Test Files
 
 ```
 e2e/tests/investments/
 ├── 01-navigation.spec.ts      # Tab navigation tests
-├── 02-epf.spec.ts             # EPF page tests
-├── 03-ppf.spec.ts             # PPF page tests
-├── 04-nps.spec.ts             # NPS page tests
-├── 05-stocks.spec.ts          # Stocks page tests
-├── 06-mutual-funds.spec.ts    # Mutual Funds page tests
+├── 05-epf.spec.ts             # EPF page tests (includes DataCompletionGrid, CopyDialog tests)
+├── 05-ppf.spec.ts             # PPF page tests (includes DataCompletionGrid, CopyDialog tests)
+├── 06-nps.spec.ts             # NPS page tests
+├── 03-stocks.spec.ts          # Stocks page tests
+├── 04-mutual-funds.spec.ts    # Mutual Funds page tests
 ├── 07-property.spec.ts        # Property page tests
 ├── 08-esop.spec.ts            # ESOP page tests
-└── 09-reports.spec.ts         # Reports page tests
+└── 08-reports.spec.ts         # Reports page tests
+
+e2e/pages/investments/
+├── epf.page.ts                # EPF page object (includes DataCompletionGrid, CopyDialog locators)
+├── ppf.page.ts                # PPF page object (includes DataCompletionGrid, CopyDialog locators)
+├── nps.page.ts                # NPS page object
+└── ...
 ```
 
 ### Test Scenarios
 
 1. **Navigation**: Click Overview/Item Details tabs - should switch without URL change
 2. **FY Selector**: Change financial year - data should refresh
-3. **Router Redirect**: Navigate to `/dashboard/investments/epf-ppf` - should redirect to `/epf`
+3. **Router Redirect**: Navigate to `/investments/epf-ppf` - should redirect to `/investments/epf`
 4. **Section Navigation**: Click section tabs (Portfolio, Stocks, etc.) - should navigate correctly
 5. **Data Display**: Verify Overview shows summary, Item Details shows editable grid/table
 6. **Responsive**: Test on mobile viewport - tabs should be scrollable
+7. **DataCompletionGrid (v2.1)**: Verify grid shows on Overview tabs, displays X/12 months chip
+8. **CopyDataDialog (v2.1)**: Test Copy menu button, dialog opening, mode selection, dialog close
 
 ---
 
@@ -557,6 +667,55 @@ e2e/tests/investments/
 
 ## Related Documents
 
-- [Investments-Section-Plan.md](./Investments-Section-Plan.md) - Original planning document
 - [Salary-Section-Plan.md](./Salary-Section-Plan.md) - Reference for two-tab pattern
 - [STYLING-GUIDE.md](./STYLING-GUIDE.md) - UI patterns and Vuetify conventions
+
+---
+
+## Changelog
+
+### v2.2 (January 11, 2026) - URL Restructure & Sidebar Fix
+
+**URL Changes**:
+- Moved investments routes from `/dashboard/investments/*` to `/investments/*`
+- Investments is now a top-level route (sibling to `/dashboard`, not a child)
+- All legacy URLs redirect to new paths
+
+**Sidebar Navigation**:
+- Split "EPF & PPF" into separate "EPF" and "PPF" menu items
+- EPF page includes VPF tracking (EPF + VPF on same page)
+- PPF is now a fully separate menu item
+
+**Updated Files**:
+- `src/router/index.ts` - New `/investments` top-level route
+- `src/layouts/DashboardLayout.vue` - Sidebar navigation updated
+- All 9 investment page files - Updated tabs arrays
+- All E2E page objects and test specs - Updated URLs
+
+### v2.1 (January 11, 2026) - Salary ↔ Investments Alignment
+
+**New Shared Components**:
+- `DataCompletionGrid.vue` - 12-month FY completion indicator (matches Salary pattern)
+- `EditableGridCell.vue` - Reusable inline-editable cell component
+- `InvestmentCopyDataDialog.vue` - Bulk copy/import dialog for monthly data
+
+**Updated Components**:
+- `EPFOverviewTab.vue` - Added DataCompletionGrid
+- `PPFOverviewTab.vue` - Added DataCompletionGrid
+- `NPSOverviewTab.vue` - Added DataCompletionGrid
+- `EPFDetailsTab.vue` - Added Copy menu and dialog integration
+- `PPFDetailsTab.vue` - Added Copy menu and dialog integration
+- `NPSDetailsTab.vue` - Added Copy menu and dialog integration
+- `InvestmentMonthlyGrid.vue` - Updated styling for consistency with SalaryMonthlyGrid
+
+**Updated E2E Tests**:
+- `epf.page.ts` - Added DataCompletionGrid and CopyDialog locators
+- `ppf.page.ts` - Added DataCompletionGrid and CopyDialog locators
+- `05-epf.spec.ts` - Added DataCompletionGrid and CopyDialog test suites
+- `05-ppf.spec.ts` - Added DataCompletionGrid and CopyDialog test suites
+
+### v2.0 (January 10, 2026) - Two-Tab Pattern Implementation
+
+- Restructured all investment pages to follow Overview + Item Details pattern
+- Split EPF-PPF combined page into separate EPF and PPF pages
+- Added legacy redirect for `/epf-ppf` → `/epf`
