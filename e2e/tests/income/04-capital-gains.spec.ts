@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { CapitalGainsPage } from "../../pages/non-salary-income";
-import { capitalGainsData, nonSalaryIncomeSummary, getCapitalGainsByType } from "../../fixtures/non-salary-income-data";
+import { CapitalGainsPage } from "../../pages/income";
+import { capitalGainsData, incomeSummary, getCapitalGainsByType } from "../../fixtures/income-data";
 
 test.describe("Capital Gains (STCG/LTCG)", () => {
   let capitalGainsPage: CapitalGainsPage;

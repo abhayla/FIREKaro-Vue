@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { NonSalaryReportsPage } from "../../pages/non-salary-income";
-import { nonSalaryIncomeSummary } from "../../fixtures/non-salary-income-data";
+import { IncomeReportsPage } from "../../pages/income";
+import { incomeSummary } from "../../fixtures/income-data";
 
-test.describe("Non-Salary Income Reports", () => {
-  let reportsPage: NonSalaryReportsPage;
+test.describe("Income Reports", () => {
+  let reportsPage: IncomeReportsPage;
 
   test.beforeEach(async ({ page }) => {
-    reportsPage = new NonSalaryReportsPage(page);
+    reportsPage = new IncomeReportsPage(page);
     await reportsPage.navigateTo();
   });
 

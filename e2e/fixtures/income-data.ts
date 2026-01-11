@@ -1,5 +1,5 @@
 /**
- * Non-Salary Income Test Data
+ * Income Test Data
  *
  * Profile: Lead Software Engineer with freelance consulting,
  * rental property, stock investments, and interest income
@@ -537,7 +537,7 @@ export const otherIncomeData: OtherIncomeTestData[] = [
 // Summary Calculations
 // ============================================
 
-export const nonSalaryIncomeSummary = {
+export const incomeSummary = {
   financialYear: "2025-26",
 
   businessIncome: {
@@ -581,7 +581,7 @@ export const nonSalaryIncomeSummary = {
   },
 
   // Grand total (excluding salary)
-  get totalNonSalaryIncome() {
+  get totalIncome() {
     return (
       this.businessIncome.totalDeemedProfit +
       this.rentalIncome.totalNetAnnualValue +

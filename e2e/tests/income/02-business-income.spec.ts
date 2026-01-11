@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { BusinessIncomePage } from "../../pages/non-salary-income";
-import { businessIncomeData, nonSalaryIncomeSummary } from "../../fixtures/non-salary-income-data";
+import { BusinessIncomePage } from "../../pages/income";
+import { businessIncomeData, incomeSummary } from "../../fixtures/income-data";
 
 test.describe("Business Income (44AD/44ADA)", () => {
   let businessPage: BusinessIncomePage;

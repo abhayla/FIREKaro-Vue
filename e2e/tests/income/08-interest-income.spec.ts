@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { InterestIncomePage } from "../../pages/non-salary-income";
+import { InterestIncomePage } from "../../pages/income";
 import {
   interestIncomeData,
   interestIncomeSummary,
   getInterestIncomeByType,
-} from "../../fixtures/non-salary-income-data";
+} from "../../fixtures/income-data";
 
 // Skip: Interest Income page has rendering issues causing all tests to timeout
 test.describe.skip("Interest Income (FD, RD, Savings, P2P)", () => {

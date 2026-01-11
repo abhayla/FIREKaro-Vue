@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { DividendIncomePage } from "../../pages/non-salary-income";
+import { DividendIncomePage } from "../../pages/income";
 import {
   dividendIncomeData,
   dividendIncomeSummary,
   getDividendIncomeByType,
-} from "../../fixtures/non-salary-income-data";
+} from "../../fixtures/income-data";
 
 // Skip: Dividend Income page has rendering issues causing all tests to timeout
 test.describe.skip("Dividend Income (Stocks & Mutual Funds)", () => {

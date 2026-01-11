@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { OtherIncomePage } from "../../pages/non-salary-income";
-import { otherIncomeData, nonSalaryIncomeSummary, getOtherIncomeByCategory } from "../../fixtures/non-salary-income-data";
+import { OtherIncomePage } from "../../pages/income";
+import { otherIncomeData, incomeSummary, getOtherIncomeByCategory } from "../../fixtures/income-data";
 
 test.describe("Other Income (Interest, Dividends)", () => {
   let otherIncomePage: OtherIncomePage;

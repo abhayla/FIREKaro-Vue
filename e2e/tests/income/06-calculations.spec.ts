@@ -1,26 +1,26 @@
 import { test, expect } from "@playwright/test";
 import {
-  NonSalaryOverviewPage,
+  IncomeOverviewPage,
   BusinessIncomePage,
   RentalIncomePage,
   CapitalGainsPage,
   OtherIncomePage,
-} from "../../pages/non-salary-income";
+} from "../../pages/income";
 import {
   businessIncomeData,
   rentalIncomeData,
   capitalGainsData,
   otherIncomeData,
-  nonSalaryIncomeSummary,
-} from "../../fixtures/non-salary-income-data";
+  incomeSummary,
+} from "../../fixtures/income-data";
 
-test.describe("Non-Salary Income Calculations", () => {
-  test("should display correct total non-salary income on overview", async ({ page }) => {
-    const overview = new NonSalaryOverviewPage(page);
+test.describe("Income Calculations", () => {
+  test("should display correct total income on overview", async ({ page }) => {
+    const overview = new IncomeOverviewPage(page);
     await overview.navigateTo();
 
     // The total should be visible and formatted in INR
-    const totalIncome = await overview.getTotalNonSalaryIncome();
+    const totalIncome = await overview.getTotalIncome();
     expect(totalIncome).toMatch(/₹|Rs\.?/);
   });
 
@@ -77,7 +77,7 @@ test.describe("Non-Salary Income Calculations", () => {
 
   test.skip("should aggregate totals correctly on overview page", async ({ page }) => {
     // Skip: Overview page summary cards not fully implemented
-    const overview = new NonSalaryOverviewPage(page);
+    const overview = new IncomeOverviewPage(page);
     await overview.navigateTo();
 
     // Verify each income type card is visible

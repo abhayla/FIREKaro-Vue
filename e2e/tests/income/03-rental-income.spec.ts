@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { RentalIncomePage } from "../../pages/non-salary-income";
-import { rentalIncomeData } from "../../fixtures/non-salary-income-data";
+import { RentalIncomePage } from "../../pages/income";
+import { rentalIncomeData } from "../../fixtures/income-data";
 
 test.describe("Rental Income (House Property)", () => {
   let rentalPage: RentalIncomePage;
