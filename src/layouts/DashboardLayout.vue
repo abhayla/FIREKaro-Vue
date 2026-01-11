@@ -93,18 +93,8 @@ const sections = [
   {
     title: "Insurance",
     icon: "mdi-shield-check",
-    route: "/dashboard/insurance",
-    children: [
-      { title: "Overview", route: "/dashboard/insurance" },
-      { title: "Life Insurance", route: "/dashboard/insurance/life" },
-      { title: "Health Insurance", route: "/dashboard/insurance/health" },
-      { title: "Other Insurance", route: "/dashboard/insurance/other" },
-      {
-        title: "Coverage Calculator",
-        route: "/dashboard/insurance/calculator",
-      },
-      { title: "Reports", route: "/dashboard/insurance/reports" },
-    ],
+    route: "/insurance",
+    // Single page with 4 tabs (Overview, Item Details, Calculator, Reports) - no sub-pages needed
   },
   {
     title: "Financial Health",

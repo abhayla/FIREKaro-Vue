@@ -1,33 +1,34 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import SectionHeader from '@/components/shared/SectionHeader.vue'
 import InsurancePolicyCard from '@/components/insurance/InsurancePolicyCard.vue'
-import InsurancePolicyForm from '@/components/insurance/InsurancePolicyForm.vue'
 import {
   useInsurancePolicies,
   type InsurancePolicy,
-  type CreatePolicyInput,
+  type InsuranceType,
   formatINR,
   formatINRCompact,
+  getInsuranceTypeIcon,
+  getInsuranceTypeColor,
 } from '@/composables/useInsurance'
 
-const tabs = [
-  { title: 'Overview', route: '/dashboard/insurance' },
-  { title: 'Life', route: '/dashboard/insurance/life' },
-  { title: 'Health', route: '/dashboard/insurance/health' },
-  { title: 'Other', route: '/dashboard/insurance/other' },
-  { title: 'Calculator', route: '/dashboard/insurance/calculator' },
-  { title: 'Reports', route: '/dashboard/insurance/reports' },
-]
+const props = defineProps<{
+  type: InsuranceType
+}>()
 
-// Fetch health insurance policies
-const { policies, isLoading, createPolicy, updatePolicy, deletePolicy } =
-  useInsurancePolicies(ref('health'))
+const emit = defineEmits<{
+  'add-policy': [type: InsuranceType]
+  'edit-policy': [policy: InsurancePolicy]
+  'delete-policy': [policy: InsurancePolicy]
+}>()
 
-// Filter to only health insurance
-const healthPolicies = computed(() => policies.value?.filter((p) => p.type === 'health') || [])
-const activePolicies = computed(() => healthPolicies.value.filter((p) => p.status === 'active'))
-const expiredPolicies = computed(() => healthPolicies.value.filter((p) => p.status !== 'active'))
+// Fetch policies for this type
+const typeRef = computed(() => props.type)
+const { policies, isLoading } = useInsurancePolicies(typeRef)
+
+// Filter policies
+const typePolicies = computed(() => policies.value?.filter((p) => p.type === props.type) || [])
+const activePolicies = computed(() => typePolicies.value.filter((p) => p.status === 'active'))
+const expiredPolicies = computed(() => typePolicies.value.filter((p) => p.status !== 'active'))
 
 // Summary stats
 const totalCoverage = computed(() =>
@@ -40,8 +41,9 @@ const totalPremium = computed(() =>
   }, 0)
 )
 
-// Count by coverage type
+// Health-specific: coverage type breakdown
 const coverageTypeCounts = computed(() => {
+  if (props.type !== 'health') return null
   const counts = { individual: 0, family: 0, floater: 0 }
   activePolicies.value.forEach((p) => {
     if (p.coverageType) counts[p.coverageType]++
@@ -49,82 +51,70 @@ const coverageTypeCounts = computed(() => {
   return counts
 })
 
-// Dialogs
-const showPolicyForm = ref(false)
-const editingPolicy = ref<InsurancePolicy | null>(null)
+// UI state
 const showExpired = ref(false)
 
-// Snackbar
-const snackbar = ref({
-  show: false,
-  message: '',
-  color: 'success',
-})
-
-const showMessage = (message: string, color = 'success') => {
-  snackbar.value = { show: true, message, color }
+// Type-specific labels
+const typeLabels: Record<InsuranceType, { singular: string; plural: string; emptyMessage: string }> = {
+  life: {
+    singular: 'Life Insurance',
+    plural: 'Life Insurance Policies',
+    emptyMessage: 'Add your term insurance and other life insurance policies to track coverage.',
+  },
+  health: {
+    singular: 'Health Insurance',
+    plural: 'Health Insurance Policies',
+    emptyMessage: 'Add your health insurance policies to track medical coverage.',
+  },
+  motor: {
+    singular: 'Motor Insurance',
+    plural: 'Motor Insurance Policies',
+    emptyMessage: 'Add your vehicle insurance policies (car, bike, etc.).',
+  },
+  home: {
+    singular: 'Home Insurance',
+    plural: 'Home Insurance Policies',
+    emptyMessage: 'Add your property insurance policies to protect your home.',
+  },
+  travel: {
+    singular: 'Travel Insurance',
+    plural: 'Travel Insurance Policies',
+    emptyMessage: 'Add your travel insurance policies for trip protection.',
+  },
 }
 
-// Policy actions
-const openAddPolicy = () => {
-  editingPolicy.value = null
-  showPolicyForm.value = true
+const typeLabel = computed(() => typeLabels[props.type])
+const typeIcon = computed(() => getInsuranceTypeIcon(props.type))
+const typeColor = computed(() => getInsuranceTypeColor(props.type))
+
+// Event handlers
+const handleAddPolicy = () => {
+  emit('add-policy', props.type)
 }
 
-const openEditPolicy = (policy: InsurancePolicy) => {
-  editingPolicy.value = policy
-  showPolicyForm.value = true
+const handleEditPolicy = (policy: InsurancePolicy) => {
+  emit('edit-policy', policy)
 }
 
-const handleSavePolicy = async (data: CreatePolicyInput) => {
-  try {
-    if (editingPolicy.value) {
-      await updatePolicy.mutateAsync({ id: editingPolicy.value.id, ...data })
-      showMessage('Policy updated successfully')
-    } else {
-      await createPolicy.mutateAsync({ ...data, type: 'health' })
-      showMessage('Policy added successfully')
-    }
-    showPolicyForm.value = false
-    editingPolicy.value = null
-  } catch {
-    showMessage('Failed to save policy', 'error')
-  }
+const handleViewPolicy = (policy: InsurancePolicy) => {
+  // For now, view = edit
+  emit('edit-policy', policy)
 }
 
-const handleDeletePolicy = async (policy: InsurancePolicy) => {
-  if (confirm(`Are you sure you want to delete "${policy.policyName}"?`)) {
-    try {
-      await deletePolicy.mutateAsync(policy.id)
-      showMessage('Policy deleted successfully')
-    } catch {
-      showMessage('Failed to delete policy', 'error')
-    }
-  }
-}
-
-// View policy details
-const viewPolicy = (policy: InsurancePolicy) => {
-  openEditPolicy(policy)
+const handleDeletePolicy = (policy: InsurancePolicy) => {
+  emit('delete-policy', policy)
 }
 </script>
 
 <template>
-  <div>
-    <SectionHeader
-      title="Insurance"
-      subtitle="Health Insurance Policies"
-      icon="mdi-shield-check"
-      :tabs="tabs"
-    />
-
+  <div class="py-4">
     <!-- Summary Stats -->
     <v-row class="mb-6">
       <v-col cols="12" sm="6" md="3">
         <v-card class="pa-4" variant="elevated">
           <div class="d-flex align-center">
-            <v-avatar color="blue" size="40" class="mr-3">
-              <v-icon icon="mdi-hospital-box" color="white" />
+            <v-avatar :color="typeColor" size="40" class="mr-3">
+              <v-icon :icon="typeIcon" color="white" />
             </v-avatar>
             <div>
               <div class="text-body-2 text-medium-emphasis">Total Coverage</div>
@@ -163,16 +153,16 @@ const viewPolicy = (policy: InsurancePolicy) => {
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <v-card class="pa-4">
-          <v-btn color="primary" block size="large" @click="openAddPolicy">
+          <v-btn color="primary" block size="large" @click="handleAddPolicy">
             <v-icon icon="mdi-plus" class="mr-2" />
-            Add Health Policy
+            Add {{ typeLabel.singular }}
           </v-btn>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Coverage Type Breakdown -->
-    <v-row v-if="activePolicies.length > 0" class="mb-6">
+    <!-- Health-specific: Coverage Type Breakdown -->
+    <v-row v-if="type === 'health' && coverageTypeCounts && activePolicies.length > 0" class="mb-6">
       <v-col cols="12">
         <v-card>
           <v-card-title class="text-subtitle-1">
@@ -222,13 +212,15 @@ const viewPolicy = (policy: InsurancePolicy) => {
 
     <template v-else>
       <!-- Empty State -->
-      <v-card v-if="healthPolicies.length === 0" class="text-center pa-8">
-        <v-icon icon="mdi-hospital-box" size="80" color="blue" class="mb-4" />
-        <h2 class="text-h5 mb-2">No Health Insurance Policies</h2>
-        <p class="text-medium-emphasis mb-4">
-          Add your health insurance policies to track medical coverage.
+      <v-card v-if="typePolicies.length === 0" class="text-center pa-8">
+        <v-icon :icon="typeIcon" size="80" :color="typeColor" class="mb-4" />
+        <h2 class="text-h5 mb-2">No {{ typeLabel.plural }}</h2>
+        <p class="text-medium-emphasis mb-6">
+          {{ typeLabel.emptyMessage }}
         </p>
-        <v-alert type="info" variant="tonal" class="mb-6 text-left">
+
+        <!-- Health-specific recommendations -->
+        <v-alert v-if="type === 'health'" type="info" variant="tonal" class="mb-6 text-left">
           <div class="text-subtitle-2 mb-2">Recommended Coverage (2025)</div>
           <ul class="text-body-2">
             <li>Metro cities: Minimum ₹10L per adult</li>
@@ -237,7 +229,8 @@ const viewPolicy = (policy: InsurancePolicy) => {
             <li>Senior parents: ₹15L each (with senior citizen plan)</li>
           </ul>
         </v-alert>
-        <v-btn color="primary" size="large" @click="openAddPolicy">
+
+        <v-btn color="primary" size="large" @click="handleAddPolicy">
           <v-icon icon="mdi-plus" class="mr-2" />
           Add Your First Policy
         </v-btn>
@@ -260,14 +253,14 @@ const viewPolicy = (policy: InsurancePolicy) => {
           >
             <InsurancePolicyCard
               :policy="policy"
-              @view="viewPolicy"
-              @edit="openEditPolicy"
+              @view="handleViewPolicy"
+              @edit="handleEditPolicy"
               @delete="handleDeletePolicy"
             />
           </v-col>
         </v-row>
         <v-alert v-else type="info" variant="tonal" class="mb-6">
-          No active health insurance policies. Add a policy to get started.
+          No active {{ type }} insurance policies. Add a policy to get started.
         </v-alert>
 
         <!-- Expired Policies (Collapsible) -->
@@ -291,8 +284,8 @@ const viewPolicy = (policy: InsurancePolicy) => {
               >
                 <InsurancePolicyCard
                   :policy="policy"
-                  @view="viewPolicy"
-                  @edit="openEditPolicy"
+                  @view="handleViewPolicy"
+                  @edit="handleEditPolicy"
                   @delete="handleDeletePolicy"
                 />
               </v-col>
@@ -301,25 +294,5 @@ const viewPolicy = (policy: InsurancePolicy) => {
         </template>
       </template>
     </template>
-
-    <!-- Policy Form Dialog -->
-    <InsurancePolicyForm
-      v-model="showPolicyForm"
-      :policy="editingPolicy"
-      @save="handleSavePolicy"
-    />
-
-    <!-- Snackbar -->
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      :timeout="3000"
-      location="bottom right"
-    >
-      {{ snackbar.message }}
-      <template #actions>
-        <v-btn variant="text" @click="snackbar.show = false">Close</v-btn>
-      </template>
-    </v-snackbar>
   </div>
 </template>

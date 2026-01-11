@@ -1,91 +1,154 @@
 import { test, expect } from "@playwright/test";
-import { InsuranceOverviewPage, LifeInsurancePage, HealthInsurancePage, InsuranceReportsPage, InsuranceCalculatorPage } from "../../pages/insurance";
+import { InsurancePage } from "../../pages/insurance";
 
 test.describe("Insurance Navigation", () => {
+  let insurancePage: InsurancePage;
+
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/insurance");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    insurancePage = new InsurancePage(page);
+    await insurancePage.navigateTo();
   });
 
-  test("should load insurance overview page", async ({ page }) => {
-    const overview = new InsuranceOverviewPage(page);
-    await expect(overview.pageTitle).toBeVisible();
-    await expect(page).toHaveURL(/\/dashboard\/protection$/);
+  test("should load insurance page", async ({ page }) => {
+    await insurancePage.expectPageLoaded();
+    await expect(page).toHaveURL(/\/insurance$/);
   });
 
-  test("should display all navigation tabs", async ({ page }) => {
-    await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Life/i })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Health/i })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Other/i })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Calculator/i })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Reports/i })).toBeVisible();
+  test("should display all main navigation tabs", async ({ page }) => {
+    await expect(insurancePage.overviewTab).toBeVisible();
+    await expect(insurancePage.itemDetailsTab).toBeVisible();
+    await expect(insurancePage.calculatorTab).toBeVisible();
+    await expect(insurancePage.reportsTab).toBeVisible();
   });
 
-  test("should navigate to Life Insurance page", async ({ page }) => {
-    const lifePage = new LifeInsurancePage(page);
-    await lifePage.navigateTo();
-    await expect(page).toHaveURL(/\/dashboard\/protection\/life/);
-    await lifePage.expectPageLoaded();
+  test("should show Overview tab as active by default", async () => {
+    await insurancePage.expectOnMainTab("overview");
   });
 
-  test("should navigate to Health Insurance page", async ({ page }) => {
-    const healthPage = new HealthInsurancePage(page);
-    await healthPage.navigateTo();
-    await expect(page).toHaveURL(/\/dashboard\/protection\/health/);
-    await healthPage.expectPageLoaded();
+  test("should navigate to Item Details tab", async ({ page }) => {
+    await insurancePage.goToMainTab("details");
+    await insurancePage.expectOnMainTab("details");
+    // URL should remain the same (client-side navigation)
+    await expect(page).toHaveURL(/\/insurance$/);
   });
 
-  test("should navigate to Other Insurance page", async ({ page }) => {
-    await page.goto("/dashboard/insurance/other");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
-    await expect(page).toHaveURL(/\/dashboard\/protection\/other/);
+  test("should navigate to Calculator tab", async ({ page }) => {
+    await insurancePage.goToMainTab("calculator");
+    await insurancePage.expectOnMainTab("calculator");
+    await expect(page).toHaveURL(/\/insurance$/);
   });
 
-  test("should navigate to Calculator page", async ({ page }) => {
-    const calculatorPage = new InsuranceCalculatorPage(page);
-    await calculatorPage.navigateTo();
-    await expect(page).toHaveURL(/\/dashboard\/protection\/calculator/);
-    await calculatorPage.expectPageLoaded();
+  test("should navigate to Reports tab", async ({ page }) => {
+    await insurancePage.goToMainTab("reports");
+    await insurancePage.expectOnMainTab("reports");
+    await expect(page).toHaveURL(/\/insurance$/);
   });
 
-  test("should navigate to Reports page", async ({ page }) => {
-    const reportsPage = new InsuranceReportsPage(page);
-    await reportsPage.navigateTo();
-    await expect(page).toHaveURL(/\/dashboard\/protection\/reports/);
-    await reportsPage.expectPageLoaded();
+  test("should display sub-tabs within Item Details", async ({ page }) => {
+    await insurancePage.goToMainTab("details");
+
+    // Check all 5 sub-tabs are visible
+    await expect(insurancePage.lifeSubTab).toBeVisible();
+    await expect(insurancePage.healthSubTab).toBeVisible();
+    await expect(insurancePage.motorSubTab).toBeVisible();
+    await expect(insurancePage.homeSubTab).toBeVisible();
+    await expect(insurancePage.travelSubTab).toBeVisible();
   });
 
-  test("should show correct active tab indicator on overview", async ({ page }) => {
-    const overviewTab = page.getByRole("tab", { name: "Overview" });
-    await expect(overviewTab).toHaveAttribute("aria-selected", "true");
+  test("should navigate to Life sub-tab within Item Details", async ({ page }) => {
+    await insurancePage.goToItemDetails("life");
+    await insurancePage.expectOnMainTab("details");
+    await insurancePage.expectOnSubTab("life");
+    await expect(page).toHaveURL(/\/insurance$/);
   });
 
-  test("should show correct active tab indicator when navigating to life page", async ({ page }) => {
+  test("should navigate to Health sub-tab within Item Details", async ({ page }) => {
+    await insurancePage.goToItemDetails("health");
+    await insurancePage.expectOnMainTab("details");
+    await insurancePage.expectOnSubTab("health");
+    await expect(page).toHaveURL(/\/insurance$/);
+  });
+
+  test("should navigate to Motor sub-tab within Item Details", async ({ page }) => {
+    await insurancePage.goToItemDetails("motor");
+    await insurancePage.expectOnMainTab("details");
+    await insurancePage.expectOnSubTab("motor");
+  });
+
+  test("should navigate to Home sub-tab within Item Details", async ({ page }) => {
+    await insurancePage.goToItemDetails("home");
+    await insurancePage.expectOnMainTab("details");
+    await insurancePage.expectOnSubTab("home");
+  });
+
+  test("should navigate to Travel sub-tab within Item Details", async ({ page }) => {
+    await insurancePage.goToItemDetails("travel");
+    await insurancePage.expectOnMainTab("details");
+    await insurancePage.expectOnSubTab("travel");
+  });
+
+  test("should show summary cards on Overview tab", async () => {
+    await insurancePage.expectOnMainTab("overview");
+    await insurancePage.expectHasSummaryCards();
+  });
+
+  test("should be able to navigate between main tabs using tab clicks", async () => {
+    // Start on Overview
+    await insurancePage.expectOnMainTab("overview");
+
+    // Go to Item Details
+    await insurancePage.goToMainTab("details");
+    await insurancePage.expectOnMainTab("details");
+
+    // Go to Calculator
+    await insurancePage.goToMainTab("calculator");
+    await insurancePage.expectOnMainTab("calculator");
+
+    // Go to Reports
+    await insurancePage.goToMainTab("reports");
+    await insurancePage.expectOnMainTab("reports");
+
+    // Back to Overview
+    await insurancePage.goToMainTab("overview");
+    await insurancePage.expectOnMainTab("overview");
+  });
+
+  test("should be able to navigate between sub-tabs within Item Details", async () => {
+    await insurancePage.goToMainTab("details");
+
+    // Navigate through all sub-tabs
+    await insurancePage.goToSubTab("life");
+    await insurancePage.expectOnSubTab("life");
+
+    await insurancePage.goToSubTab("health");
+    await insurancePage.expectOnSubTab("health");
+
+    await insurancePage.goToSubTab("motor");
+    await insurancePage.expectOnSubTab("motor");
+
+    await insurancePage.goToSubTab("home");
+    await insurancePage.expectOnSubTab("home");
+
+    await insurancePage.goToSubTab("travel");
+    await insurancePage.expectOnSubTab("travel");
+  });
+
+  test("should handle legacy URLs by redirecting to main insurance page", async ({ page }) => {
+    // Legacy URLs should redirect to main insurance page
     await page.goto("/dashboard/insurance/life");
     await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(500); // Wait for tab state to update
+    await expect(page).toHaveURL(/\/insurance$/);
 
-    const lifeTab = page.getByRole("tab", { name: /Life/i });
-    await expect(lifeTab).toHaveAttribute("aria-selected", "true");
-  });
+    await page.goto("/dashboard/insurance/health");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page).toHaveURL(/\/insurance$/);
 
-  test("should show summary cards on overview page", async ({ page }) => {
-    const overview = new InsuranceOverviewPage(page);
-    await overview.expectHasSummaryCards();
-  });
+    await page.goto("/dashboard/insurance/calculator");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page).toHaveURL(/\/insurance$/);
 
-  test("should be able to navigate between tabs using tab clicks", async ({ page }) => {
-    // Click on Life tab
-    await page.getByRole("tab", { name: /Life/i }).click();
-    await page.waitForTimeout(500);
-    await expect(page).toHaveURL(/\/dashboard\/protection\/life/);
-
-    // Click back to Overview
-    await page.getByRole("tab", { name: "Overview" }).click();
-    await page.waitForTimeout(500);
-    await expect(page).toHaveURL(/\/dashboard\/protection$/);
+    await page.goto("/dashboard/insurance/reports");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page).toHaveURL(/\/insurance$/);
   });
 });

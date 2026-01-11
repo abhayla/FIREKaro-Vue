@@ -1,77 +1,80 @@
 import { test, expect } from "@playwright/test";
-import { HealthInsurancePage } from "../../pages/insurance";
+import { InsurancePage } from "../../pages/insurance";
 import { healthInsuranceData, sampleHealthPolicy } from "../../fixtures/insurance-data";
 
 test.describe("Health Insurance", () => {
-  let healthPage: HealthInsurancePage;
+  let insurancePage: InsurancePage;
 
   test.beforeEach(async ({ page }) => {
-    healthPage = new HealthInsurancePage(page);
-    await healthPage.navigateTo();
+    insurancePage = new InsurancePage(page);
+    await insurancePage.navigateTo();
+    await insurancePage.goToItemDetails("health");
   });
 
-  test("should display health insurance page", async ({ page }) => {
-    await healthPage.expectPageLoaded();
-    await expect(healthPage.addPolicyButton).toBeVisible();
+  test("should display health insurance sub-tab within Item Details", async ({ page }) => {
+    await insurancePage.expectPageLoaded();
+    await insurancePage.expectOnMainTab("details");
+    await insurancePage.expectOnSubTab("health");
+    await expect(insurancePage.addPolicyButton).toBeVisible();
   });
 
-  test("should open add policy form", async ({ page }) => {
-    await healthPage.openAddForm();
-    await healthPage.expectFormDialogVisible();
+  test("should open add policy form", async () => {
+    await insurancePage.openAddForm();
+    await insurancePage.expectFormDialogVisible();
   });
 
-  test("should close form when cancel is clicked", async ({ page }) => {
-    await healthPage.openAddForm();
-    await healthPage.expectFormDialogVisible();
-    await healthPage.cancelButton.click();
-    await healthPage.expectFormDialogClosed();
+  test("should close form when cancel is clicked", async () => {
+    await insurancePage.openAddForm();
+    await insurancePage.expectFormDialogVisible();
+    await insurancePage.cancelButton.click();
+    await insurancePage.expectFormDialogClosed();
   });
 
-  test("should have form fields for adding health insurance policy", async ({ page }) => {
-    await healthPage.openAddForm();
+  test("should have form fields for adding health insurance policy", async () => {
+    await insurancePage.openAddForm();
 
     // Verify form dialog is visible with required fields
-    await healthPage.expectFormDialogVisible();
+    await insurancePage.expectFormDialogVisible();
 
     // Check that required fields exist
-    await expect(healthPage.policyNumberField).toBeVisible();
-    await expect(healthPage.policyNameField).toBeVisible();
-    await expect(healthPage.sumAssuredField).toBeVisible();
-    await expect(healthPage.premiumField).toBeVisible();
+    await expect(insurancePage.policyNumberField).toBeVisible();
+    await expect(insurancePage.policyNameField).toBeVisible();
+    await expect(insurancePage.sumAssuredField).toBeVisible();
+    await expect(insurancePage.premiumField).toBeVisible();
 
     // Close the form
-    await healthPage.cancelButton.click();
-    await healthPage.expectFormDialogClosed();
+    await insurancePage.cancelButton.click();
+    await insurancePage.expectFormDialogClosed();
   });
 
-  test("should show summary cards", async ({ page }) => {
-    // Summary cards should be visible (even if showing 0 values for empty state)
-    await expect(page.getByText(/Coverage|Sum/i).first()).toBeVisible();
+  test("should show summary stats for health insurance", async ({ page }) => {
+    // Health sub-tab should show coverage stats
+    await expect(page.getByText(/Coverage|Sum|Total/i).first()).toBeVisible();
   });
 
   test("should have save button that requires valid data", async ({ page }) => {
-    await healthPage.openAddForm();
+    await insurancePage.openAddForm();
 
     // Save button should be visible
-    await expect(healthPage.saveButton).toBeVisible();
+    await expect(insurancePage.saveButton).toBeVisible();
 
     // Save button should be disabled when form is empty (or validation should prevent save)
-    const saveBtn = healthPage.saveButton;
+    const saveBtn = insurancePage.saveButton;
     const isDisabled = await saveBtn.isDisabled();
 
     if (!isDisabled) {
       // If not disabled, clicking should keep form open due to validation
       await saveBtn.click();
       await page.waitForTimeout(300);
-      await healthPage.expectFormDialogVisible();
+      await insurancePage.expectFormDialogVisible();
     }
   });
 
   test("should show health-specific fields when Health type is selected", async ({ page }) => {
-    await healthPage.openAddForm();
+    await insurancePage.openAddForm();
 
     // Select Health type
-    await healthPage.selectPolicyType('Health');
+    await insurancePage.selectPolicyType("Health");
     await page.waitForTimeout(300); // Wait for conditional fields to appear
 
     // Health-specific fields should appear
@@ -79,30 +82,44 @@ test.describe("Health Insurance", () => {
   });
 
   test("should be able to fill policy form fields", async ({ page }) => {
-    await healthPage.openAddForm();
+    await insurancePage.openAddForm();
 
     // Select Health type
-    await healthPage.selectPolicyType('Health');
+    await insurancePage.selectPolicyType("Health");
     await page.waitForTimeout(300);
 
     // Fill basic text fields (no dropdown interaction)
-    await healthPage.policyNumberField.fill('HEALTH-TEST-' + Date.now());
-    await healthPage.policyNameField.fill('Test Health Policy');
-    await healthPage.sumAssuredField.fill('500000');
-    await healthPage.premiumField.fill('20000');
+    await insurancePage.policyNumberField.fill("HEALTH-TEST-" + Date.now());
+    await insurancePage.policyNameField.fill("Test Health Policy");
+    await insurancePage.sumAssuredField.fill("500000");
+    await insurancePage.premiumField.fill("20000");
 
     // Fill date fields
-    const today = new Date().toISOString().split('T')[0];
-    const nextYear = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    await healthPage.policyFormDialog.getByLabel(/Start Date/i).fill(today);
-    await healthPage.policyFormDialog.getByLabel(/End Date/i).fill(nextYear);
+    const today = new Date().toISOString().split("T")[0];
+    const nextYear = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    await insurancePage.policyFormDialog.getByLabel(/Start Date/i).fill(today);
+    await insurancePage.policyFormDialog.getByLabel(/End Date/i).fill(nextYear);
 
     // Verify fields were filled
-    await expect(healthPage.policyNameField).toHaveValue('Test Health Policy');
-    await expect(healthPage.sumAssuredField).toHaveValue('500000');
+    await expect(insurancePage.policyNameField).toHaveValue("Test Health Policy");
+    await expect(insurancePage.sumAssuredField).toHaveValue("500000");
 
     // Close form without saving (to avoid API dependency)
-    await healthPage.cancelButton.click();
-    await healthPage.expectFormDialogClosed();
+    await insurancePage.cancelButton.click();
+    await insurancePage.expectFormDialogClosed();
+  });
+
+  test("should stay on same URL when switching sub-tabs", async ({ page }) => {
+    // Switch to Life sub-tab
+    await insurancePage.goToSubTab("life");
+    await insurancePage.expectOnSubTab("life");
+    await expect(page).toHaveURL(/\/insurance$/);
+
+    // Switch to Motor sub-tab
+    await insurancePage.goToSubTab("motor");
+    await insurancePage.expectOnSubTab("motor");
+    await expect(page).toHaveURL(/\/insurance$/);
   });
 });

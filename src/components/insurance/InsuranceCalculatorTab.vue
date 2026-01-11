@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import SectionHeader from '@/components/shared/SectionHeader.vue'
-import CoverageAdequacyWizard from '@/components/insurance/CoverageAdequacyWizard.vue'
 import HLVCalculator from '@/components/insurance/HLVCalculator.vue'
 import {
   useInsurancePolicies,
@@ -11,22 +9,14 @@ import {
   formatINRCompact,
 } from '@/composables/useInsurance'
 
-const tabs = [
-  { title: 'Overview', route: '/dashboard/insurance' },
-  { title: 'Life', route: '/dashboard/insurance/life' },
-  { title: 'Health', route: '/dashboard/insurance/health' },
-  { title: 'Other', route: '/dashboard/insurance/other' },
-  { title: 'Calculator', route: '/dashboard/insurance/calculator' },
-  { title: 'Reports', route: '/dashboard/insurance/reports' },
-]
+const emit = defineEmits<{
+  'open-wizard': []
+}>()
 
 // Fetch existing coverage
 const { coverageByType, isLoading } = useInsurancePolicies()
 const { data: coverageAnalysis } = useCoverageAnalysis()
 const { data: recommendations, isLoading: recommendationsLoading } = useInsuranceRecommendations()
-
-// Dialog state
-const showWizard = ref(false)
 
 // Local calculation result
 const localAnalysis = ref<CoverageAnalysis | null>(null)
@@ -45,17 +35,14 @@ const getProgressColor = (percentage: number) => {
   if (percentage >= 40) return 'warning'
   return 'error'
 }
+
+const openFullWizard = () => {
+  emit('open-wizard')
+}
 </script>
 
 <template>
-  <div>
-    <SectionHeader
-      title="Insurance"
-      subtitle="Coverage Adequacy Calculator"
-      icon="mdi-shield-check"
-      :tabs="tabs"
-    />
-
+  <div class="py-4">
     <!-- Introduction -->
     <v-alert type="info" variant="tonal" class="mb-6">
       <template #prepend>
@@ -88,7 +75,7 @@ const getProgressColor = (percentage: number) => {
             Use the quick calculator on the left, or open the full wizard for a comprehensive
             analysis with detailed recommendations.
           </p>
-          <v-btn color="primary" size="large" @click="showWizard = true">
+          <v-btn color="primary" size="large" @click="openFullWizard">
             <v-icon icon="mdi-wizard-hat" class="mr-2" />
             Open Full Calculator
           </v-btn>
@@ -169,7 +156,7 @@ const getProgressColor = (percentage: number) => {
               </div>
             </div>
 
-            <v-btn variant="outlined" color="primary" block @click="showWizard = true">
+            <v-btn variant="outlined" color="primary" block @click="openFullWizard">
               <v-icon icon="mdi-refresh" class="mr-2" />
               Recalculate with Full Wizard
             </v-btn>
@@ -279,13 +266,5 @@ const getProgressColor = (percentage: number) => {
         </v-card>
       </v-col>
     </v-row>
-
-    <!-- Full Wizard Dialog -->
-    <CoverageAdequacyWizard
-      v-model="showWizard"
-      :existing-life-cover="coverageByType?.life"
-      :existing-health-cover="coverageByType?.health"
-      @calculated="handleCalculated"
-    />
   </div>
 </template>

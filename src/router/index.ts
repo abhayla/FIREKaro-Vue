@@ -185,38 +185,7 @@ const router = createRouter({
           name: "liabilities-reports",
           component: () => import("@/pages/dashboard/liabilities/reports.vue"),
         },
-        // Section 7: Insurance
-        {
-          path: "insurance",
-          name: "insurance",
-          component: () => import("@/pages/dashboard/insurance/index.vue"),
-        },
-        {
-          path: "insurance/life",
-          name: "insurance-life",
-          component: () => import("@/pages/dashboard/insurance/life.vue"),
-        },
-        {
-          path: "insurance/health",
-          name: "insurance-health",
-          component: () => import("@/pages/dashboard/insurance/health.vue"),
-        },
-        {
-          path: "insurance/other",
-          name: "insurance-other",
-          component: () => import("@/pages/dashboard/insurance/other.vue"),
-        },
-        {
-          path: "insurance/calculator",
-          name: "insurance-calculator",
-          component: () =>
-            import("@/pages/dashboard/insurance/calculator.vue"),
-        },
-        {
-          path: "insurance/reports",
-          name: "insurance-reports",
-          component: () => import("@/pages/dashboard/insurance/reports.vue"),
-        },
+        // Section 7: Insurance - moved to top-level /insurance route
         // Section 8: Financial Health
         {
           path: "financial-health",
@@ -290,7 +259,45 @@ const router = createRouter({
         },
       ],
     },
+    // Section 7: Insurance (Single page with 4 tabs: Overview, Item Details, Calculator, Reports)
+    {
+      path: "/insurance",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "insurance",
+          component: () => import("@/pages/dashboard/insurance/index.vue"),
+        },
+      ],
+    },
     // Legacy URL Redirects
+    // Insurance section - old routes redirect to new /insurance
+    {
+      path: "/dashboard/insurance",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/life",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/health",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/other",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/calculator",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/reports",
+      redirect: "/insurance",
+    },
     // Salary section - old sub-pages redirect to main salary page
     {
       path: "/dashboard/salary/current",
