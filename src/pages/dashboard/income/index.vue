@@ -1,27 +1,23 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import SectionHeader from "@/components/shared/SectionHeader.vue";
 import IncomeSourceCard from "@/components/income/IncomeSourceCard.vue";
 import IncomeSummaryChart from "@/components/income/IncomeSummaryChart.vue";
-import BusinessIncomeForm from "@/components/income/BusinessIncomeForm.vue";
-import RentalIncomeForm from "@/components/income/RentalIncomeForm.vue";
-import CapitalGainsCalculator from "@/components/income/CapitalGainsCalculator.vue";
-import OtherIncomeForm from "@/components/income/OtherIncomeForm.vue";
 import {
   useBusinessIncome,
   useRentalIncome,
   useCapitalGains,
   useOtherIncome,
+  useInterestIncomeAPI,
+  useDividendIncomeAPI,
   useIncomeSummary,
-  useAddBusinessIncome,
-  useAddRentalIncome,
-  useAddCapitalGain,
-  useAddOtherIncome,
   formatINR,
 } from "@/composables/useIncome";
 import { useFinancialYear } from "@/composables/useSalary";
 import { getFinancialYearOptions } from "@/types/salary";
-import type { IncomeType } from "@/types/income";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 // Advance Tax Due Dates for FY 2024-25
 const ADVANCE_TAX_DATES = [
@@ -29,17 +25,6 @@ const ADVANCE_TAX_DATES = [
   { date: "2024-09-15", quarter: "Q2", percentage: 45 },
   { date: "2024-12-15", quarter: "Q3", percentage: 75 },
   { date: "2025-03-15", quarter: "Q4", percentage: 100 },
-];
-
-const tabs = [
-  { title: "Overview", route: "/dashboard/non-salary-income" },
-  { title: "Business", route: "/dashboard/non-salary-income/business" },
-  { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
-  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
-  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
-  { title: "Other", route: "/dashboard/non-salary-income/other" },
-  { title: "Reports", route: "/dashboard/non-salary-income/reports" },
 ];
 
 // Financial Year
@@ -50,14 +35,10 @@ const fyOptions = computed(() => getFinancialYearOptions());
 const { data: businessData, isLoading: businessLoading } = useBusinessIncome();
 const { data: rentalData, isLoading: rentalLoading } = useRentalIncome();
 const { data: capitalGainsData, isLoading: cgLoading } = useCapitalGains();
+const { data: interestData, isLoading: interestLoading } = useInterestIncomeAPI();
+const { data: dividendData, isLoading: dividendLoading } = useDividendIncomeAPI();
 const { data: otherData, isLoading: otherLoading } = useOtherIncome();
 const { summary, isLoading: summaryLoading } = useIncomeSummary();
-
-// Mutations
-const addBusinessMutation = useAddBusinessIncome();
-const addRentalMutation = useAddRentalIncome();
-const addCapitalGainMutation = useAddCapitalGain();
-const addOtherMutation = useAddOtherIncome();
 
 // Computed totals
 const businessTotal = computed(
@@ -70,6 +51,12 @@ const capitalGainsTotal = computed(
   () =>
     capitalGainsData.value?.reduce((sum, cg) => sum + cg.taxableGain, 0) || 0,
 );
+const interestTotal = computed(
+  () => interestData.value?.summary?.totalInterest || 0,
+);
+const dividendTotal = computed(
+  () => dividendData.value?.summary?.totalDividend || 0,
+);
 const otherTotal = computed(
   () => otherData.value?.reduce((sum, o) => sum + o.grossAmount, 0) || 0,
 );
@@ -79,6 +66,8 @@ const isLoading = computed(
     businessLoading.value ||
     rentalLoading.value ||
     cgLoading.value ||
+    interestLoading.value ||
+    dividendLoading.value ||
     otherLoading.value,
 );
 
@@ -105,16 +94,22 @@ const filingReadinessItems = computed(() => [
     icon: "mdi-trending-up",
   },
   {
+    id: "interest",
+    label: "Interest income recorded",
+    completed: (interestData.value?.records?.length || 0) > 0,
+    icon: "mdi-percent",
+  },
+  {
+    id: "dividend",
+    label: "Dividend income recorded",
+    completed: (dividendData.value?.records?.length || 0) > 0,
+    icon: "mdi-cash-multiple",
+  },
+  {
     id: "other",
     label: "Other income recorded",
     completed: (otherData.value?.length || 0) > 0,
     icon: "mdi-dots-horizontal",
-  },
-  {
-    id: "tds",
-    label: "TDS entries verified",
-    completed: true, // Mock - would check TDS data
-    icon: "mdi-receipt",
   },
 ]);
 
@@ -207,7 +202,7 @@ const smartAlerts = computed(() => {
       icon: "mdi-lightbulb-outline",
       title: "No Income Sources Added",
       message: "Add your business or rental income to get accurate tax calculations",
-      action: { label: "Add Income", route: "/dashboard/non-salary-income/business" },
+      action: { label: "Add Income", route: "/dashboard/income/business" },
     });
   }
 
@@ -218,7 +213,7 @@ const smartAlerts = computed(() => {
       icon: "mdi-trending-up",
       title: "Track Your Investments",
       message: "Record your stock/mutual fund sales to calculate capital gains tax",
-      action: { label: "Add Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+      action: { label: "Add Capital Gains", route: "/dashboard/income/capital-gains" },
     });
   }
 
@@ -232,7 +227,7 @@ const smartAlerts = computed(() => {
         icon: "mdi-file-document-alert",
         title: "ITR Filing Deadline",
         message: `File your ITR within ${daysUntilITR} days to avoid late fees`,
-        action: { label: "View Reports", route: "/dashboard/non-salary-income/reports" },
+        action: { label: "View Reports", route: "/dashboard/income/reports" },
       });
     }
   }
@@ -240,21 +235,15 @@ const smartAlerts = computed(() => {
   return alerts;
 });
 
-// Add income dialog
-const showAddDialog = ref(false);
-const selectedIncomeType = ref<IncomeType | null>(null);
-const showBusinessForm = ref(false);
-const showRentalForm = ref(false);
-const showCapitalGainsForm = ref(false);
-const showOtherForm = ref(false);
-
-const incomeTypes = [
+// Income type cards for hub navigation
+const incomeTypeCards = [
   {
     type: "business",
-    title: "Business/Profession",
-    subtitle: "44AD/44ADA",
+    title: "Business Income",
+    subtitle: "44AD/44ADA Presumptive",
     icon: "mdi-store",
     color: "primary",
+    route: "/dashboard/income/business",
   },
   {
     type: "rental",
@@ -262,6 +251,7 @@ const incomeTypes = [
     subtitle: "House Property",
     icon: "mdi-home-city",
     color: "secondary",
+    route: "/dashboard/income/rental",
   },
   {
     type: "capital_gains",
@@ -269,6 +259,7 @@ const incomeTypes = [
     subtitle: "STCG/LTCG",
     icon: "mdi-trending-up",
     color: "success",
+    route: "/dashboard/income/capital-gains",
   },
   {
     type: "interest",
@@ -276,6 +267,7 @@ const incomeTypes = [
     subtitle: "FD/Savings/P2P",
     icon: "mdi-percent",
     color: "info",
+    route: "/dashboard/income/interest",
   },
   {
     type: "dividend",
@@ -283,6 +275,7 @@ const incomeTypes = [
     subtitle: "Stocks/MF",
     icon: "mdi-cash-multiple",
     color: "warning",
+    route: "/dashboard/income/dividends",
   },
   {
     type: "other",
@@ -290,68 +283,21 @@ const incomeTypes = [
     subtitle: "Commission/Gifts",
     icon: "mdi-dots-horizontal",
     color: "grey",
+    route: "/dashboard/income/other",
   },
 ];
 
-function openAddDialog() {
-  selectedIncomeType.value = null;
-  showAddDialog.value = true;
-}
-
-function selectIncomeType(type: IncomeType) {
-  showAddDialog.value = false;
-  selectedIncomeType.value = type;
-
-  switch (type) {
-    case "business":
-      showBusinessForm.value = true;
-      break;
-    case "rental":
-      showRentalForm.value = true;
-      break;
-    case "capital_gains":
-      showCapitalGainsForm.value = true;
-      break;
-    case "interest":
-    case "dividend":
-    case "other":
-      showOtherForm.value = true;
-      break;
-  }
-}
-
-async function handleBusinessSubmit(
-  data: Parameters<typeof addBusinessMutation.mutateAsync>[0],
-) {
-  await addBusinessMutation.mutateAsync(data);
-}
-
-async function handleRentalSubmit(
-  data: Parameters<typeof addRentalMutation.mutateAsync>[0],
-) {
-  await addRentalMutation.mutateAsync(data);
-}
-
-async function handleCapitalGainSubmit(
-  data: Parameters<typeof addCapitalGainMutation.mutateAsync>[0],
-) {
-  await addCapitalGainMutation.mutateAsync(data);
-}
-
-async function handleOtherSubmit(
-  data: Parameters<typeof addOtherMutation.mutateAsync>[0],
-) {
-  await addOtherMutation.mutateAsync(data);
+function navigateToIncomeType(route: string) {
+  router.push(route);
 }
 </script>
 
 <template>
   <div>
     <SectionHeader
-      title="Non-Salary Income"
+      title="Income"
       subtitle="Track all your income sources beyond salary"
       icon="mdi-cash-plus"
-      :tabs="tabs"
     />
 
     <!-- Controls Row -->
@@ -366,16 +312,11 @@ async function handleOtherSubmit(
           @update:model-value="setFinancialYear"
         />
       </v-col>
-      <v-col cols="12" md="4" class="text-md-right">
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-          Add Income Source
-        </v-btn>
-      </v-col>
     </v-row>
 
-    <!-- Summary Cards -->
+    <!-- Summary Cards - Row 1 -->
     <v-row>
-      <v-col cols="12" md="6" lg="3">
+      <v-col cols="12" sm="6" lg="4">
         <IncomeSourceCard
           type="business"
           title="Business Income"
@@ -387,10 +328,10 @@ async function handleOtherSubmit(
           "
           :count="businessData?.length || 0"
           :loading="businessLoading"
-          href="/dashboard/non-salary-income/business"
+          href="/dashboard/income/business"
         />
       </v-col>
-      <v-col cols="12" md="6" lg="3">
+      <v-col cols="12" sm="6" lg="4">
         <IncomeSourceCard
           type="rental"
           title="Rental Income"
@@ -402,10 +343,10 @@ async function handleOtherSubmit(
           "
           :count="rentalData?.length || 0"
           :loading="rentalLoading"
-          href="/dashboard/non-salary-income/rental"
+          href="/dashboard/income/rental"
         />
       </v-col>
-      <v-col cols="12" md="6" lg="3">
+      <v-col cols="12" sm="6" lg="4">
         <IncomeSourceCard
           type="capital_gains"
           title="Capital Gains"
@@ -413,18 +354,46 @@ async function handleOtherSubmit(
           :amount="capitalGainsTotal"
           :count="capitalGainsData?.length || 0"
           :loading="cgLoading"
-          href="/dashboard/non-salary-income/capital-gains"
+          href="/dashboard/income/capital-gains"
         />
       </v-col>
-      <v-col cols="12" md="6" lg="3">
+      <v-col cols="12" sm="6" lg="4">
+        <IncomeSourceCard
+          type="interest"
+          title="Interest Income"
+          subtitle="FD/Savings/P2P"
+          :amount="interestTotal"
+          secondary-label="80TTA/80TTB Deduction"
+          :secondary-amount="
+            (interestData?.summary?.deduction80TTA || 0) + (interestData?.summary?.deduction80TTB || 0)
+          "
+          :count="interestData?.records?.length || 0"
+          :loading="interestLoading"
+          href="/dashboard/income/interest"
+        />
+      </v-col>
+      <v-col cols="12" sm="6" lg="4">
+        <IncomeSourceCard
+          type="dividend"
+          title="Dividend Income"
+          subtitle="Stocks/MF"
+          :amount="dividendTotal"
+          secondary-label="TDS Deducted"
+          :secondary-amount="dividendData?.summary?.totalTDS || 0"
+          :count="dividendData?.records?.length || 0"
+          :loading="dividendLoading"
+          href="/dashboard/income/dividends"
+        />
+      </v-col>
+      <v-col cols="12" sm="6" lg="4">
         <IncomeSourceCard
           type="other"
-          title="Other Sources"
-          subtitle="Interest, Dividends, etc."
+          title="Other Income"
+          subtitle="Commission/Gifts"
           :amount="otherTotal"
           :count="otherData?.length || 0"
           :loading="otherLoading"
-          href="/dashboard/non-salary-income/other"
+          href="/dashboard/income/other"
         />
       </v-col>
     </v-row>
@@ -590,7 +559,7 @@ async function handleOtherSubmit(
             <v-btn
               variant="text"
               color="primary"
-              to="/dashboard/non-salary-income/reports"
+              to="/dashboard/income/reports"
               prepend-icon="mdi-file-document"
             >
               View Full Report
@@ -607,16 +576,18 @@ async function handleOtherSubmit(
           <v-card-text class="d-flex justify-space-between align-center">
             <div>
               <div class="text-body-2 text-white-secondary">
-                Total Non-Salary Income ({{ selectedFinancialYear }})
+                Total Income ({{ selectedFinancialYear }})
               </div>
               <div class="text-caption text-white-secondary">
                 {{
                   (businessData?.length || 0) +
                   (rentalData?.length || 0) +
                   (capitalGainsData?.length || 0) +
+                  (interestData?.records?.length || 0) +
+                  (dividendData?.records?.length || 0) +
                   (otherData?.length || 0)
                 }}
-                sources
+                records across 6 income types
               </div>
             </div>
             <div class="text-h4 text-white text-currency font-weight-bold">
@@ -637,49 +608,23 @@ async function handleOtherSubmit(
         <v-card>
           <v-card-title>
             <v-icon class="mr-2">mdi-lightbulb</v-icon>
-            Quick Actions
+            Quick Navigation
           </v-card-title>
           <v-card-text>
             <v-list>
               <v-list-item
-                prepend-icon="mdi-store"
-                title="Add Business Income"
-                subtitle="44AD/44ADA presumptive taxation"
-                @click="selectIncomeType('business')"
+                v-for="item in incomeTypeCards"
+                :key="item.type"
+                :prepend-icon="item.icon"
+                :title="item.title"
+                :subtitle="item.subtitle"
+                :to="item.route"
               >
-                <template #append>
-                  <v-icon icon="mdi-chevron-right" />
+                <template #prepend>
+                  <v-avatar :color="item.color" size="36" class="mr-3">
+                    <v-icon :icon="item.icon" color="white" size="small" />
+                  </v-avatar>
                 </template>
-              </v-list-item>
-
-              <v-list-item
-                prepend-icon="mdi-home-city"
-                title="Add Rental Income"
-                subtitle="House property with Section 24"
-                @click="selectIncomeType('rental')"
-              >
-                <template #append>
-                  <v-icon icon="mdi-chevron-right" />
-                </template>
-              </v-list-item>
-
-              <v-list-item
-                prepend-icon="mdi-trending-up"
-                title="Add Capital Gains"
-                subtitle="STCG/LTCG calculator"
-                @click="selectIncomeType('capital_gains')"
-              >
-                <template #append>
-                  <v-icon icon="mdi-chevron-right" />
-                </template>
-              </v-list-item>
-
-              <v-list-item
-                prepend-icon="mdi-percent"
-                title="Add Interest/Dividend"
-                subtitle="FD, Savings, Stock dividends"
-                @click="selectIncomeType('interest')"
-              >
                 <template #append>
                   <v-icon icon="mdi-chevron-right" />
                 </template>
@@ -740,61 +685,6 @@ async function handleOtherSubmit(
       </v-col>
     </v-row>
 
-    <!-- Add Income Type Dialog -->
-    <v-dialog v-model="showAddDialog" max-width="500">
-      <v-card>
-        <v-card-title>Add Income Source</v-card-title>
-        <v-card-text>
-          <v-list>
-            <v-list-item
-              v-for="item in incomeTypes"
-              :key="item.type"
-              :prepend-icon="item.icon"
-              :title="item.title"
-              :subtitle="item.subtitle"
-              @click="selectIncomeType(item.type as IncomeType)"
-            >
-              <template #prepend>
-                <v-avatar :color="item.color" size="40">
-                  <v-icon :icon="item.icon" color="white" />
-                </v-avatar>
-              </template>
-              <template #append>
-                <v-icon icon="mdi-chevron-right" />
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn variant="text" @click="showAddDialog = false">Cancel</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Form Dialogs -->
-    <BusinessIncomeForm
-      v-model="showBusinessForm"
-      @submit="handleBusinessSubmit"
-    />
-
-    <RentalIncomeForm v-model="showRentalForm" @submit="handleRentalSubmit" />
-
-    <CapitalGainsCalculator
-      v-model="showCapitalGainsForm"
-      @submit="handleCapitalGainSubmit"
-    />
-
-    <OtherIncomeForm
-      v-model="showOtherForm"
-      :default-category="
-        selectedIncomeType === 'dividend'
-          ? 'dividend'
-          : selectedIncomeType === 'interest'
-            ? 'interest'
-            : 'other'
-      "
-      @submit="handleOtherSubmit"
-    />
   </div>
 </template>
 
