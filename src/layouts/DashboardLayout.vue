@@ -14,31 +14,20 @@ const userStore = useUserStore();
 // Fetch user session on mount
 userStore.fetchSession();
 
-// Navigation sections (9 sections from Feature-Reorganization-Plan)
+// Navigation sections (8 sections - Salary + Non-Salary merged into Income)
 const sections = [
   {
-    title: "Salary",
-    icon: "mdi-cash-multiple",
-    route: "/dashboard/salary",
-    // Single page with 2 tabs (Overview + Salary Details) - no sub-pages needed
-  },
-  {
-    title: "Non-Salary Income",
-    icon: "mdi-cash-plus",
-    route: "/dashboard/non-salary-income",
+    title: "Income",
+    icon: "mdi-currency-inr",
+    route: "/dashboard/income",
     children: [
-      { title: "Overview", route: "/dashboard/non-salary-income" },
-      {
-        title: "Business Income",
-        route: "/dashboard/non-salary-income/business",
-      },
-      { title: "Rental Income", route: "/dashboard/non-salary-income/rental" },
-      {
-        title: "Capital Gains",
-        route: "/dashboard/non-salary-income/capital-gains",
-      },
-      { title: "Other Sources", route: "/dashboard/non-salary-income/other" },
-      { title: "Reports", route: "/dashboard/non-salary-income/reports" },
+      { title: "Overview", route: "/dashboard/income" },
+      { title: "Salary", route: "/dashboard/income/salary" },
+      { title: "Business Income", route: "/dashboard/income/business" },
+      { title: "Rental Income", route: "/dashboard/income/rental" },
+      { title: "Capital Gains", route: "/dashboard/income/capital-gains" },
+      { title: "Other Sources", route: "/dashboard/income/other" },
+      { title: "Reports", route: "/dashboard/income/reports" },
     ],
   },
   {

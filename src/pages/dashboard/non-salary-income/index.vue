@@ -32,14 +32,14 @@ const ADVANCE_TAX_DATES = [
 ];
 
 const tabs = [
-  { title: "Overview", route: "/dashboard/non-salary-income" },
-  { title: "Business", route: "/dashboard/non-salary-income/business" },
-  { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
-  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
-  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
-  { title: "Other", route: "/dashboard/non-salary-income/other" },
-  { title: "Reports", route: "/dashboard/non-salary-income/reports" },
+  { title: "Overview", route: "/dashboard/income" },
+  { title: "Business", route: "/dashboard/income/business" },
+  { title: "Rental", route: "/dashboard/income/rental" },
+  { title: "Capital Gains", route: "/dashboard/income/capital-gains" },
+  { title: "Interest", route: "/dashboard/income/interest" },
+  { title: "Dividends", route: "/dashboard/income/dividends" },
+  { title: "Other", route: "/dashboard/income/other" },
+  { title: "Reports", route: "/dashboard/income/reports" },
 ];
 
 // Financial Year
@@ -207,7 +207,7 @@ const smartAlerts = computed(() => {
       icon: "mdi-lightbulb-outline",
       title: "No Income Sources Added",
       message: "Add your business or rental income to get accurate tax calculations",
-      action: { label: "Add Income", route: "/dashboard/non-salary-income/business" },
+      action: { label: "Add Income", route: "/dashboard/income/business" },
     });
   }
 
@@ -218,7 +218,7 @@ const smartAlerts = computed(() => {
       icon: "mdi-trending-up",
       title: "Track Your Investments",
       message: "Record your stock/mutual fund sales to calculate capital gains tax",
-      action: { label: "Add Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
+      action: { label: "Add Capital Gains", route: "/dashboard/income/capital-gains" },
     });
   }
 
@@ -232,7 +232,7 @@ const smartAlerts = computed(() => {
         icon: "mdi-file-document-alert",
         title: "ITR Filing Deadline",
         message: `File your ITR within ${daysUntilITR} days to avoid late fees`,
-        action: { label: "View Reports", route: "/dashboard/non-salary-income/reports" },
+        action: { label: "View Reports", route: "/dashboard/income/reports" },
       });
     }
   }
@@ -387,7 +387,7 @@ async function handleOtherSubmit(
           "
           :count="businessData?.length || 0"
           :loading="businessLoading"
-          href="/dashboard/non-salary-income/business"
+          href="/dashboard/income/business"
         />
       </v-col>
       <v-col cols="12" md="6" lg="3">
@@ -402,7 +402,7 @@ async function handleOtherSubmit(
           "
           :count="rentalData?.length || 0"
           :loading="rentalLoading"
-          href="/dashboard/non-salary-income/rental"
+          href="/dashboard/income/rental"
         />
       </v-col>
       <v-col cols="12" md="6" lg="3">
@@ -413,7 +413,7 @@ async function handleOtherSubmit(
           :amount="capitalGainsTotal"
           :count="capitalGainsData?.length || 0"
           :loading="cgLoading"
-          href="/dashboard/non-salary-income/capital-gains"
+          href="/dashboard/income/capital-gains"
         />
       </v-col>
       <v-col cols="12" md="6" lg="3">
@@ -424,7 +424,7 @@ async function handleOtherSubmit(
           :amount="otherTotal"
           :count="otherData?.length || 0"
           :loading="otherLoading"
-          href="/dashboard/non-salary-income/other"
+          href="/dashboard/income/other"
         />
       </v-col>
     </v-row>
@@ -590,7 +590,7 @@ async function handleOtherSubmit(
             <v-btn
               variant="text"
               color="primary"
-              to="/dashboard/non-salary-income/reports"
+              to="/dashboard/income/reports"
               prepend-icon="mdi-file-document"
             >
               View Full Report

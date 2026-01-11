@@ -20,14 +20,14 @@ import { getFinancialYearOptions } from "@/types/salary";
 import type { OtherIncome, OtherIncomeInput } from "@/types/income";
 
 const tabs = [
-  { title: "Overview", route: "/dashboard/non-salary-income" },
-  { title: "Business", route: "/dashboard/non-salary-income/business" },
-  { title: "Rental", route: "/dashboard/non-salary-income/rental" },
-  { title: "Capital Gains", route: "/dashboard/non-salary-income/capital-gains" },
-  { title: "Interest", route: "/dashboard/non-salary-income/interest" },
-  { title: "Dividends", route: "/dashboard/non-salary-income/dividends" },
-  { title: "Other", route: "/dashboard/non-salary-income/other" },
-  { title: "Reports", route: "/dashboard/non-salary-income/reports" },
+  { title: "Overview", route: "/dashboard/income" },
+  { title: "Business", route: "/dashboard/income/business" },
+  { title: "Rental", route: "/dashboard/income/rental" },
+  { title: "Capital Gains", route: "/dashboard/income/capital-gains" },
+  { title: "Interest", route: "/dashboard/income/interest" },
+  { title: "Dividends", route: "/dashboard/income/dividends" },
+  { title: "Other", route: "/dashboard/income/other" },
+  { title: "Reports", route: "/dashboard/income/reports" },
 ];
 
 // Financial Year
