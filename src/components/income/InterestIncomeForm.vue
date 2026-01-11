@@ -40,12 +40,12 @@ const sourceTypes = [
 const schema = toTypedSchema(
   z.object({
     sourceType: z.enum(["FD", "RD", "SAVINGS", "P2P", "BONDS", "NSC", "SCSS", "PPF", "OTHER"]),
-    institutionName: z.string().min(1, "Institution name is required"),
+    institutionName: z.string().optional(),
     accountNumber: z.string().optional(),
     branchName: z.string().optional(),
-    principalAmount: z.coerce.number().positive().optional(),
-    interestRate: z.coerce.number().min(0).max(100).optional(),
-    interestEarned: z.coerce.number().positive("Interest amount is required"),
+    principalAmount: z.coerce.number().positive("Principal amount is required"),
+    interestRate: z.coerce.number().min(0, "Interest rate is required").max(100, "Interest rate must be between 0-100"),
+    interestEarned: z.coerce.number().positive().optional(),
     tdsDeducted: z.coerce.number().min(0).optional(),
     depositDate: z.string().optional(),
     maturityDate: z.string().optional(),
@@ -125,12 +125,12 @@ const onSubmit = handleSubmit((values) => {
   const data: InterestIncomeInput = {
     fiscalYear: props.fiscalYear,
     sourceType: values.sourceType,
-    institutionName: values.institutionName,
+    institutionName: values.institutionName || undefined,
     accountNumber: values.accountNumber || undefined,
     branchName: values.branchName || undefined,
-    principalAmount: values.principalAmount,
-    interestRate: values.interestRate,
-    interestEarned: values.interestEarned!,
+    principalAmount: values.principalAmount!,
+    interestRate: values.interestRate!,
+    interestEarned: values.interestEarned || undefined,
     tdsDeducted: values.tdsDeducted || 0,
     depositDate: values.depositDate || undefined,
     maturityDate: values.maturityDate || undefined,
@@ -160,7 +160,7 @@ function handleCancel() {
             <v-col cols="12" md="6">
               <v-select
                 v-model="sourceType"
-                label="Source Type"
+                label="Source Type *"
                 :items="sourceTypes"
                 item-title="title"
                 item-value="value"
@@ -173,7 +173,6 @@ function handleCancel() {
                 v-model="institutionName"
                 label="Institution Name"
                 :error-messages="errors.institutionName"
-                required
               />
             </v-col>
             <v-col cols="12" md="6">
@@ -193,19 +192,21 @@ function handleCancel() {
             <v-col cols="12" md="4">
               <v-text-field
                 v-model.number="principalAmount"
-                label="Principal Amount"
+                label="Principal Amount *"
                 type="number"
                 prefix="₹"
                 :error-messages="errors.principalAmount"
+                required
               />
             </v-col>
             <v-col cols="12" md="4">
               <v-text-field
                 v-model.number="interestRate"
-                label="Interest Rate"
+                label="Interest Rate *"
                 type="number"
                 suffix="%"
                 :error-messages="errors.interestRate"
+                required
               />
             </v-col>
             <v-col cols="12" md="4">
@@ -215,7 +216,6 @@ function handleCancel() {
                 type="number"
                 prefix="₹"
                 :error-messages="errors.interestEarned"
-                required
               />
             </v-col>
             <v-col cols="12" md="4">

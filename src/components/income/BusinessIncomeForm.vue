@@ -228,7 +228,7 @@ function handleSubmit() {
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="form.businessName"
-                label="Business/Firm Name"
+                label="Business/Firm Name *"
                 required
                 :rules="[(v) => !!v || 'Business name is required']"
               />
@@ -237,10 +237,12 @@ function handleSubmit() {
             <v-col cols="12" md="6">
               <v-select
                 v-model="form.businessType"
-                label="Business Type"
+                label="Business Type *"
                 :items="businessTypes"
                 item-value="value"
                 item-title="title"
+                required
+                :rules="[(v) => !!v || 'Business type is required']"
               />
             </v-col>
 
@@ -292,9 +294,10 @@ function handleSubmit() {
             <v-col cols="12" md="6">
               <v-text-field
                 v-model.number="form.grossReceipts"
-                label="Gross Receipts / Turnover"
+                label="Gross Receipts / Turnover *"
                 type="number"
                 prefix="Rs."
+                required
                 :rules="[(v) => v > 0 || 'Enter gross receipts']"
               />
             </v-col>

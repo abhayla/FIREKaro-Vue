@@ -46,7 +46,7 @@ const schema = toTypedSchema(
     isin: z.string().optional(),
     folioNumber: z.string().optional(),
     dividendType: z.enum(["INTERIM", "FINAL", "SPECIAL"]).optional(),
-    paymentDate: z.string().min(1, "Payment date is required"),
+    paymentDate: z.string().optional(),
     dividendPerShare: z.coerce.number().positive().optional(),
     numberOfShares: z.coerce.number().positive().optional(),
     dividendAmount: z.coerce.number().positive("Dividend amount is required"),
@@ -139,7 +139,7 @@ const onSubmit = handleSubmit((values) => {
     isin: values.isin || undefined,
     folioNumber: values.folioNumber || undefined,
     dividendType: values.dividendType,
-    paymentDate: values.paymentDate,
+    paymentDate: values.paymentDate || undefined,
     dividendPerShare: values.dividendPerShare,
     numberOfShares: values.numberOfShares,
     dividendAmount: values.dividendAmount!,
@@ -171,7 +171,7 @@ function handleCancel() {
             <v-col cols="12" md="6">
               <v-select
                 v-model="sourceType"
-                label="Source Type"
+                label="Source Type *"
                 :items="sourceTypes"
                 item-title="title"
                 item-value="value"
@@ -182,7 +182,7 @@ function handleCancel() {
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="companyOrFundName"
-                label="Company/Fund Name"
+                label="Company/Fund Name *"
                 :error-messages="errors.companyOrFundName"
                 required
               />
@@ -226,7 +226,6 @@ function handleCancel() {
                 label="Payment Date"
                 type="date"
                 :error-messages="errors.paymentDate"
-                required
               />
             </v-col>
             <v-col cols="12" md="4">
@@ -249,7 +248,7 @@ function handleCancel() {
             <v-col cols="12" md="4">
               <v-text-field
                 v-model.number="dividendAmount"
-                label="Total Dividend"
+                label="Total Dividend *"
                 type="number"
                 prefix="₹"
                 :error-messages="errors.dividendAmount"

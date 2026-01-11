@@ -194,10 +194,12 @@ function handleSubmit() {
             <v-col cols="12">
               <v-select
                 v-model="form.category"
-                label="Income Category"
+                label="Income Category *"
                 :items="categories"
                 item-value="value"
                 item-title="title"
+                required
+                :rules="[(v) => !!v || 'Income category is required']"
               >
                 <template #item="{ props: itemProps, item }">
                   <v-list-item v-bind="itemProps">
@@ -233,8 +235,9 @@ function handleSubmit() {
             <v-col cols="12">
               <v-text-field
                 v-model="form.description"
-                label="Description"
+                label="Description *"
                 placeholder="e.g., SBI FD Interest, HDFC Savings Interest"
+                required
                 :rules="[(v) => !!v || 'Description is required']"
               />
             </v-col>
@@ -266,9 +269,10 @@ function handleSubmit() {
             <v-col cols="12" md="6">
               <v-text-field
                 v-model.number="form.grossAmount"
-                label="Gross Amount"
+                label="Gross Amount *"
                 type="number"
                 prefix="Rs."
+                required
                 :rules="[(v) => v > 0 || 'Enter amount']"
               />
             </v-col>

@@ -17,17 +17,6 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
-const tabs = [
-  { title: "Overview", route: "/dashboard/income" },
-  { title: "Business", route: "/dashboard/income/business" },
-  { title: "Rental", route: "/dashboard/income/rental" },
-  { title: "Capital Gains", route: "/dashboard/income/capital-gains" },
-  { title: "Interest", route: "/dashboard/income/interest" },
-  { title: "Dividends", route: "/dashboard/income/dividends" },
-  { title: "Other", route: "/dashboard/income/other" },
-  { title: "Reports", route: "/dashboard/income/reports" },
-];
-
 // Financial Year
 const { selectedFinancialYear, setFinancialYear } = useFinancialYear();
 const fyOptions = computed(() => getFinancialYearOptions());
@@ -430,7 +419,6 @@ function getPreviousFY(fy: string): string {
       title="Income"
       subtitle="Income Reports & Analytics"
       icon="mdi-cash-plus"
-      :tabs="tabs"
     />
 
     <!-- Controls -->
