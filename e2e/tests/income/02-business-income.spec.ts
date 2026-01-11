@@ -144,6 +144,7 @@ test.describe("Business Income (44AD/44ADA)", () => {
     await businessPage.openAddForm();
     await businessPage.fillBusinessForm({
       businessName: "Test Business",
+      businessType: "freelance",
       grossReceipts: 100000,
     });
     await businessPage.cancelForm();

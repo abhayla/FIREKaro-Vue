@@ -29,11 +29,11 @@ export interface BusinessIncomeTestData {
 
 export interface RentalIncomeTestData {
   id?: string;
-  propertyName: string;
+  propertyName: string;  // Mandatory
   propertyType: 'residential' | 'commercial';
-  propertyAddress: string;
+  propertyAddress?: string;  // Optional
   financialYear: string;
-  monthlyRent: number;
+  monthlyRent: number;  // Mandatory
   annualRent: number;
   vacantMonths: number;
   municipalTaxesPaid: number;
@@ -83,13 +83,13 @@ export interface OtherIncomeTestData {
 
 export interface InterestIncomeTestData {
   id?: string;
-  sourceType: 'fd' | 'rd' | 'savings' | 'p2p' | 'bonds' | 'nsc' | 'scss';
-  institutionName: string;
+  sourceType: 'fd' | 'rd' | 'savings' | 'p2p' | 'bonds' | 'nsc' | 'scss';  // Mandatory
+  institutionName?: string;  // Optional
   accountNumber?: string;
   financialYear: string;
-  principalAmount?: number;
-  interestRate?: number;
-  interestEarned: number;
+  principalAmount: number;  // Mandatory
+  interestRate: number;  // Mandatory
+  interestEarned?: number;  // Optional (can be auto-calculated)
   tdsDeducted: number;
   maturityDate?: string;
   is80TTAEligible?: boolean;
@@ -98,12 +98,12 @@ export interface InterestIncomeTestData {
 
 export interface DividendIncomeTestData {
   id?: string;
-  sourceType: 'stock' | 'mutual_fund';
-  companyOrFundName: string;
+  sourceType: 'stock' | 'mutual_fund';  // Mandatory
+  companyOrFundName: string;  // Mandatory
   symbol?: string;
   financialYear: string;
-  dividendAmount: number;
-  dividendDate: string;
+  dividendAmount: number;  // Mandatory
+  dividendDate?: string;  // Optional (paymentDate)
   tdsDeducted: number;
 }
 

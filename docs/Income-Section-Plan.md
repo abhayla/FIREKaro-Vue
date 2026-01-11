@@ -567,10 +567,35 @@ useIncomeSummary()
 
 ---
 
+## Mandatory Fields by Income Type
+
+All mandatory fields are marked with asterisks (*) in the UI forms.
+
+| Income Type | Mandatory Fields | Notes |
+|-------------|------------------|-------|
+| **Interest Income** | Source Type *, Principal Amount *, Interest Rate * | Interest Earned is auto-calculated from Principal × Rate |
+| **Rental Income** | Property Name *, Monthly Rent * | Property Address is optional |
+| **Dividend Income** | Source Type *, Company/Fund Name *, Total Dividend * | Payment Date is optional |
+| **Capital Gains** | Asset Type *, Asset Name *, Purchase Date *, Purchase Price *, Sale Date *, Sale Price * | All transaction details required for gain calculation |
+| **Business Income** | Business Name *, Business Type *, Gross Receipts * | Deemed profit auto-calculated based on taxation method |
+| **Other Income** | Income Category *, Description *, Gross Amount * | Flexible catch-all for various income types |
+
+**Notes:**
+- Reports page does NOT display navigation tabs (standalone analytics view)
+- Interest Earned can be auto-calculated from Principal Amount × Interest Rate
+- Annual Rent is auto-calculated from Monthly Rent × (12 - Vacancy Months)
+
+---
+
 ## Change Log
 
 | Date | Change |
 |------|--------|
+| Jan 11, 2026 | Added mandatory field indicators (*) to all income forms |
+| Jan 11, 2026 | Updated Interest Income: Principal Amount & Interest Rate now mandatory, Institution Name & Interest Earned optional |
+| Jan 11, 2026 | Updated Rental Income: Property Address now optional |
+| Jan 11, 2026 | Updated Dividend Income: Payment Date now optional |
+| Jan 11, 2026 | Removed navigation tabs from Reports page |
 | Jan 11, 2026 | Route restructured from `/dashboard/income` to `/income` (top-level) |
 | Jan 11, 2026 | Salary consolidated under Income section at `/income/salary` |
 | Jan 11, 2026 | Created unified Income section doc (merged Salary + Non-Salary) |

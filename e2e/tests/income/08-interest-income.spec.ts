@@ -59,6 +59,8 @@ test.describe.skip("Interest Income (FD, RD, Savings, P2P)", () => {
     await interestPage.fillInterestForm({
       sourceType: "Savings",
       institutionName: testData.institutionName,
+      principalAmount: testData.principalAmount,
+      interestRate: testData.interestRate,
       interestEarned: testData.interestEarned,
     });
 
@@ -111,6 +113,8 @@ test.describe.skip("Interest Income (FD, RD, Savings, P2P)", () => {
     await interestPage.fillInterestForm({
       sourceType: "FD",
       institutionName: testData.institutionName,
+      principalAmount: testData.principalAmount,
+      interestRate: testData.interestRate,
       interestEarned: testData.interestEarned,
     });
     await interestPage.saveForm();
@@ -135,6 +139,8 @@ test.describe.skip("Interest Income (FD, RD, Savings, P2P)", () => {
     await interestPage.fillInterestForm({
       sourceType: "FD",
       institutionName: testData.institutionName,
+      principalAmount: testData.principalAmount,
+      interestRate: testData.interestRate,
       interestEarned: testData.interestEarned,
     });
     await interestPage.saveForm();
@@ -156,6 +162,8 @@ test.describe.skip("Interest Income (FD, RD, Savings, P2P)", () => {
     await interestPage.fillInterestForm({
       sourceType: "FD",
       institutionName: "Test Bank FD",
+      principalAmount: 100000,
+      interestRate: 7.5,
       interestEarned: 10000,
     });
     await interestPage.cancelForm();
