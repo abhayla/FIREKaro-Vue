@@ -6,11 +6,13 @@ import { milestonesData, testMilestone } from "../../fixtures/financial-health-d
  * Net Worth Milestones Tests
  *
  * Tests for the customizable net worth milestones feature:
- * - Display of milestones section
+ * - Display of milestones section (in Details tab)
  * - Achieved vs pending milestones
  * - Adding custom milestones
  * - Progress tracking
  * - Next milestone projection
+ *
+ * NOTE: Milestones are now located in the Details tab (not Overview)
  */
 test.describe("Net Worth Milestones", () => {
   let netWorthPage: NetWorthPage;
@@ -20,9 +22,12 @@ test.describe("Net Worth Milestones", () => {
     await netWorthPage.navigateTo();
   });
 
-  test("should display milestones section on net worth page", async ({ page }) => {
+  test("should display milestones section in Details tab", async ({ page }) => {
     await netWorthPage.expectPageLoaded();
+    // This method navigates to Details tab automatically
     await netWorthPage.expectMilestonesSectionVisible();
+    // Verify we're on Details tab
+    await netWorthPage.expectDetailsTabActive();
   });
 
   test("should show achieved and pending milestones", async ({ page }) => {

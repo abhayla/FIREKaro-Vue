@@ -6,12 +6,12 @@ import PassiveIncomeSummary from '@/components/financial-health/PassiveIncomeSum
 import { useCashFlow, formatINR } from '@/composables/useFinancialHealth'
 
 const tabs = [
-  { title: 'Health Score', route: '/dashboard/financial-health' },
-  { title: 'Net Worth', route: '/dashboard/financial-health/net-worth' },
-  { title: 'Cash Flow', route: '/dashboard/financial-health/cash-flow' },
-  { title: 'Banking', route: '/dashboard/financial-health/banking' },
-  { title: 'Emergency Fund', route: '/dashboard/financial-health/emergency-fund' },
-  { title: 'Reports', route: '/dashboard/financial-health/reports' },
+  { title: 'Health Score', route: '/financial-health' },
+  { title: 'Net Worth', route: '/financial-health/net-worth' },
+  { title: 'Cash Flow', route: '/financial-health/cash-flow' },
+  { title: 'Banking', route: '/financial-health/banking' },
+  { title: 'Emergency Fund', route: '/financial-health/emergency-fund' },
+  { title: 'Reports', route: '/financial-health/reports' },
 ]
 
 const selectedMonth = ref<string | undefined>()

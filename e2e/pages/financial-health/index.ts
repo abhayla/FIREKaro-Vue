@@ -18,7 +18,7 @@ import { BasePage } from "../base.page";
 // ============================================
 
 export class FinancialHealthOverviewPage extends BasePage {
-  readonly baseUrl = "/dashboard/financial-health";
+  readonly baseUrl = "/financial-health";
 
   // Page title
   get pageTitle(): Locator {
@@ -163,10 +163,23 @@ export class FinancialHealthOverviewPage extends BasePage {
 // ============================================
 
 export class NetWorthPage extends BasePage {
-  readonly baseUrl = "/dashboard/financial-health/net-worth";
+  readonly baseUrl = "/financial-health/net-worth";
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Net Worth/i });
+  }
+
+  // Internal Tabs (Overview / Details) - second tablist on page
+  get internalTablist(): Locator {
+    return this.page.locator('[role="tablist"]').nth(1);
+  }
+
+  get overviewTab(): Locator {
+    return this.internalTablist.getByRole("tab", { name: /Overview/i });
+  }
+
+  get detailsTab(): Locator {
+    return this.internalTablist.getByRole("tab", { name: /Details/i });
   }
 
   // Summary Cards
@@ -313,10 +326,34 @@ export class NetWorthPage extends BasePage {
   }
 
   // ============================================
-  // Milestone Actions
+  // Internal Tab Navigation
+  // ============================================
+
+  async navigateToOverviewTab(): Promise<void> {
+    await this.overviewTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async navigateToDetailsTab(): Promise<void> {
+    await this.detailsTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async expectOverviewTabActive(): Promise<void> {
+    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  async expectDetailsTabActive(): Promise<void> {
+    await expect(this.detailsTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  // ============================================
+  // Milestone Actions (requires Details tab)
   // ============================================
 
   async openAddMilestoneDialog(): Promise<void> {
+    // Navigate to Details tab first where milestones are located
+    await this.navigateToDetailsTab();
     await this.addMilestoneButton.click();
     await expect(this.milestoneDialog).toBeVisible();
   }
@@ -330,18 +367,24 @@ export class NetWorthPage extends BasePage {
   }
 
   async getMilestoneCount(): Promise<number> {
+    // Navigate to Details tab first where milestones are located
+    await this.navigateToDetailsTab();
     return await this.milestoneItems.count();
   }
 
   async getAchievedMilestoneCount(): Promise<number> {
+    await this.navigateToDetailsTab();
     return await this.achievedMilestones.count();
   }
 
   async expectMilestoneVisible(name: string): Promise<void> {
+    await this.navigateToDetailsTab();
     await expect(this.milestonesSection.getByText(name)).toBeVisible();
   }
 
   async expectMilestonesSectionVisible(): Promise<void> {
+    // Navigate to Details tab first where milestones are located
+    await this.navigateToDetailsTab();
     await expect(this.milestonesSection).toBeVisible();
   }
 }
@@ -351,7 +394,7 @@ export class NetWorthPage extends BasePage {
 // ============================================
 
 export class CashFlowPage extends BasePage {
-  readonly baseUrl = "/dashboard/financial-health/cash-flow";
+  readonly baseUrl = "/financial-health/cash-flow";
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Cash Flow/i });
@@ -516,10 +559,24 @@ export class CashFlowPage extends BasePage {
 // ============================================
 
 export class EmergencyFundPage extends BasePage {
-  readonly baseUrl = "/dashboard/financial-health/emergency-fund";
+  readonly baseUrl = "/financial-health/emergency-fund";
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Emergency Fund/i });
+  }
+
+  // Internal Tabs (Overview / Details - renamed from "Current Status" / "Calculator")
+  // Second tablist on page (first is section navigation)
+  get internalTablist(): Locator {
+    return this.page.locator('[role="tablist"]').nth(1);
+  }
+
+  get overviewTab(): Locator {
+    return this.internalTablist.getByRole("tab", { name: /Overview/i });
+  }
+
+  get detailsTab(): Locator {
+    return this.internalTablist.getByRole("tab", { name: /Details/i });
   }
 
   // Summary Cards
@@ -599,6 +656,28 @@ export class EmergencyFundPage extends BasePage {
   async getProgressPercentage(): Promise<string> {
     return (await this.progressPercentage.textContent()) ?? "";
   }
+
+  // ============================================
+  // Internal Tab Navigation
+  // ============================================
+
+  async navigateToOverviewTab(): Promise<void> {
+    await this.overviewTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async navigateToDetailsTab(): Promise<void> {
+    await this.detailsTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async expectOverviewTabActive(): Promise<void> {
+    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  async expectDetailsTabActive(): Promise<void> {
+    await expect(this.detailsTab).toHaveAttribute("aria-selected", "true");
+  }
 }
 
 // ============================================
@@ -606,10 +685,23 @@ export class EmergencyFundPage extends BasePage {
 // ============================================
 
 export class BankingPage extends BasePage {
-  readonly baseUrl = "/dashboard/financial-health/banking";
+  readonly baseUrl = "/financial-health/banking";
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Banking/i });
+  }
+
+  // Internal Tabs (Overview / Details) - second tablist on page
+  get internalTablist(): Locator {
+    return this.page.locator('[role="tablist"]').nth(1);
+  }
+
+  get overviewTab(): Locator {
+    return this.internalTablist.getByRole("tab", { name: /Overview/i });
+  }
+
+  get detailsTab(): Locator {
+    return this.internalTablist.getByRole("tab", { name: /Details/i });
   }
 
   // Summary Cards
@@ -685,11 +777,41 @@ export class BankingPage extends BasePage {
     return (await this.totalBalanceCard.locator(".text-currency, .text-h4, .text-h5").first().textContent()) ?? "";
   }
 
+  // ============================================
+  // Internal Tab Navigation
+  // ============================================
+
+  async navigateToOverviewTab(): Promise<void> {
+    await this.overviewTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async navigateToDetailsTab(): Promise<void> {
+    await this.detailsTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async expectOverviewTabActive(): Promise<void> {
+    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  async expectDetailsTabActive(): Promise<void> {
+    await expect(this.detailsTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  // ============================================
+  // Account Actions (requires Details tab)
+  // ============================================
+
   async getAccountCount(): Promise<number> {
+    // Navigate to Details tab first where accounts are listed
+    await this.navigateToDetailsTab();
     return await this.accountRows.count();
   }
 
   async openAddForm(): Promise<void> {
+    // Navigate to Details tab first where add button is located
+    await this.navigateToDetailsTab();
     await this.addAccountButton.click();
     await expect(this.formDialog).toBeVisible();
   }
@@ -723,6 +845,7 @@ export class BankingPage extends BasePage {
   }
 
   async expectAccountInTable(bankName: string): Promise<void> {
+    await this.navigateToDetailsTab();
     await expect(this.accountsTable.getByText(bankName)).toBeVisible();
   }
 }
@@ -732,7 +855,7 @@ export class BankingPage extends BasePage {
 // ============================================
 
 export class FinancialHealthReportsPage extends BasePage {
-  readonly baseUrl = "/dashboard/financial-health/reports";
+  readonly baseUrl = "/financial-health/reports";
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Reports|Financial Health Report/i });

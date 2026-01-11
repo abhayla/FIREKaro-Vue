@@ -217,43 +217,6 @@ const router = createRouter({
           name: "insurance-reports",
           component: () => import("@/pages/dashboard/insurance/reports.vue"),
         },
-        // Section 8: Financial Health
-        {
-          path: "financial-health",
-          name: "financial-health",
-          component: () =>
-            import("@/pages/dashboard/financial-health/index.vue"),
-        },
-        {
-          path: "financial-health/net-worth",
-          name: "financial-health-net-worth",
-          component: () =>
-            import("@/pages/dashboard/financial-health/net-worth.vue"),
-        },
-        {
-          path: "financial-health/cash-flow",
-          name: "financial-health-cash-flow",
-          component: () =>
-            import("@/pages/dashboard/financial-health/cash-flow.vue"),
-        },
-        {
-          path: "financial-health/banking",
-          name: "financial-health-banking",
-          component: () =>
-            import("@/pages/dashboard/financial-health/banking.vue"),
-        },
-        {
-          path: "financial-health/emergency-fund",
-          name: "financial-health-emergency-fund",
-          component: () =>
-            import("@/pages/dashboard/financial-health/emergency-fund.vue"),
-        },
-        {
-          path: "financial-health/reports",
-          name: "financial-health-reports",
-          component: () =>
-            import("@/pages/dashboard/financial-health/reports.vue"),
-        },
         // Section 9: FIRE & Goals
         {
           path: "fire-goals",
@@ -287,6 +250,50 @@ const router = createRouter({
           path: "fire-goals/reports",
           name: "fire-goals-reports",
           component: () => import("@/pages/dashboard/fire-goals/reports.vue"),
+        },
+      ],
+    },
+    // Section 8: Financial Health (top-level route, not under /dashboard)
+    {
+      path: "/financial-health",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "financial-health",
+          component: () =>
+            import("@/pages/dashboard/financial-health/index.vue"),
+        },
+        {
+          path: "net-worth",
+          name: "financial-health-net-worth",
+          component: () =>
+            import("@/pages/dashboard/financial-health/net-worth.vue"),
+        },
+        {
+          path: "cash-flow",
+          name: "financial-health-cash-flow",
+          component: () =>
+            import("@/pages/dashboard/financial-health/cash-flow.vue"),
+        },
+        {
+          path: "banking",
+          name: "financial-health-banking",
+          component: () =>
+            import("@/pages/dashboard/financial-health/banking.vue"),
+        },
+        {
+          path: "emergency-fund",
+          name: "financial-health-emergency-fund",
+          component: () =>
+            import("@/pages/dashboard/financial-health/emergency-fund.vue"),
+        },
+        {
+          path: "reports",
+          name: "financial-health-reports",
+          component: () =>
+            import("@/pages/dashboard/financial-health/reports.vue"),
         },
       ],
     },

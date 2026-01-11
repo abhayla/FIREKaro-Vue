@@ -172,7 +172,7 @@ test.describe("App Bar Family Toggle", () => {
     const sections = [
       "/dashboard/investments",
       "/dashboard/liabilities",
-      "/dashboard/financial-health",
+      "/financial-health",
       "/dashboard/tax-planning",
       "/dashboard/non-salary-income",
       "/dashboard/salary",
