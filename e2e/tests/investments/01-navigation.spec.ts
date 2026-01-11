@@ -13,7 +13,7 @@ import {
 
 test.describe("Investments Navigation", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/investments");
+    await page.goto("/investments");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   });
@@ -21,7 +21,8 @@ test.describe("Investments Navigation", () => {
   test("should load investments overview page", async ({ page }) => {
     const overview = new InvestmentsOverviewPage(page);
     await expect(overview.pageTitle).toBeVisible();
-    await expect(page).toHaveURL(/\/dashboard\/investments$/);
+    // Investments is at top-level /investments route (not under /dashboard)
+    await expect(page).toHaveURL(/\/investments$/);
   });
 
   test("should display all investment type tabs", async ({ page }) => {
@@ -38,7 +39,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should navigate to Stocks page", async ({ page }) => {
-    await page.goto("/dashboard/investments/stocks");
+    await page.goto("/investments/stocks");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -47,7 +48,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should navigate to Mutual Funds page", async ({ page }) => {
-    await page.goto("/dashboard/investments/mutual-funds");
+    await page.goto("/investments/mutual-funds");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -56,7 +57,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should navigate to EPF page", async ({ page }) => {
-    await page.goto("/dashboard/investments/epf");
+    await page.goto("/investments/epf");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -65,7 +66,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should navigate to PPF page", async ({ page }) => {
-    await page.goto("/dashboard/investments/ppf");
+    await page.goto("/investments/ppf");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -74,15 +75,15 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should redirect old EPF-PPF URL to EPF", async ({ page }) => {
-    await page.goto("/dashboard/investments/epf-ppf");
+    await page.goto("/investments/epf-ppf");
     await page.waitForLoadState("domcontentloaded");
 
     // Should redirect to EPF page
-    await expect(page).toHaveURL(/\/dashboard\/investments\/epf$/);
+    await expect(page).toHaveURL(/\/investments\/epf$/);
   });
 
   test("should navigate to NPS page", async ({ page }) => {
-    await page.goto("/dashboard/investments/nps");
+    await page.goto("/investments/nps");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -91,7 +92,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should navigate to Property page", async ({ page }) => {
-    await page.goto("/dashboard/investments/property");
+    await page.goto("/investments/property");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -100,7 +101,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should navigate to Reports page", async ({ page }) => {
-    await page.goto("/dashboard/investments/reports");
+    await page.goto("/investments/reports");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -114,7 +115,7 @@ test.describe("Investments Navigation", () => {
     await expect(portfolioTab).toHaveAttribute("aria-selected", "true");
 
     // Navigate to Stocks and verify active state
-    await page.goto("/dashboard/investments/stocks");
+    await page.goto("/investments/stocks");
     await page.waitForLoadState("domcontentloaded");
 
     const stocksTab = page.getByRole("tab", { name: "Stocks" });
@@ -123,7 +124,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should show two-tab pattern on EPF page", async ({ page }) => {
-    await page.goto("/dashboard/investments/epf");
+    await page.goto("/investments/epf");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -133,7 +134,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should show two-tab pattern on PPF page", async ({ page }) => {
-    await page.goto("/dashboard/investments/ppf");
+    await page.goto("/investments/ppf");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -143,7 +144,7 @@ test.describe("Investments Navigation", () => {
   });
 
   test("should switch between Overview and Item Details tabs without URL change", async ({ page }) => {
-    await page.goto("/dashboard/investments/epf");
+    await page.goto("/investments/epf");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 

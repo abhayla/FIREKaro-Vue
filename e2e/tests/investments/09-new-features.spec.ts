@@ -23,7 +23,7 @@ import {
 // ============================================
 test.describe("Yield Calculations", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/investments");
+    await page.goto("/investments");
     await page.waitForLoadState("domcontentloaded");
   });
 

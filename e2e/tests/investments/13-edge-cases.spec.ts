@@ -292,7 +292,7 @@ test.describe("Edge Cases & Validation - Investments", () => {
       const overviewPage = new InvestmentsOverviewPage(page);
 
       // Navigate and check for loading indicators
-      await page.goto("/dashboard/investments");
+      await page.goto("/investments");
 
       // Check for skeleton loaders or progress indicators
       const loadingIndicators = page.locator(".v-skeleton-loader, .v-progress-circular, .v-progress-linear");
