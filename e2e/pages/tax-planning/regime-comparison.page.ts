@@ -7,7 +7,7 @@ import { BasePage } from "../base.page";
  */
 export class RegimeComparisonPage extends BasePage {
   // Regime comparison is shown on the Overview page, not a separate page
-  readonly url = "/dashboard/tax-planning";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);

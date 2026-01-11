@@ -3,17 +3,37 @@ import { BasePage } from "../base.page";
 
 /**
  * Tax Deductions Page Object
- * Handles 80C, 80D, HRA and other deductions
+ * Now inside Tax Details tab accordion - Deductions section
  */
 export class TaxDeductionsPage extends BasePage {
-  readonly url = "/dashboard/tax-planning/deductions";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Tab and Accordion Locators
+  // ============================================
+
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
+  }
+
+  get deductionsSection(): Locator {
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Deductions/i });
+  }
+
+  get deductionsHeader(): Locator {
+    return this.deductionsSection.locator(".v-expansion-panel-title");
+  }
+
+  get deductionsContent(): Locator {
+    return this.deductionsSection.locator(".v-expansion-panel-text");
+  }
+
+  // ============================================
+  // Page Locators
   // ============================================
 
   get pageTitle(): Locator {
@@ -131,6 +151,19 @@ export class TaxDeductionsPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Switch to Tax Details tab
+    await this.taxDetailsTab.click();
+    await this.page.waitForTimeout(300);
+    // Expand Deductions accordion section
+    await this.expandDeductions();
+  }
+
+  async expandDeductions() {
+    const isExpanded = await this.deductionsSection.getAttribute("class");
+    if (!isExpanded?.includes("v-expansion-panel--active")) {
+      await this.deductionsHeader.click();
+      await this.page.waitForTimeout(300);
+    }
   }
 
   // ============================================
@@ -207,7 +240,9 @@ export class TaxDeductionsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Tax Planning/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Deductions/i })).toHaveAttribute("aria-selected", "true");
+    // Tax Details tab should be active and Deductions section expanded
+    await expect(this.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(this.deductionsContent).toBeVisible();
   }
 
   async expectSection80CVisible() {

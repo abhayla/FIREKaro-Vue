@@ -3,17 +3,37 @@ import { BasePage } from "../base.page";
 
 /**
  * Tax Calculator Page Object
- * Handles tax calculation with slab rates
+ * Now inside Tax Details tab accordion - Calculator section
  */
 export class TaxCalculatorPage extends BasePage {
-  readonly url = "/dashboard/tax-planning/calculator";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Tab and Accordion Locators
+  // ============================================
+
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
+  }
+
+  get calculatorSection(): Locator {
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Calculator/i });
+  }
+
+  get calculatorHeader(): Locator {
+    return this.calculatorSection.locator(".v-expansion-panel-title");
+  }
+
+  get calculatorContent(): Locator {
+    return this.calculatorSection.locator(".v-expansion-panel-text");
+  }
+
+  // ============================================
+  // Page Locators
   // ============================================
 
   get pageTitle(): Locator {
@@ -129,6 +149,19 @@ export class TaxCalculatorPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Switch to Tax Details tab
+    await this.taxDetailsTab.click();
+    await this.page.waitForTimeout(300);
+    // Expand Calculator accordion section
+    await this.expandCalculator();
+  }
+
+  async expandCalculator() {
+    const isExpanded = await this.calculatorSection.getAttribute("class");
+    if (!isExpanded?.includes("v-expansion-panel--active")) {
+      await this.calculatorHeader.click();
+      await this.page.waitForTimeout(300);
+    }
   }
 
   // ============================================
@@ -222,7 +255,9 @@ export class TaxCalculatorPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Tax Planning/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Calculator/i })).toHaveAttribute("aria-selected", "true");
+    // Tax Details tab should be active and Calculator section expanded
+    await expect(this.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(this.calculatorContent).toBeVisible();
   }
 
   async expectResultsVisible() {

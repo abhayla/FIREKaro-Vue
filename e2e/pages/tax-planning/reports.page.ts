@@ -3,25 +3,41 @@ import { BasePage } from "../base.page";
 
 /**
  * Reports Page Object
- * Handles tax reports, export, and ITR form reference
+ * Now inside Tax Details tab accordion - Reports section
  */
 export class ReportsPage extends BasePage {
-  readonly url = "/dashboard/tax-planning/reports";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Tab and Accordion Locators
+  // ============================================
+
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
+  }
+
+  get reportsSection(): Locator {
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Reports/i });
+  }
+
+  get reportsHeader(): Locator {
+    return this.reportsSection.locator(".v-expansion-panel-title");
+  }
+
+  get reportsContent(): Locator {
+    return this.reportsSection.locator(".v-expansion-panel-text");
+  }
+
+  // ============================================
+  // Page Locators
   // ============================================
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Tax Planning/i });
-  }
-
-  get reportsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Reports/i });
   }
 
   // Financial Year Selector
@@ -119,6 +135,19 @@ export class ReportsPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Switch to Tax Details tab
+    await this.taxDetailsTab.click();
+    await this.page.waitForTimeout(300);
+    // Expand Reports accordion section
+    await this.expandReports();
+  }
+
+  async expandReports() {
+    const isExpanded = await this.reportsSection.getAttribute("class");
+    if (!isExpanded?.includes("v-expansion-panel--active")) {
+      await this.reportsHeader.click();
+      await this.page.waitForTimeout(300);
+    }
   }
 
   // ============================================
@@ -207,7 +236,9 @@ export class ReportsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    await expect(this.reportsTab).toHaveAttribute("aria-selected", "true");
+    // Tax Details tab should be active and Reports section expanded
+    await expect(this.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(this.reportsContent).toBeVisible();
   }
 
   async expectExportButtonsVisible() {

@@ -3,25 +3,41 @@ import { BasePage } from "../base.page";
 
 /**
  * Advance Tax Page Object
- * Handles advance tax schedule and payment tracking
+ * Now inside Tax Details tab accordion - Advance Tax section
  */
 export class AdvanceTaxPage extends BasePage {
-  readonly url = "/dashboard/tax-planning/advance-tax";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Tab and Accordion Locators
+  // ============================================
+
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
+  }
+
+  get advanceTaxSection(): Locator {
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Advance Tax/i });
+  }
+
+  get advanceTaxHeader(): Locator {
+    return this.advanceTaxSection.locator(".v-expansion-panel-title");
+  }
+
+  get advanceTaxContent(): Locator {
+    return this.advanceTaxSection.locator(".v-expansion-panel-text");
+  }
+
+  // ============================================
+  // Page Locators
   // ============================================
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Tax Planning/i });
-  }
-
-  get advanceTaxTab(): Locator {
-    return this.page.getByRole("tab", { name: /Advance Tax/i });
   }
 
   // Summary cards
@@ -138,6 +154,19 @@ export class AdvanceTaxPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Switch to Tax Details tab
+    await this.taxDetailsTab.click();
+    await this.page.waitForTimeout(300);
+    // Expand Advance Tax accordion section
+    await this.expandAdvanceTax();
+  }
+
+  async expandAdvanceTax() {
+    const isExpanded = await this.advanceTaxSection.getAttribute("class");
+    if (!isExpanded?.includes("v-expansion-panel--active")) {
+      await this.advanceTaxHeader.click();
+      await this.page.waitForTimeout(300);
+    }
   }
 
   // ============================================
@@ -235,9 +264,9 @@ export class AdvanceTaxPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    // Wait for tabs to update their state after route change
-    await this.page.waitForTimeout(300);
-    await expect(this.advanceTaxTab).toHaveAttribute("aria-selected", "true", { timeout: 5000 });
+    // Tax Details tab should be active and Advance Tax section expanded
+    await expect(this.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(this.advanceTaxContent).toBeVisible();
   }
 
   async expectSummaryCardsVisible() {
