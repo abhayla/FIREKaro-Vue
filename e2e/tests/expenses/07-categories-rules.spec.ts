@@ -1,33 +1,55 @@
 import { test, expect } from "@playwright/test";
-import { ExpenseCategoriesPage } from "../../pages/expenses";
+import { ExpenseCategoriesPage, ExpenseTrackingPage } from "../../pages/expenses";
 import { expenseCategories } from "../../fixtures/expenses-data";
 
-test.describe("Expense Categories & Rules", () => {
+/**
+ * Categories is now a dialog accessible from the Track Expenses page.
+ * These tests verify the dialog functionality.
+ */
+test.describe("Expense Categories & Rules Dialog", () => {
   let categoriesPage: ExpenseCategoriesPage;
+  let trackingPage: ExpenseTrackingPage;
 
   test.beforeEach(async ({ page }) => {
+    trackingPage = new ExpenseTrackingPage(page);
     categoriesPage = new ExpenseCategoriesPage(page);
-    await categoriesPage.navigateTo();
+
+    // Navigate to Track page first
+    await trackingPage.navigateTo();
   });
 
-  test.describe("Page Layout", () => {
-    test("should display categories page correctly", async ({ page }) => {
-      await categoriesPage.expectPageLoaded();
-      await expect(page).toHaveURL(/\/dashboard\/expenses\/categories/);
+  test.describe("Dialog Access", () => {
+    test("should open categories dialog from Track page", async ({ page }) => {
+      await categoriesPage.openCategoriesDialog();
+      await categoriesPage.expectDialogVisible();
     });
 
-    test("should display Rules and Categories inner tabs", async ({ page }) => {
+    test("should close categories dialog", async ({ page }) => {
+      await categoriesPage.openCategoriesDialog();
+      await categoriesPage.expectDialogVisible();
+
+      await categoriesPage.closeCategoriesDialog();
+      await categoriesPage.expectDialogClosed();
+    });
+
+    test("should display Rules and Categories tabs in dialog", async ({ page }) => {
+      await categoriesPage.openCategoriesDialog();
       await expect(categoriesPage.rulesTab).toBeVisible();
-      // The page might have a categories section or tab
-      await expect(page.getByText(/Categories|All Categories/i)).toBeVisible();
+      await expect(categoriesPage.categoriesTab).toBeVisible();
     });
 
-    test("should display Add Rule button", async ({ page }) => {
+    test("should display Add Rule button in Rules tab", async ({ page }) => {
+      await categoriesPage.openCategoriesDialog();
+      await categoriesPage.switchToRulesTab();
       await expect(categoriesPage.addRuleButton).toBeVisible();
     });
   });
 
   test.describe("Rule Management", () => {
+    test.beforeEach(async ({ page }) => {
+      await categoriesPage.openCategoriesDialog();
+    });
+
     test("should open rule editor dialog", async ({ page }) => {
       await categoriesPage.openAddRuleDialog();
       await categoriesPage.expectRuleDialogVisible();
@@ -46,7 +68,7 @@ test.describe("Expense Categories & Rules", () => {
       await categoriesPage.openAddRuleDialog();
       await categoriesPage.fillRuleForm({
         name: ruleName,
-        targetCategory: expenseCategories[0].name,
+        targetCategory: expenseCategories[0]?.name || "Food",
       });
       await categoriesPage.saveRule();
       await categoriesPage.expectRuleDialogClosed();
@@ -85,22 +107,29 @@ test.describe("Expense Categories & Rules", () => {
     });
   });
 
-  test.describe("Categories Display", () => {
-    test("should display expense categories", async ({ page }) => {
-      // Switch to categories tab/section if needed
-      const categoriesSection = page.locator(".v-card, .v-list").filter({ hasText: /Food|Housing|Transportation/i });
-      await expect(categoriesSection.first()).toBeVisible();
+  test.describe("Categories Tab", () => {
+    test.beforeEach(async ({ page }) => {
+      await categoriesPage.openCategoriesDialog();
     });
 
-    test("should display category icons and colors", async ({ page }) => {
+    test("should switch to Categories tab", async ({ page }) => {
+      await categoriesPage.switchToCategoriesTab();
+      await categoriesPage.expectCategoriesTabActive();
+    });
+
+    test("should display expense categories", async ({ page }) => {
+      await categoriesPage.switchToCategoriesTab();
+
       // Categories should have icons (mdi-* icons)
-      const categoryWithIcon = page.locator("[class*='mdi-']").first();
+      const categoryWithIcon = categoriesPage.categoriesDialog.locator("[class*='mdi-']").first();
       await expect(categoryWithIcon).toBeVisible();
     });
 
     test("should show budget type labels (Needs/Wants/Savings)", async ({ page }) => {
+      await categoriesPage.switchToCategoriesTab();
+
       // Look for budget type chips or labels
-      const budgetTypeIndicator = page.locator(".v-chip, .text-caption").filter({
+      const budgetTypeIndicator = categoriesPage.categoriesDialog.locator(".v-chip, .text-caption").filter({
         hasText: /Needs|Wants|Savings/i
       });
 
@@ -110,28 +139,44 @@ test.describe("Expense Categories & Rules", () => {
     });
   });
 
-  test.describe("AI Suggestions", () => {
-    test("should display AI suggestions section", async ({ page }) => {
-      // Look for AI suggestions card
-      const aiSection = page.locator(".v-card").filter({ hasText: /AI|Suggest|Smart/i });
-      // May or may not be visible depending on data
-      // Just check the page loads without error
-      await expect(page.getByRole("heading", { name: /Expenses/i })).toBeVisible();
+  test.describe("Tab Navigation in Dialog", () => {
+    test.beforeEach(async ({ page }) => {
+      await categoriesPage.openCategoriesDialog();
+    });
+
+    test("should switch between Rules and Categories tabs", async ({ page }) => {
+      // Start on Rules tab
+      await categoriesPage.switchToRulesTab();
+      await categoriesPage.expectRulesTabActive();
+
+      // Switch to Categories tab
+      await categoriesPage.switchToCategoriesTab();
+      await categoriesPage.expectCategoriesTabActive();
+
+      // Switch back to Rules tab
+      await categoriesPage.switchToRulesTab();
+      await categoriesPage.expectRulesTabActive();
     });
   });
 });
 
+
 test.describe("Rule Priority & Ordering", () => {
   let categoriesPage: ExpenseCategoriesPage;
+  let trackingPage: ExpenseTrackingPage;
 
   test.beforeEach(async ({ page }) => {
+    trackingPage = new ExpenseTrackingPage(page);
     categoriesPage = new ExpenseCategoriesPage(page);
-    await categoriesPage.navigateTo();
+    await trackingPage.navigateTo();
+    await categoriesPage.openCategoriesDialog();
   });
 
   test("should display rules in priority order", async ({ page }) => {
+    await categoriesPage.switchToRulesTab();
+
     // Check that rules list has numbered items or priority indicators
-    const rulesList = page.locator(".v-list-item").filter({ hasText: /Rule|Match/i });
+    const rulesList = categoriesPage.categoriesDialog.locator(".v-list-item").filter({ hasText: /Rule|Match/i });
     const count = await rulesList.count();
 
     // If there are rules, they should be displayed

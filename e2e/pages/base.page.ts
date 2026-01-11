@@ -7,7 +7,7 @@ export const DASHBOARD_SECTIONS = {
   salary: "/dashboard/salary",
   "non-salary-income": "/dashboard/non-salary-income",
   "tax-planning": "/dashboard/tax-planning",
-  expenses: "/dashboard/expenses",
+  expenses: "/expenses",
   investments: "/dashboard/investments",
   liabilities: "/dashboard/liabilities",
   insurance: "/dashboard/insurance",

@@ -89,32 +89,6 @@ const router = createRouter({
           name: "tax-planning-reports",
           component: () => import("@/pages/dashboard/tax-planning/reports.vue"),
         },
-        // Section 4: Expenses
-        {
-          path: "expenses",
-          name: "expenses",
-          component: () => import("@/pages/dashboard/expenses/index.vue"),
-        },
-        {
-          path: "expenses/track",
-          name: "expenses-track",
-          component: () => import("@/pages/dashboard/expenses/track.vue"),
-        },
-        {
-          path: "expenses/budgets",
-          name: "expenses-budgets",
-          component: () => import("@/pages/dashboard/expenses/budgets.vue"),
-        },
-        {
-          path: "expenses/reports",
-          name: "expenses-reports",
-          component: () => import("@/pages/dashboard/expenses/reports.vue"),
-        },
-        {
-          path: "expenses/categories",
-          name: "expenses-categories",
-          component: () => import("@/pages/dashboard/expenses/categories.vue"),
-        },
         // Section 5: Investments
         {
           path: "investments",
@@ -287,6 +261,34 @@ const router = createRouter({
           path: "fire-goals/reports",
           name: "fire-goals-reports",
           component: () => import("@/pages/dashboard/fire-goals/reports.vue"),
+        },
+      ],
+    },
+    // Section: Expenses (top-level, outside /dashboard)
+    {
+      path: "/expenses",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "expenses",
+          component: () => import("@/pages/expenses/index.vue"),
+        },
+        {
+          path: "track",
+          name: "expenses-track",
+          component: () => import("@/pages/expenses/track.vue"),
+        },
+        {
+          path: "budgets",
+          name: "expenses-budgets",
+          component: () => import("@/pages/expenses/budgets.vue"),
+        },
+        {
+          path: "recurring",
+          name: "expenses-recurring",
+          component: () => import("@/pages/expenses/recurring.vue"),
         },
       ],
     },

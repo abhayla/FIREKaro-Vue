@@ -14,11 +14,11 @@ import {
 } from '@/composables/useExpenses'
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/expenses' },
-  { title: 'Track', route: '/dashboard/expenses/track' },
-  { title: 'Budgets', route: '/dashboard/expenses/budgets' },
-  { title: 'Reports', route: '/dashboard/expenses/reports' },
-  { title: 'Categories', route: '/dashboard/expenses/categories' },
+  { title: 'Overview', route: '/expenses' },
+  { title: 'Track', route: '/expenses/track' },
+  { title: 'Budgets', route: '/expenses/budgets' },
+  { title: 'Reports', route: '/expenses/reports' },
+  { title: 'Categories', route: '/expenses/categories' },
 ]
 
 // Current month filter

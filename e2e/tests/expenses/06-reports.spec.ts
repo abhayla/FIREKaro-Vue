@@ -1,108 +1,116 @@
 import { test, expect } from "@playwright/test";
-import { ExpensesReportsPage } from "../../pages/expenses";
+import { ExpenseTrackingPage } from "../../pages/expenses";
 
-test.describe("Expenses Reports", () => {
-  let reportsPage: ExpensesReportsPage;
+/**
+ * Reports functionality is now integrated into the Track Expenses Overview tab.
+ * This spec tests the reporting features (charts, exports) in that context.
+ */
+test.describe("Expenses Reports (Track Overview Tab)", () => {
+  let trackingPage: ExpenseTrackingPage;
 
   test.beforeEach(async ({ page }) => {
-    reportsPage = new ExpensesReportsPage(page);
-    await reportsPage.navigateTo();
+    trackingPage = new ExpenseTrackingPage(page);
+    await trackingPage.navigateTo();
+    await trackingPage.switchToOverviewTab();
   });
 
-  test("should display reports page correctly", async ({ page }) => {
-    await reportsPage.expectPageLoaded();
+  test.describe("Report Display", () => {
+    test("should display Track page with Overview tab", async ({ page }) => {
+      await trackingPage.expectPageLoaded();
+      await trackingPage.expectOverviewTabActive();
+    });
+
+    test("should show summary cards in Overview", async ({ page }) => {
+      await expect(trackingPage.totalSpentCard).toBeVisible();
+    });
+
+    test("should have export section visible", async ({ page }) => {
+      await expect(trackingPage.exportSection).toBeVisible();
+    });
+
+    test("should show category breakdown chart (if data exists)", async ({ page }) => {
+      // Chart may not be visible if no data
+      const chartCard = page.locator(".v-card").filter({ hasText: /Category/i });
+      await expect(chartCard).toBeVisible();
+    });
   });
 
-  test("should show category breakdown chart", async ({ page }) => {
-    await reportsPage.expectCategoryChartVisible();
-  });
+  test.describe("Report Exports", () => {
+    test("should show export buttons (PDF, Excel, CSV, JSON)", async ({ page }) => {
+      await expect(trackingPage.exportPDFButton).toBeVisible();
+      await expect(trackingPage.exportExcelButton).toBeVisible();
+      await expect(trackingPage.exportCSVButton).toBeVisible();
+      await expect(trackingPage.exportJSONButton).toBeVisible();
+    });
 
-  test("should have export button visible", async ({ page }) => {
-    await reportsPage.expectExportButtonVisible();
-  });
+    test("should trigger PDF export", async ({ page }) => {
+      // Listen for download event
+      const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
 
-  test("should show expense trend chart", async ({ page }) => {
-    await expect(reportsPage.trendChart).toBeVisible();
-  });
+      await trackingPage.exportPDFButton.click();
 
-  test("should allow period selection", async ({ page }) => {
-    await expect(reportsPage.periodSelect).toBeVisible();
+      // Either download happens or snackbar confirmation
+      const download = await downloadPromise;
+      if (download) {
+        expect(download.suggestedFilename()).toContain(".pdf");
+      } else {
+        // Check for success message or no error
+        const errorSnackbar = page.locator(".v-snackbar").filter({ hasText: /error|failed/i });
+        await expect(errorSnackbar).not.toBeVisible();
+      }
+    });
+
+    test("should trigger Excel export", async ({ page }) => {
+      // Listen for download event
+      const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
+
+      await trackingPage.exportExcelButton.click();
+
+      // Either download happens or snackbar confirmation
+      const download = await downloadPromise;
+      if (download) {
+        const filename = download.suggestedFilename();
+        expect(filename).toMatch(/\.xlsx?$/);
+      } else {
+        // Check for success message or no error
+        const errorSnackbar = page.locator(".v-snackbar").filter({ hasText: /error|failed/i });
+        await expect(errorSnackbar).not.toBeVisible();
+      }
+    });
+
+    test("should trigger CSV export", async ({ page }) => {
+      // Listen for download event
+      const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
+
+      await trackingPage.exportCSVButton.click();
+
+      // Either download happens or snackbar confirmation
+      const download = await downloadPromise;
+      if (download) {
+        expect(download.suggestedFilename()).toContain(".csv");
+      } else {
+        // Check for success message or no error
+        const errorSnackbar = page.locator(".v-snackbar").filter({ hasText: /error|failed/i });
+        await expect(errorSnackbar).not.toBeVisible();
+      }
+    });
+
+    test("should trigger JSON export", async ({ page }) => {
+      // Listen for download event
+      const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
+
+      await trackingPage.exportJSONButton.click();
+
+      // Either download happens or snackbar confirmation
+      const download = await downloadPromise;
+      if (download) {
+        expect(download.suggestedFilename()).toContain(".json");
+      } else {
+        // Check for success message or no error
+        const errorSnackbar = page.locator(".v-snackbar").filter({ hasText: /error|failed/i });
+        await expect(errorSnackbar).not.toBeVisible();
+      }
+    });
   });
 });
 
-test.describe("Report Exports", () => {
-  let reportsPage: ExpensesReportsPage;
-
-  test.beforeEach(async ({ page }) => {
-    reportsPage = new ExpensesReportsPage(page);
-    await reportsPage.navigateTo();
-  });
-
-  test("should show export menu with PDF, Excel, CSV options", async ({ page }) => {
-    await reportsPage.openExportMenu();
-
-    // Check for export options in menu
-    const menu = page.locator(".v-menu, .v-list").filter({ hasText: /Export|PDF|Excel|CSV/i });
-    await expect(menu).toBeVisible();
-
-    // Verify options are present
-    await expect(page.getByText(/PDF/i)).toBeVisible();
-    await expect(page.getByText(/Excel/i)).toBeVisible();
-    await expect(page.getByText(/CSV/i)).toBeVisible();
-  });
-
-  test("should trigger PDF export", async ({ page }) => {
-    // Listen for download event
-    const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
-
-    await reportsPage.openExportMenu();
-    await page.getByText(/PDF/i).click();
-
-    // Either download happens or snackbar confirmation
-    const download = await downloadPromise;
-    if (download) {
-      expect(download.suggestedFilename()).toContain(".pdf");
-    } else {
-      // Check for success message or no error
-      const errorSnackbar = page.locator(".v-snackbar").filter({ hasText: /error|failed/i });
-      await expect(errorSnackbar).not.toBeVisible();
-    }
-  });
-
-  test("should trigger Excel export", async ({ page }) => {
-    // Listen for download event
-    const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
-
-    await reportsPage.openExportMenu();
-    await page.getByText(/Excel/i).click();
-
-    // Either download happens or snackbar confirmation
-    const download = await downloadPromise;
-    if (download) {
-      const filename = download.suggestedFilename();
-      expect(filename).toMatch(/\.xlsx?$/);
-    } else {
-      // Check for success message or no error
-      const errorSnackbar = page.locator(".v-snackbar").filter({ hasText: /error|failed/i });
-      await expect(errorSnackbar).not.toBeVisible();
-    }
-  });
-
-  test("should trigger CSV export", async ({ page }) => {
-    // Listen for download event
-    const downloadPromise = page.waitForEvent("download", { timeout: 5000 }).catch(() => null);
-
-    await reportsPage.openExportMenu();
-    await page.getByText(/CSV/i).click();
-
-    // Either download happens or snackbar confirmation
-    const download = await downloadPromise;
-    if (download) {
-      expect(download.suggestedFilename()).toContain(".csv");
-    } else {
-      // Check for success message or no error
-      const errorSnackbar = page.locator(".v-snackbar").filter({ hasText: /error|failed/i });
-      await expect(errorSnackbar).not.toBeVisible();
-    }
-  });
-});

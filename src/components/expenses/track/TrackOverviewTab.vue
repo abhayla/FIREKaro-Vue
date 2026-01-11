@@ -1,41 +1,34 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import SectionHeader from '@/components/shared/SectionHeader.vue'
 import CategoryPieChart from '@/components/expenses/CategoryPieChart.vue'
 import MonthlyTrendChart from '@/components/expenses/MonthlyTrendChart.vue'
 import {
   useExpenses,
   useBudgets,
   formatINR,
-  getCurrentMonth,
+  type Expense,
 } from '@/composables/useExpenses'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 
-const tabs = [
-  { title: 'Overview', route: '/dashboard/expenses' },
-  { title: 'Track', route: '/dashboard/expenses/track' },
-  { title: 'Budgets', route: '/dashboard/expenses/budgets' },
-  { title: 'Reports', route: '/dashboard/expenses/reports' },
-  { title: 'Categories', route: '/dashboard/expenses/categories' },
-]
+const props = defineProps<{
+  selectedMonth: string
+}>()
 
-// Report type
-const reportType = ref<'monthly' | 'quarterly' | 'yearly' | 'custom'>('monthly')
-
-// Date range
-const selectedMonth = ref(getCurrentMonth())
-const customStartDate = ref('')
-const customEndDate = ref('')
+const emit = defineEmits<{
+  (e: 'go-to-details'): void
+}>()
 
 // Fetch data
-const { expenses, totalExpenses, expensesByCategory, isLoading } = useExpenses(selectedMonth)
-const { currentBudget, budgetUsage } = useBudgets(selectedMonth)
+const { expenses, totalExpenses, expensesByCategory, isLoading } = useExpenses(
+  computed(() => props.selectedMonth)
+)
+const { currentBudget, budgetUsage } = useBudgets(computed(() => props.selectedMonth))
 
 // Month name
 const monthName = computed(() => {
-  const [year, month] = selectedMonth.value.split('-').map(Number)
+  const [year, month] = props.selectedMonth.split('-').map(Number)
   return new Date(year, month - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })
 })
 
@@ -70,6 +63,14 @@ const topExpenses = computed(() => {
     .slice(0, 5)
 })
 
+// Recent expenses
+const recentExpenses = computed(() => {
+  if (!expenses.value) return []
+  return [...expenses.value]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
+})
+
 // Payment method breakdown
 const paymentMethodBreakdown = computed(() => {
   if (!expenses.value) return {}
@@ -98,13 +99,13 @@ const exportToCSV = () => {
   ])
 
   const csvContent = [headers, ...rows].map((row) => row.join(',')).join('\n')
-  downloadFile(csvContent, `expenses-${selectedMonth.value}.csv`, 'text/csv')
+  downloadFile(csvContent, `expenses-${props.selectedMonth}.csv`, 'text/csv')
 }
 
 const exportToJSON = () => {
   if (!expenses.value) return
   const jsonContent = JSON.stringify(expenses.value, null, 2)
-  downloadFile(jsonContent, `expenses-${selectedMonth.value}.json`, 'application/json')
+  downloadFile(jsonContent, `expenses-${props.selectedMonth}.json`, 'application/json')
 }
 
 const downloadFile = (content: string, filename: string, mimeType: string) => {
@@ -220,7 +221,7 @@ const exportToPDF = () => {
     )
   }
 
-  doc.save(`expense-report-${selectedMonth.value}.pdf`)
+  doc.save(`expense-report-${props.selectedMonth}.pdf`)
 }
 
 // Export to Excel
@@ -271,14 +272,14 @@ const exportToExcel = () => {
   // Expenses sheet
   const expensesSheet = XLSX.utils.aoa_to_sheet([expenseHeaders, ...expenseData])
   expensesSheet['!cols'] = [
-    { wch: 12 }, // Date
-    { wch: 40 }, // Description
-    { wch: 20 }, // Category
-    { wch: 20 }, // Subcategory
-    { wch: 20 }, // Merchant
-    { wch: 12 }, // Amount
-    { wch: 15 }, // Payment Method
-    { wch: 20 }, // Tags
+    { wch: 12 },
+    { wch: 40 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 20 },
   ]
   XLSX.utils.book_append_sheet(wb, expensesSheet, 'Expenses')
 
@@ -322,194 +323,121 @@ const exportToExcel = () => {
   }
 
   // Save file
-  XLSX.writeFile(wb, `expense-report-${selectedMonth.value}.xlsx`)
+  XLSX.writeFile(wb, `expense-report-${props.selectedMonth}.xlsx`)
 }
 
 // Print report
 const printReport = () => {
   window.print()
 }
-
-// Month options for selector
-const monthOptions = computed(() => {
-  const options = []
-  const now = new Date()
-
-  for (let i = 0; i < 12; i++) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    options.push({
-      title: date.toLocaleString('en-IN', { month: 'long', year: 'numeric' }),
-      value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-    })
-  }
-
-  return options
-})
-
-// Navigation
-const goToPreviousMonth = () => {
-  const [year, month] = selectedMonth.value.split('-').map(Number)
-  const date = new Date(year, month - 2, 1)
-  selectedMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
-
-const goToNextMonth = () => {
-  const [year, month] = selectedMonth.value.split('-').map(Number)
-  const date = new Date(year, month, 1)
-  selectedMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
 </script>
 
 <template>
   <div>
-    <SectionHeader
-      title="Expenses"
-      subtitle="Expense reports and analytics"
-      icon="mdi-cart-outline"
-      :tabs="tabs"
-    />
-
-    <!-- Report Controls -->
-    <v-card class="mb-6" variant="outlined">
-      <v-card-text>
-        <v-row align="center">
-          <!-- Report Type -->
-          <v-col cols="12" sm="4">
-            <v-btn-toggle v-model="reportType" mandatory density="compact" color="primary">
-              <v-btn value="monthly" size="small">Monthly</v-btn>
-              <v-btn value="quarterly" size="small">Quarterly</v-btn>
-              <v-btn value="yearly" size="small">Yearly</v-btn>
-              <v-btn value="custom" size="small">Custom</v-btn>
-            </v-btn-toggle>
-          </v-col>
-
-          <!-- Date Selection -->
-          <v-col cols="12" sm="4">
-            <template v-if="reportType === 'monthly'">
-              <div class="d-flex align-center">
-                <v-btn icon="mdi-chevron-left" variant="text" size="small" @click="goToPreviousMonth" />
-                <v-select
-                  v-model="selectedMonth"
-                  :items="monthOptions"
-                  item-title="title"
-                  item-value="value"
-                  density="compact"
-                  hide-details
-                  variant="outlined"
-                  style="min-width: 180px"
-                />
-                <v-btn icon="mdi-chevron-right" variant="text" size="small" @click="goToNextMonth" />
-              </div>
-            </template>
-            <template v-else-if="reportType === 'custom'">
-              <div class="d-flex gap-2">
-                <v-text-field
-                  v-model="customStartDate"
-                  type="date"
-                  label="From"
-                  density="compact"
-                  hide-details
-                />
-                <v-text-field
-                  v-model="customEndDate"
-                  type="date"
-                  label="To"
-                  density="compact"
-                  hide-details
-                />
-              </div>
-            </template>
-          </v-col>
-
-          <!-- Export Actions -->
-          <v-col cols="12" sm="4" class="text-right">
-            <v-menu>
-              <template #activator="{ props }">
-                <v-btn variant="outlined" v-bind="props">
-                  <v-icon icon="mdi-download" class="mr-1" />
-                  Export
-                </v-btn>
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="exportToPDF">
-                  <template #prepend>
-                    <v-icon icon="mdi-file-pdf-box" color="error" />
-                  </template>
-                  <v-list-item-title>Export as PDF</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="exportToExcel">
-                  <template #prepend>
-                    <v-icon icon="mdi-microsoft-excel" color="success" />
-                  </template>
-                  <v-list-item-title>Export as Excel</v-list-item-title>
-                </v-list-item>
-                <v-divider />
-                <v-list-item @click="exportToCSV">
-                  <template #prepend>
-                    <v-icon icon="mdi-file-delimited" />
-                  </template>
-                  <v-list-item-title>Export as CSV</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="exportToJSON">
-                  <template #prepend>
-                    <v-icon icon="mdi-code-json" />
-                  </template>
-                  <v-list-item-title>Export as JSON</v-list-item-title>
-                </v-list-item>
-                <v-divider />
-                <v-list-item @click="printReport">
-                  <template #prepend>
-                    <v-icon icon="mdi-printer" />
-                  </template>
-                  <v-list-item-title>Print Report</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-
     <!-- Loading State -->
     <div v-if="isLoading" class="text-center py-8">
       <v-progress-circular indeterminate color="primary" size="48" />
-      <p class="mt-4 text-medium-emphasis">Loading report data...</p>
+      <p class="mt-4 text-medium-emphasis">Loading expense data...</p>
     </div>
 
     <template v-else>
-      <!-- Report Header -->
-      <v-card class="mb-6">
-        <v-card-title class="d-flex align-center">
-          <v-icon icon="mdi-file-chart" class="mr-2" />
-          Expense Report - {{ monthName }}
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" sm="6" md="3">
+      <!-- Summary Cards -->
+      <v-row class="mb-6">
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined">
+            <v-card-text class="text-center">
+              <v-icon icon="mdi-cash-minus" size="32" color="error" class="mb-2" />
               <div class="text-body-2 text-medium-emphasis">Total Expenses</div>
-              <div class="text-h4 font-weight-bold text-error">
+              <div class="text-h5 font-weight-bold text-error">
                 {{ formatINR(totalExpenses) }}
               </div>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined">
+            <v-card-text class="text-center">
+              <v-icon icon="mdi-receipt-text-outline" size="32" color="primary" class="mb-2" />
               <div class="text-body-2 text-medium-emphasis">Transactions</div>
-              <div class="text-h4 font-weight-bold">
+              <div class="text-h5 font-weight-bold">
                 {{ expenses?.length || 0 }}
               </div>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined">
+            <v-card-text class="text-center">
+              <v-icon icon="mdi-calculator" size="32" color="info" class="mb-2" />
               <div class="text-body-2 text-medium-emphasis">Avg. Transaction</div>
-              <div class="text-h4 font-weight-bold">
+              <div class="text-h5 font-weight-bold">
                 {{ formatINR(expenses?.length ? totalExpenses / expenses.length : 0) }}
               </div>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined">
+            <v-card-text class="text-center">
+              <v-icon icon="mdi-target" size="32" :color="budgetUsage && budgetUsage.total > 100 ? 'error' : 'success'" class="mb-2" />
               <div class="text-body-2 text-medium-emphasis">Budget Usage</div>
-              <div class="text-h4 font-weight-bold" :class="budgetUsage && budgetUsage.total > 100 ? 'text-error' : 'text-success'">
+              <div class="text-h5 font-weight-bold" :class="budgetUsage && budgetUsage.total > 100 ? 'text-error' : 'text-success'">
                 {{ budgetUsage?.total.toFixed(0) || '--' }}%
               </div>
-            </v-col>
-          </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Export Actions -->
+      <v-card class="mb-6" variant="outlined">
+        <v-card-text class="d-flex align-center justify-space-between flex-wrap ga-2">
+          <div class="text-body-1">
+            <v-icon icon="mdi-file-chart" class="mr-1" />
+            {{ monthName }} Report
+          </div>
+          <v-menu>
+            <template #activator="{ props: menuProps }">
+              <v-btn variant="outlined" v-bind="menuProps">
+                <v-icon icon="mdi-download" class="mr-1" />
+                Export
+              </v-btn>
+            </template>
+            <v-list density="compact">
+              <v-list-item @click="exportToPDF">
+                <template #prepend>
+                  <v-icon icon="mdi-file-pdf-box" color="error" />
+                </template>
+                <v-list-item-title>Export as PDF</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="exportToExcel">
+                <template #prepend>
+                  <v-icon icon="mdi-microsoft-excel" color="success" />
+                </template>
+                <v-list-item-title>Export as Excel</v-list-item-title>
+              </v-list-item>
+              <v-divider />
+              <v-list-item @click="exportToCSV">
+                <template #prepend>
+                  <v-icon icon="mdi-file-delimited" />
+                </template>
+                <v-list-item-title>Export as CSV</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="exportToJSON">
+                <template #prepend>
+                  <v-icon icon="mdi-code-json" />
+                </template>
+                <v-list-item-title>Export as JSON</v-list-item-title>
+              </v-list-item>
+              <v-divider />
+              <v-list-item @click="printReport">
+                <template #prepend>
+                  <v-icon icon="mdi-printer" />
+                </template>
+                <v-list-item-title>Print Report</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </v-card-text>
       </v-card>
 
@@ -533,8 +461,46 @@ const goToNextMonth = () => {
         </v-col>
       </v-row>
 
-      <!-- Details Row -->
-      <v-row>
+      <!-- Recent Expenses & Top Expenses -->
+      <v-row class="mb-6">
+        <!-- Recent Expenses -->
+        <v-col cols="12" md="6">
+          <v-card>
+            <v-card-title class="d-flex align-center justify-space-between">
+              <span>
+                <v-icon icon="mdi-clock-outline" class="mr-2" />
+                Recent Expenses
+              </span>
+              <v-btn size="small" variant="text" color="primary" @click="emit('go-to-details')">
+                View All
+              </v-btn>
+            </v-card-title>
+            <v-card-text v-if="recentExpenses.length === 0" class="text-center pa-8">
+              <v-icon icon="mdi-receipt-text-outline" size="48" color="grey" />
+              <p class="text-medium-emphasis mt-2">No expenses this month</p>
+              <v-btn color="primary" class="mt-2" @click="emit('go-to-details')">
+                Add Expense
+              </v-btn>
+            </v-card-text>
+            <v-list v-else lines="two" density="compact">
+              <v-list-item
+                v-for="expense in recentExpenses"
+                :key="expense.id"
+              >
+                <v-list-item-title>{{ expense.description }}</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ expense.category }} &bull; {{ new Date(expense.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) }}
+                </v-list-item-subtitle>
+                <template #append>
+                  <span class="text-body-2 font-weight-bold text-error">
+                    {{ formatINR(expense.amount) }}
+                  </span>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </v-col>
+
         <!-- Top Expenses -->
         <v-col cols="12" md="6">
           <v-card>
@@ -546,61 +512,23 @@ const goToNextMonth = () => {
               <v-icon icon="mdi-receipt-text-outline" size="48" color="grey" />
               <p class="text-medium-emphasis mt-2">No expenses this month</p>
             </v-card-text>
-            <v-list v-else lines="two">
+            <v-list v-else lines="two" density="compact">
               <v-list-item
                 v-for="(expense, index) in topExpenses"
                 :key="expense.id"
               >
                 <template #prepend>
-                  <v-avatar color="primary" variant="tonal" size="36">
-                    <span class="font-weight-bold">{{ index + 1 }}</span>
+                  <v-avatar color="primary" variant="tonal" size="32">
+                    <span class="text-body-2 font-weight-bold">{{ index + 1 }}</span>
                   </v-avatar>
                 </template>
                 <v-list-item-title>{{ expense.description }}</v-list-item-title>
                 <v-list-item-subtitle>
-                  {{ expense.category }} &bull; {{ new Date(expense.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) }}
+                  {{ expense.category }}
                 </v-list-item-subtitle>
                 <template #append>
-                  <span class="text-body-1 font-weight-bold text-error">
+                  <span class="text-body-2 font-weight-bold text-error">
                     {{ formatINR(expense.amount) }}
-                  </span>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-card>
-        </v-col>
-
-        <!-- Payment Methods -->
-        <v-col cols="12" md="6">
-          <v-card>
-            <v-card-title>
-              <v-icon icon="mdi-credit-card" class="mr-2" />
-              Payment Methods
-            </v-card-title>
-            <v-card-text v-if="Object.keys(paymentMethodBreakdown).length === 0" class="text-center pa-8">
-              <v-icon icon="mdi-credit-card-outline" size="48" color="grey" />
-              <p class="text-medium-emphasis mt-2">No payment data</p>
-            </v-card-text>
-            <v-list v-else>
-              <v-list-item
-                v-for="(amount, method) in paymentMethodBreakdown"
-                :key="method"
-              >
-                <template #prepend>
-                  <v-avatar color="info" variant="tonal" size="36">
-                    <v-icon
-                      :icon="method === 'UPI' ? 'mdi-cellphone' : method === 'Credit Card' ? 'mdi-credit-card' : method === 'Cash' ? 'mdi-cash' : 'mdi-bank'"
-                      size="18"
-                    />
-                  </v-avatar>
-                </template>
-                <v-list-item-title>{{ method }}</v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ Math.round((amount / totalExpenses) * 100) }}% of total
-                </v-list-item-subtitle>
-                <template #append>
-                  <span class="text-body-1 font-weight-bold">
-                    {{ formatINR(amount) }}
                   </span>
                 </template>
               </v-list-item>
@@ -610,7 +538,7 @@ const goToNextMonth = () => {
       </v-row>
 
       <!-- Budget vs Actual -->
-      <v-card v-if="currentBudget" class="mt-6">
+      <v-card v-if="currentBudget">
         <v-card-title>
           <v-icon icon="mdi-scale-balance" class="mr-2" />
           Budget vs Actual
@@ -641,14 +569,6 @@ const goToNextMonth = () => {
                 height="8"
                 rounded
               />
-              <div class="text-center mt-2">
-                <v-chip
-                  :color="currentBudget.needsActual <= currentBudget.needsLimit ? 'success' : 'error'"
-                  size="small"
-                >
-                  {{ currentBudget.needsActual <= currentBudget.needsLimit ? 'Under Budget' : 'Over Budget' }}
-                </v-chip>
-              </div>
             </v-col>
 
             <!-- Wants -->
@@ -675,14 +595,6 @@ const goToNextMonth = () => {
                 height="8"
                 rounded
               />
-              <div class="text-center mt-2">
-                <v-chip
-                  :color="currentBudget.wantsActual <= currentBudget.wantsLimit ? 'success' : 'error'"
-                  size="small"
-                >
-                  {{ currentBudget.wantsActual <= currentBudget.wantsLimit ? 'Under Budget' : 'Over Budget' }}
-                </v-chip>
-              </div>
             </v-col>
 
             <!-- Savings -->
@@ -709,17 +621,18 @@ const goToNextMonth = () => {
                 height="8"
                 rounded
               />
-              <div class="text-center mt-2">
-                <v-chip
-                  :color="currentBudget.savingsActual >= currentBudget.savingsLimit ? 'success' : 'warning'"
-                  size="small"
-                >
-                  {{ currentBudget.savingsActual >= currentBudget.savingsLimit ? 'Goal Met' : 'Keep Saving' }}
-                </v-chip>
-              </div>
             </v-col>
           </v-row>
         </v-card-text>
+      </v-card>
+
+      <!-- Empty State for no budget -->
+      <v-card v-else class="text-center pa-6">
+        <v-icon icon="mdi-target" size="48" color="grey" />
+        <p class="text-medium-emphasis mt-2">No budget set for this month</p>
+        <v-btn color="primary" variant="outlined" to="/expenses/budgets" class="mt-2">
+          Set Budget
+        </v-btn>
       </v-card>
     </template>
   </div>

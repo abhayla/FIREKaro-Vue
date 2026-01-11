@@ -12,11 +12,11 @@ import {
 } from '@/composables/useExpenses'
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/expenses' },
-  { title: 'Track', route: '/dashboard/expenses/track' },
-  { title: 'Budgets', route: '/dashboard/expenses/budgets' },
-  { title: 'Reports', route: '/dashboard/expenses/reports' },
-  { title: 'Categories', route: '/dashboard/expenses/categories' },
+  { title: 'Overview', route: '/expenses' },
+  { title: 'Track', route: '/expenses/track' },
+  { title: 'Budgets', route: '/expenses/budgets' },
+  { title: 'Reports', route: '/expenses/reports' },
+  { title: 'Categories', route: '/expenses/categories' },
 ]
 
 // Current month filter
@@ -163,7 +163,7 @@ const formatDate = (date: string) =>
       <v-row>
         <!-- Budget Progress (if exists) -->
         <v-col v-if="currentBudget" cols="12" md="6">
-          <BudgetCard :budget="currentBudget" @edit="$router.push('/dashboard/expenses/budgets')" />
+          <BudgetCard :budget="currentBudget" @edit="$router.push('/expenses/budgets')" />
         </v-col>
 
         <!-- No Budget Alert -->
@@ -178,7 +178,7 @@ const formatDate = (date: string) =>
               <v-btn
                 color="primary"
                 class="mt-4"
-                @click="$router.push('/dashboard/expenses/budgets')"
+                @click="$router.push('/expenses/budgets')"
               >
                 <v-icon icon="mdi-plus" class="mr-1" />
                 Create Budget
@@ -206,7 +206,7 @@ const formatDate = (date: string) =>
             variant="text"
             color="primary"
             size="small"
-            @click="$router.push('/dashboard/expenses/track')"
+            @click="$router.push('/expenses/track')"
           >
             View All
           </v-btn>
@@ -218,7 +218,7 @@ const formatDate = (date: string) =>
           <v-btn
             color="primary"
             class="mt-4"
-            @click="$router.push('/dashboard/expenses/track')"
+            @click="$router.push('/expenses/track')"
           >
             <v-icon icon="mdi-plus" class="mr-1" />
             Add Expense
@@ -259,7 +259,7 @@ const formatDate = (date: string) =>
                 block
                 variant="outlined"
                 class="pa-6"
-                @click="$router.push('/dashboard/expenses/track')"
+                @click="$router.push('/expenses/track')"
               >
                 <div class="text-center">
                   <v-icon icon="mdi-plus-circle" size="32" color="primary" />
@@ -272,7 +272,7 @@ const formatDate = (date: string) =>
                 block
                 variant="outlined"
                 class="pa-6"
-                @click="$router.push('/dashboard/expenses/budgets')"
+                @click="$router.push('/expenses/budgets')"
               >
                 <div class="text-center">
                   <v-icon icon="mdi-chart-pie" size="32" color="success" />
@@ -285,7 +285,7 @@ const formatDate = (date: string) =>
                 block
                 variant="outlined"
                 class="pa-6"
-                @click="$router.push('/dashboard/expenses/track')"
+                @click="$router.push('/expenses/track')"
               >
                 <div class="text-center">
                   <v-icon icon="mdi-file-upload" size="32" color="info" />
@@ -298,7 +298,7 @@ const formatDate = (date: string) =>
                 block
                 variant="outlined"
                 class="pa-6"
-                @click="$router.push('/dashboard/expenses/reports')"
+                @click="$router.push('/expenses/reports')"
               >
                 <div class="text-center">
                   <v-icon icon="mdi-file-chart" size="32" color="warning" />
