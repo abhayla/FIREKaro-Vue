@@ -49,6 +49,17 @@ import liabilitiesReportsRoutes from './routes/liabilities-reports'
 // Protection/Insurance routes
 import insuranceRoutes from './routes/insurance'
 
+// FIRE routes
+import fireMetricsRoutes from './routes/fire-metrics'
+import fireFreedomScoreRoutes from './routes/fire-freedom-score'
+import fireCrossoverRoutes from './routes/fire-crossover'
+import fireExpenseCoverageRoutes from './routes/fire-expense-coverage'
+import fireProjectionsRoutes from './routes/fire-projections'
+import fireMonteCarloRoutes from './routes/fire-monte-carlo'
+import fireExportRoutes from './routes/fire-export'
+import goalsRoutes from './routes/goals'
+import withdrawalStrategyRoutes from './routes/withdrawal-strategy'
+
 const app = new Hono()
 
 // Middleware
@@ -115,6 +126,17 @@ app.route('/api/liabilities/reports', liabilitiesReportsRoutes)
 
 // API routes - Protection/Insurance
 app.route('/api/insurance', insuranceRoutes)
+
+// API routes - FIRE
+app.route('/api/fire/metrics', fireMetricsRoutes)
+app.route('/api/fire/freedom-score', fireFreedomScoreRoutes)
+app.route('/api/fire/crossover', fireCrossoverRoutes)
+app.route('/api/fire/expense-coverage', fireExpenseCoverageRoutes)
+app.route('/api/fire/projections', fireProjectionsRoutes)
+app.route('/api/fire/monte-carlo', fireMonteCarloRoutes)
+app.route('/api/fire/export', fireExportRoutes)
+app.route('/api/goals', goalsRoutes)
+app.route('/api/withdrawal-strategy', withdrawalStrategyRoutes)
 
 // 404 handler
 app.notFound((c) => {
