@@ -12,12 +12,18 @@ test.describe("Amortization Schedule", () => {
   test("should display loans page with loan cards", async ({ page }) => {
     await loansPage.expectPageLoaded();
 
-    // Verify loan cards are visible (either real data or mock data)
-    const loanCards = page.locator(".v-card").filter({ hasText: /EMI|Outstanding|Interest/i });
+    // Navigate to Details tab where loan cards are displayed
+    await loansPage.goToDetailsTab();
+
+    // Verify loan cards are visible (either real data or empty state)
+    const loanCards = page.locator(".v-card").filter({ hasText: /EMI|Outstanding|Interest|No loans/i });
     await expect(loanCards.first()).toBeVisible();
   });
 
   test("should open amortization schedule dialog from loan card", async ({ page }) => {
+    // Navigate to Details tab where loan cards are displayed
+    await loansPage.goToDetailsTab();
+
     // Look for a loan card with view schedule action
     const loanCard = page.locator(".v-card").filter({ hasText: /HDFC|ICICI|Home Loan|Car Loan/i }).first();
 
@@ -132,6 +138,8 @@ test.describe("Amortization Schedule", () => {
 
   test("should support prepayment simulation", async ({ page }) => {
     await loansPage.navigateTo();
+    // Navigate to Details tab where loan cards with prepay buttons are displayed
+    await loansPage.goToDetailsTab();
 
     // Look for a prepayment button on loan cards
     const prepayBtn = page.getByRole("button", { name: /Prepay|Prepayment/i }).first();

@@ -157,34 +157,6 @@ const router = createRouter({
           name: "investments-reports",
           component: () => import("@/pages/dashboard/investments/reports.vue"),
         },
-        // Section 6: Liabilities
-        {
-          path: "liabilities",
-          name: "liabilities",
-          component: () => import("@/pages/dashboard/liabilities/index.vue"),
-        },
-        {
-          path: "liabilities/loans",
-          name: "liabilities-loans",
-          component: () => import("@/pages/dashboard/liabilities/loans.vue"),
-        },
-        {
-          path: "liabilities/credit-cards",
-          name: "liabilities-credit-cards",
-          component: () =>
-            import("@/pages/dashboard/liabilities/credit-cards.vue"),
-        },
-        {
-          path: "liabilities/debt-payoff",
-          name: "liabilities-debt-payoff",
-          component: () =>
-            import("@/pages/dashboard/liabilities/debt-payoff.vue"),
-        },
-        {
-          path: "liabilities/reports",
-          name: "liabilities-reports",
-          component: () => import("@/pages/dashboard/liabilities/reports.vue"),
-        },
         // Section 7: Insurance
         {
           path: "insurance",
@@ -287,6 +259,39 @@ const router = createRouter({
           path: "fire-goals/reports",
           name: "fire-goals-reports",
           component: () => import("@/pages/dashboard/fire-goals/reports.vue"),
+        },
+      ],
+    },
+    // Section 6: Liabilities (top-level route)
+    {
+      path: "/liabilities",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "liabilities",
+          component: () => import("@/pages/liabilities/index.vue"),
+        },
+        {
+          path: "loans",
+          name: "liabilities-loans",
+          component: () => import("@/pages/liabilities/loans.vue"),
+        },
+        {
+          path: "credit-cards",
+          name: "liabilities-credit-cards",
+          component: () => import("@/pages/liabilities/credit-cards.vue"),
+        },
+        {
+          path: "debt-payoff",
+          name: "liabilities-debt-payoff",
+          component: () => import("@/pages/liabilities/debt-payoff.vue"),
+        },
+        {
+          path: "reports",
+          name: "liabilities-reports",
+          component: () => import("@/pages/liabilities/reports.vue"),
         },
       ],
     },

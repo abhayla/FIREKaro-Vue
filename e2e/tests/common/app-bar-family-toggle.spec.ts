@@ -171,7 +171,7 @@ test.describe("App Bar Family Toggle", () => {
   test("should be visible across all dashboard sections", async ({ page }) => {
     const sections = [
       "/dashboard/investments",
-      "/dashboard/liabilities",
+      "/liabilities",
       "/dashboard/financial-health",
       "/dashboard/tax-planning",
       "/dashboard/non-salary-income",

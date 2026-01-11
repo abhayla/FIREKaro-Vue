@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles debt payoff strategies (Snowball vs Avalanche)
  */
 export class DebtPayoffPage extends BasePage {
-  readonly url = "/dashboard/liabilities/debt-payoff";
+  readonly url = "/liabilities/debt-payoff";
 
   constructor(page: Page) {
     super(page);

@@ -17,11 +17,11 @@ import {
 } from '@/composables/useLiabilities'
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/liabilities' },
-  { title: 'Loans', route: '/dashboard/liabilities/loans' },
-  { title: 'Credit Cards', route: '/dashboard/liabilities/credit-cards' },
-  { title: 'Debt Payoff', route: '/dashboard/liabilities/debt-payoff' },
-  { title: 'Reports', route: '/dashboard/liabilities/reports' },
+  { title: 'Overview', route: '/liabilities' },
+  { title: 'Loans', route: '/liabilities/loans' },
+  { title: 'Credit Cards', route: '/liabilities/credit-cards' },
+  { title: 'Debt Payoff', route: '/liabilities/debt-payoff' },
+  { title: 'Reports', route: '/liabilities/reports' },
 ]
 
 // Data fetching
@@ -241,7 +241,7 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || ove
                 variant="text"
                 color="primary"
                 size="small"
-                to="/dashboard/liabilities/loans"
+                to="/liabilities/loans"
               >
                 View All
               </v-btn>
@@ -275,7 +275,7 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || ove
                 variant="text"
                 color="primary"
                 size="small"
-                to="/dashboard/liabilities/credit-cards"
+                to="/liabilities/credit-cards"
               >
                 View All
               </v-btn>
@@ -302,16 +302,16 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || ove
       <!-- Quick Actions -->
       <v-card variant="outlined" class="mt-6">
         <v-card-text class="d-flex gap-3 flex-wrap">
-          <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" to="/dashboard/liabilities/loans">
+          <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" to="/liabilities/loans">
             Add Loan
           </v-btn>
-          <v-btn color="orange" variant="flat" prepend-icon="mdi-credit-card-plus" to="/dashboard/liabilities/credit-cards">
+          <v-btn color="orange" variant="flat" prepend-icon="mdi-credit-card-plus" to="/liabilities/credit-cards">
             Add Credit Card
           </v-btn>
-          <v-btn variant="outlined" prepend-icon="mdi-chart-line" to="/dashboard/liabilities/debt-payoff">
+          <v-btn variant="outlined" prepend-icon="mdi-chart-line" to="/liabilities/debt-payoff">
             Payoff Strategy
           </v-btn>
-          <v-btn variant="outlined" prepend-icon="mdi-file-document" to="/dashboard/liabilities/reports">
+          <v-btn variant="outlined" prepend-icon="mdi-file-document" to="/liabilities/reports">
             Generate Report
           </v-btn>
         </v-card-text>

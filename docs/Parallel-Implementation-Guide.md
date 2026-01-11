@@ -423,7 +423,7 @@ API Endpoints (already exist):
 - GET /api/debt-payoff/strategies
 
 File Structure to Create:
-src/pages/dashboard/liabilities/
+src/pages/liabilities/
 ├── index.vue (Overview - replace stub)
 ├── loans.vue (All loans)
 ├── credit-cards.vue (Credit cards)

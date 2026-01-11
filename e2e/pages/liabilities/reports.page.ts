@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles debt reports, amortization schedules, and exports
  */
 export class LiabilitiesReportsPage extends BasePage {
-  readonly url = "/dashboard/liabilities/reports";
+  readonly url = "/liabilities/reports";
 
   constructor(page: Page) {
     super(page);

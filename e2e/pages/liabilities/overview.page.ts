@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Main overview showing debt summary and breakdown
  */
 export class LiabilitiesOverviewPage extends BasePage {
-  readonly url = "/dashboard/liabilities";
+  readonly url = "/liabilities";
 
   constructor(page: Page) {
     super(page);

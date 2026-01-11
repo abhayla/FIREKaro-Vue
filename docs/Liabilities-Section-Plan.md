@@ -15,7 +15,7 @@ The LIABILITIES section is **100% implemented** with full backend API, frontend 
 
 1. **Backend APIs** - All CRUD routes for Loans, Credit Cards, Overview, Reports
 2. **Database Models** - CreditCard and CreditCardStatement models added to Prisma
-3. **Frontend Pages** - 5 sub-pages under consolidated /dashboard/liabilities section
+3. **Frontend Pages** - 5 sub-pages under consolidated /liabilities section
 4. **Components** - 8 Vue components for liabilities management
 5. **Composable** - Full useLiabilities.ts with all hooks and calculations
 6. **E2E Tests** - 7 test spec files covering all functionality
@@ -157,7 +157,7 @@ model CreditCardStatement {
 #### Pages Structure
 
 ```
-src/pages/dashboard/liabilities/
+src/pages/liabilities/
 ├── index.vue          # Overview dashboard
 ├── loans.vue          # Loan management
 ├── credit-cards.vue   # Credit card management

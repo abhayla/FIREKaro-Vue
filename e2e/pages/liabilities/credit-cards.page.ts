@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles credit card management and tracking
  */
 export class CreditCardsPage extends BasePage {
-  readonly url = "/dashboard/liabilities/credit-cards";
+  readonly url = "/liabilities/credit-cards";
 
   constructor(page: Page) {
     super(page);
@@ -20,8 +20,19 @@ export class CreditCardsPage extends BasePage {
     return this.page.getByRole("heading", { name: /Liabilities/i });
   }
 
+  // Internal tabs (Overview / Card Details)
+  // Use nth(1) to get the second tablist (internal tabs) since first is section-level
+  get overviewTab(): Locator {
+    return this.page.locator('[role="tablist"]').nth(1).getByRole("tab", { name: "Overview" });
+  }
+
+  get detailsTab(): Locator {
+    return this.page.getByRole("tab", { name: "Card Details" });
+  }
+
   get addCardButton(): Locator {
-    return this.page.getByRole("button", { name: /Add Card|Add Credit Card/i });
+    // Use first() to get the toolbar button (not the empty state button)
+    return this.page.getByRole("button", { name: /Add Card|Add Credit Card/i }).first();
   }
 
   // Summary cards
@@ -30,11 +41,16 @@ export class CreditCardsPage extends BasePage {
   }
 
   get totalLimitCard(): Locator {
-    return this.getSummaryCardByTitle("Total Limit");
+    return this.getSummaryCardByTitle("Total Credit Limit");
   }
 
   get avgUtilizationCard(): Locator {
+    // Updated to match new Overview tab which has "Credit Utilization Score" card
     return this.getSummaryCardByTitle("Utilization");
+  }
+
+  get creditUtilizationGauge(): Locator {
+    return this.getSummaryCardByTitle("Credit Utilization Score");
   }
 
   get totalMinDueCard(): Locator {
@@ -102,11 +118,29 @@ export class CreditCardsPage extends BasePage {
     await this.waitForPageLoad();
   }
 
+  /**
+   * Navigate to the Overview tab (shows summary metrics, utilization gauge, upcoming payments)
+   */
+  async goToOverviewTab() {
+    await this.overviewTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  /**
+   * Navigate to the Card Details tab (shows credit card cards, CRUD operations)
+   */
+  async goToDetailsTab() {
+    await this.detailsTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
   // ============================================
   // Form Actions
   // ============================================
 
   async openAddForm() {
+    // Navigate to Details tab first (Add button is only on Details tab)
+    await this.goToDetailsTab();
     await this.addCardButton.click();
     await this.cardFormDialog.waitFor({ state: "visible" });
   }
@@ -217,7 +251,19 @@ export class CreditCardsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Liabilities/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Credit Cards|Cards/i })).toHaveAttribute("aria-selected", "true");
+    // Section-level tab should be active
+    await expect(this.page.getByRole("tab", { name: /Credit Cards|Cards/i }).first()).toHaveAttribute("aria-selected", "true");
+    // Internal tabs should be visible
+    await expect(this.overviewTab).toBeVisible();
+    await expect(this.detailsTab).toBeVisible();
+  }
+
+  async expectOverviewTabActive() {
+    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  async expectDetailsTabActive() {
+    await expect(this.detailsTab).toHaveAttribute("aria-selected", "true");
   }
 
   async expectFormDialogVisible() {

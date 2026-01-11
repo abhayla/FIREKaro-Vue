@@ -9,7 +9,7 @@ export const DASHBOARD_SECTIONS = {
   "tax-planning": "/dashboard/tax-planning",
   expenses: "/dashboard/expenses",
   investments: "/dashboard/investments",
-  liabilities: "/dashboard/liabilities",
+  liabilities: "/liabilities",
   insurance: "/dashboard/insurance",
   "financial-health": "/dashboard/financial-health",
   "fire-goals": "/dashboard/fire-goals",

@@ -32,11 +32,11 @@ ChartJS.register(
 )
 
 const tabs = [
-  { title: 'Overview', route: '/dashboard/liabilities' },
-  { title: 'Loans', route: '/dashboard/liabilities/loans' },
-  { title: 'Credit Cards', route: '/dashboard/liabilities/credit-cards' },
-  { title: 'Debt Payoff', route: '/dashboard/liabilities/debt-payoff' },
-  { title: 'Reports', route: '/dashboard/liabilities/reports' },
+  { title: 'Overview', route: '/liabilities' },
+  { title: 'Loans', route: '/liabilities/loans' },
+  { title: 'Credit Cards', route: '/liabilities/credit-cards' },
+  { title: 'Debt Payoff', route: '/liabilities/debt-payoff' },
+  { title: 'Reports', route: '/liabilities/reports' },
 ]
 
 // Data fetching

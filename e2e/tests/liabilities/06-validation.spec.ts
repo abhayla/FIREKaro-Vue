@@ -51,6 +51,7 @@ test.describe("Liabilities Form Validation", () => {
 
     await loansPage.cancelForm();
     await loansPage.expectFormDialogClosed();
+    // We're already on Details tab (openAddForm navigates there)
     await loansPage.expectLoanNotInTable("Test Bank");
   });
 
