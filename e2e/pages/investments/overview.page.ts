@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Main overview showing portfolio summary and allocation
  */
 export class InvestmentsOverviewPage extends BasePage {
-  readonly url = "/dashboard/investments";
+  readonly url = "/investments";
 
   constructor(page: Page) {
     super(page);

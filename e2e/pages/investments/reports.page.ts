@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles investment reports, charts, and export
  */
 export class InvestmentReportsPage extends BasePage {
-  readonly url = "/dashboard/investments/reports";
+  readonly url = "/investments/reports";
 
   constructor(page: Page) {
     super(page);

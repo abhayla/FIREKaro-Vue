@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles Public Provident Fund page with two-tab pattern
  */
 export class PpfPage extends BasePage {
-  readonly url = "/dashboard/investments/ppf";
+  readonly url = "/investments/ppf";
 
   constructor(page: Page) {
     super(page);
@@ -80,13 +80,15 @@ export class PpfPage extends BasePage {
     return this.page.locator("canvas, .vue-chartjs");
   }
 
-  // Monthly/Yearly grid (Details tab)
+  // Year-wise history table (Details tab)
   get contributionGrid(): Locator {
-    return this.page.locator(".investment-monthly-grid, table");
+    // PPF uses v-table for year-wise history
+    return this.page.locator(".v-table, table");
   }
 
   get addContributionButton(): Locator {
-    return this.page.getByRole("button", { name: /Add.*Contribution/i });
+    // PPF button says "Add Deposit" not "Add Contribution"
+    return this.page.getByRole("button", { name: /Add.*Deposit|Add.*Contribution/i });
   }
 
   get editModeButton(): Locator {
@@ -114,6 +116,57 @@ export class PpfPage extends BasePage {
     return this.page.getByLabel(/Date/i);
   }
 
+  // Data Completion Grid (Overview tab)
+  get dataCompletionGrid(): Locator {
+    return this.page.locator(".v-card").filter({ has: this.page.locator(".completion-grid") });
+  }
+
+  get dataCompletionChip(): Locator {
+    return this.page.locator(".v-chip").filter({ hasText: /\d+\/12 months|Complete!/i });
+  }
+
+  get dataCompletionProgress(): Locator {
+    return this.dataCompletionGrid.locator(".v-progress-linear");
+  }
+
+  get completionMonthLabels(): Locator {
+    return this.dataCompletionGrid.locator(".month-label");
+  }
+
+  // Copy Data Dialog (Details tab)
+  get copyMenuButton(): Locator {
+    return this.page.getByRole("button", { name: /^Copy$/i });
+  }
+
+  get copyMenu(): Locator {
+    return this.page.locator(".v-list").filter({ hasText: /Copy to remaining|Import from previous/i });
+  }
+
+  get copyDialog(): Locator {
+    // Dialog titles: "Copy PPF to Remaining Months", "Import PPF from Previous Year", "Clear PPF Data"
+    return this.page.locator(".v-dialog").filter({ hasText: /Copy PPF|Import PPF|Clear PPF/i });
+  }
+
+  get copyToRemainingOption(): Locator {
+    return this.page.locator(".v-list-item").filter({ hasText: /Copy to remaining/i });
+  }
+
+  get importFromPrevFYOption(): Locator {
+    return this.page.locator(".v-list-item").filter({ hasText: /Import from previous/i });
+  }
+
+  get clearMonthsOption(): Locator {
+    return this.page.locator(".v-list-item").filter({ hasText: /Clear selected/i });
+  }
+
+  get copyConfirmButton(): Locator {
+    return this.copyDialog.getByRole("button", { name: /Copy|Import|Clear/i }).last();
+  }
+
+  get copyCancelButton(): Locator {
+    return this.copyDialog.getByRole("button", { name: /Cancel/i });
+  }
+
   // ============================================
   // Navigation
   // ============================================
@@ -121,16 +174,25 @@ export class PpfPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Wait for PPF Overview content to load
+    await this.page.locator(".v-card").filter({ hasText: /Current Balance|Monthly Contribution/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 15000 })
+      .catch(() => {});
   }
 
   async navigateToOverview() {
     await this.overviewTab.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(500);
+    await this.page.locator(".v-card").filter({ hasText: /Current Balance|Monthly Contribution/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 10000 })
+      .catch(() => {});
   }
 
   async navigateToDetails() {
     await this.detailsTab.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(500);
   }
 
   // ============================================
@@ -170,6 +232,28 @@ export class PpfPage extends BasePage {
 
   async cancelEdit() {
     await this.cancelButton.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async openCopyMenu() {
+    await this.copyMenuButton.click();
+    await this.page.waitForTimeout(200);
+  }
+
+  async openCopyToRemainingDialog() {
+    await this.openCopyMenu();
+    await this.copyToRemainingOption.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async openImportFromPrevFYDialog() {
+    await this.openCopyMenu();
+    await this.importFromPrevFYOption.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async closeCopyDialog() {
+    await this.copyCancelButton.click();
     await this.page.waitForTimeout(300);
   }
 
@@ -247,5 +331,25 @@ export class PpfPage extends BasePage {
     const cancelBtn = this.addContributionDialog.getByRole("button", { name: /Cancel|Close/i });
     await cancelBtn.click();
     await this.page.waitForTimeout(300);
+  }
+
+  async expectDataCompletionGridVisible() {
+    await expect(this.dataCompletionGrid).toBeVisible();
+  }
+
+  async expectDataCompletionChipVisible() {
+    await expect(this.dataCompletionChip).toBeVisible();
+  }
+
+  async expectCopyMenuButtonVisible() {
+    await expect(this.copyMenuButton).toBeVisible();
+  }
+
+  async expectCopyDialogVisible() {
+    await expect(this.copyDialog).toBeVisible();
+  }
+
+  async expectCopyDialogHidden() {
+    await expect(this.copyDialog).not.toBeVisible();
   }
 }

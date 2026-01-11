@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles direct equity/stock holdings
  */
 export class StocksPage extends BasePage {
-  readonly url = "/dashboard/investments/stocks";
+  readonly url = "/investments/stocks";
 
   constructor(page: Page) {
     super(page);

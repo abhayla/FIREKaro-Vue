@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles ESOP/RSU grant management with two-tab pattern (Overview + Item Details)
  */
 export class ESOPPage extends BasePage {
-  readonly url = "/dashboard/investments/esop";
+  readonly url = "/investments/esop";
 
   constructor(page: Page) {
     super(page);

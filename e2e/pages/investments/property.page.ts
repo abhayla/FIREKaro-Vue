@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles real estate investments
  */
 export class PropertyPage extends BasePage {
-  readonly url = "/dashboard/investments/property";
+  readonly url = "/investments/property";
 
   constructor(page: Page) {
     super(page);

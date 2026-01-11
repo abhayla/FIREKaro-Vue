@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles mutual fund holdings, SIPs, and lumpsum investments
  */
 export class MutualFundsPage extends BasePage {
-  readonly url = "/dashboard/investments/mutual-funds";
+  readonly url = "/investments/mutual-funds";
 
   constructor(page: Page) {
     super(page);

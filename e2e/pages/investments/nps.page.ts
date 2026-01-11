@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles National Pension System investments
  */
 export class NpsPage extends BasePage {
-  readonly url = "/dashboard/investments/nps";
+  readonly url = "/investments/nps";
 
   constructor(page: Page) {
     super(page);

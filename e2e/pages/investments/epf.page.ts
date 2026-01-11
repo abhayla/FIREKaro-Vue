@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles Employee Provident Fund page with two-tab pattern
  */
 export class EpfPage extends BasePage {
-  readonly url = "/dashboard/investments/epf";
+  readonly url = "/investments/epf";
 
   constructor(page: Page) {
     super(page);
@@ -40,15 +40,19 @@ export class EpfPage extends BasePage {
 
   // Summary cards (Overview tab)
   get totalBalanceCard(): Locator {
-    return this.getSummaryCardByTitle("Total Balance");
+    return this.getSummaryCardByTitle("Current Balance");
   }
 
-  get employeeShareCard(): Locator {
-    return this.getSummaryCardByTitle("Employee Share");
+  get monthlyContributionCard(): Locator {
+    return this.getSummaryCardByTitle("Monthly Contribution");
   }
 
-  get employerShareCard(): Locator {
-    return this.getSummaryCardByTitle("Employer Share");
+  get interestRateCard(): Locator {
+    return this.getSummaryCardByTitle("Interest Rate");
+  }
+
+  get projectedAtRetirementCard(): Locator {
+    return this.getSummaryCardByTitle("Projected at 60");
   }
 
   get section80CCard(): Locator {
@@ -87,6 +91,59 @@ export class EpfPage extends BasePage {
     return this.page.getByRole("button", { name: /Cancel/i });
   }
 
+  // Data Completion Grid (Overview tab)
+  get dataCompletionGrid(): Locator {
+    // The DataCompletionGrid component has .completion-grid class inside a .v-card
+    return this.page.locator(".v-card").filter({ has: this.page.locator(".completion-grid") });
+  }
+
+  get dataCompletionChip(): Locator {
+    return this.page.locator(".v-chip").filter({ hasText: /\d+\/12 months|Complete!/i });
+  }
+
+  get dataCompletionProgress(): Locator {
+    return this.dataCompletionGrid.locator(".v-progress-linear");
+  }
+
+  get completionMonthLabels(): Locator {
+    return this.dataCompletionGrid.locator(".month-label");
+  }
+
+  // Copy Data Dialog (Details tab)
+  get copyMenuButton(): Locator {
+    // The menu button has "Copy" text with prepend icon
+    return this.page.getByRole("button", { name: /^Copy$/i });
+  }
+
+  get copyMenu(): Locator {
+    return this.page.locator(".v-list").filter({ hasText: /Copy to remaining|Import from previous/i });
+  }
+
+  get copyDialog(): Locator {
+    // Dialog titles: "Copy EPF to Remaining Months", "Import EPF from Previous Year", "Clear EPF Data"
+    return this.page.locator(".v-dialog").filter({ hasText: /Copy EPF|Import EPF|Clear EPF/i });
+  }
+
+  get copyToRemainingOption(): Locator {
+    return this.page.locator(".v-list-item").filter({ hasText: /Copy to remaining/i });
+  }
+
+  get importFromPrevFYOption(): Locator {
+    return this.page.locator(".v-list-item").filter({ hasText: /Import from previous/i });
+  }
+
+  get clearMonthsOption(): Locator {
+    return this.page.locator(".v-list-item").filter({ hasText: /Clear selected/i });
+  }
+
+  get copyConfirmButton(): Locator {
+    return this.copyDialog.getByRole("button", { name: /Copy|Import|Clear/i }).last();
+  }
+
+  get copyCancelButton(): Locator {
+    return this.copyDialog.getByRole("button", { name: /Cancel/i });
+  }
+
   // ============================================
   // Navigation
   // ============================================
@@ -94,11 +151,21 @@ export class EpfPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Wait for EPF Overview content to load (not skeleton)
+    await this.page.locator(".v-card").filter({ hasText: /Current Balance|Monthly Contribution/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 15000 })
+      .catch(() => {});
   }
 
   async navigateToOverview() {
     await this.overviewTab.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(500);
+    // Wait for overview content
+    await this.page.locator(".v-card").filter({ hasText: /Current Balance|Monthly Contribution/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 10000 })
+      .catch(() => {});
   }
 
   async navigateToDetails() {
@@ -131,20 +198,42 @@ export class EpfPage extends BasePage {
     await this.page.waitForTimeout(300);
   }
 
+  async openCopyMenu() {
+    await this.copyMenuButton.click();
+    await this.page.waitForTimeout(200);
+  }
+
+  async openCopyToRemainingDialog() {
+    await this.openCopyMenu();
+    await this.copyToRemainingOption.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async openImportFromPrevFYDialog() {
+    await this.openCopyMenu();
+    await this.importFromPrevFYOption.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async closeCopyDialog() {
+    await this.copyCancelButton.click();
+    await this.page.waitForTimeout(300);
+  }
+
   // ============================================
   // Getters
   // ============================================
 
   async getTotalBalance(): Promise<string> {
-    return await this.getSummaryCardValue("Total Balance");
+    return await this.getSummaryCardValue("Current Balance");
   }
 
-  async getEmployeeShare(): Promise<string> {
-    return await this.getSummaryCardValue("Employee Share");
+  async getMonthlyContribution(): Promise<string> {
+    return await this.getSummaryCardValue("Monthly Contribution");
   }
 
-  async getEmployerShare(): Promise<string> {
-    return await this.getSummaryCardValue("Employer Share");
+  async getProjectedAtRetirement(): Promise<string> {
+    return await this.getSummaryCardValue("Projected at 60");
   }
 
   // ============================================
@@ -194,5 +283,25 @@ export class EpfPage extends BasePage {
   async expectEditModeInactive() {
     // Not in edit mode, edit button should be visible
     await expect(this.editModeButton).toBeVisible();
+  }
+
+  async expectDataCompletionGridVisible() {
+    await expect(this.dataCompletionGrid).toBeVisible();
+  }
+
+  async expectDataCompletionChipVisible() {
+    await expect(this.dataCompletionChip).toBeVisible();
+  }
+
+  async expectCopyMenuButtonVisible() {
+    await expect(this.copyMenuButton).toBeVisible();
+  }
+
+  async expectCopyDialogVisible() {
+    await expect(this.copyDialog).toBeVisible();
+  }
+
+  async expectCopyDialogHidden() {
+    await expect(this.copyDialog).not.toBeVisible();
   }
 }
