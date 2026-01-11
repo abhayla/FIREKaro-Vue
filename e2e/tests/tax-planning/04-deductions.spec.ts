@@ -2,11 +2,18 @@ import { test, expect } from "@playwright/test";
 import { TaxDeductionsPage } from "../../pages/tax-planning";
 import { deductionsData, deductionSummary, hraExemptionData } from "../../fixtures/tax-planning-data";
 
+/**
+ * Tax Deductions Tests
+ *
+ * Structure: Tax Details tab → Deductions accordion section
+ * The deductions section is now inside an accordion in the Tax Details tab
+ */
 test.describe("Tax Deductions (80C, 80D, HRA)", () => {
   let deductionsPage: TaxDeductionsPage;
 
   test.beforeEach(async ({ page }) => {
     deductionsPage = new TaxDeductionsPage(page);
+    // navigateTo() now handles: go to page → click Tax Details tab → expand Deductions accordion
     await deductionsPage.navigateTo();
   });
 

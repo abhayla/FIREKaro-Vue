@@ -3,11 +3,18 @@ import { TaxCalculatorPage } from "../../pages/tax-planning";
 import { oldRegimeSlabs, newRegimeSlabs, calculateTaxForSlab, calculateCess } from "../../fixtures/tax-planning-data";
 import { testUserProfile } from "../../fixtures/unified-profile";
 
+/**
+ * Tax Calculator Tests
+ *
+ * Structure: Tax Details tab → Calculator accordion section
+ * The calculator is now inside an accordion in the Tax Details tab
+ */
 test.describe("Tax Calculator", () => {
   let calculatorPage: TaxCalculatorPage;
 
   test.beforeEach(async ({ page }) => {
     calculatorPage = new TaxCalculatorPage(page);
+    // navigateTo() now handles: go to page → click Tax Details tab → expand Calculator accordion
     await calculatorPage.navigateTo();
   });
 

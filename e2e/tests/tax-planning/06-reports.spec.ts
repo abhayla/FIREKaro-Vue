@@ -1,21 +1,30 @@
 import { test, expect } from "@playwright/test";
 import { ReportsPage } from "../../pages/tax-planning";
 
+/**
+ * Tax Planning Reports Tests
+ *
+ * Structure: Tax Details tab → Reports accordion section
+ * The reports section is now inside an accordion in the Tax Details tab
+ */
 test.describe("Tax Planning Reports", () => {
   let reportsPage: ReportsPage;
 
   test.beforeEach(async ({ page }) => {
     reportsPage = new ReportsPage(page);
+    // navigateTo() now handles: go to page → click Tax Details tab → expand Reports accordion
     await reportsPage.navigateTo();
   });
 
-  test("should load reports page", async ({ page }) => {
+  test("should load reports section", async ({ page }) => {
     await reportsPage.expectPageLoaded();
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/reports/);
+    // URL remains /tax-planning (accordion-based, not route-based)
+    await expect(page).toHaveURL(/\/dashboard\/tax-planning$/);
   });
 
-  test("should display Reports tab as active", async ({ page }) => {
-    await expect(reportsPage.reportsTab).toHaveAttribute("aria-selected", "true");
+  test("should display Tax Details tab as active with Reports expanded", async ({ page }) => {
+    await expect(reportsPage.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(reportsPage.reportsContent).toBeVisible();
   });
 
   test.describe("Controls", () => {

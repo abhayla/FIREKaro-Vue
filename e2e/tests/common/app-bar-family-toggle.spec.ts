@@ -173,7 +173,7 @@ test.describe("App Bar Family Toggle", () => {
       "/dashboard/investments",
       "/dashboard/liabilities",
       "/dashboard/financial-health",
-      "/dashboard/tax-planning",
+      "/tax-planning",
       "/dashboard/non-salary-income",
       "/dashboard/salary",
       "/dashboard/expenses",

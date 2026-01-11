@@ -15,7 +15,7 @@ import { testUserProfile } from "../../fixtures/unified-profile";
 test.describe("Tax Integration", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to tax planning section
-    await page.goto("/dashboard/tax-planning");
+    await page.goto("/tax-planning");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   });

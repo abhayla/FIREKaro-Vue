@@ -1,21 +1,30 @@
 import { test, expect } from "@playwright/test";
 import { ScenariosPage } from "../../pages/tax-planning";
 
+/**
+ * Tax Scenarios Management Tests
+ *
+ * Structure: Tax Details tab → Scenarios accordion section
+ * The scenarios section is now inside an accordion in the Tax Details tab
+ */
 test.describe("Tax Scenarios Management", () => {
   let scenariosPage: ScenariosPage;
 
   test.beforeEach(async ({ page }) => {
     scenariosPage = new ScenariosPage(page);
+    // navigateTo() now handles: go to page → click Tax Details tab → expand Scenarios accordion
     await scenariosPage.navigateTo();
   });
 
-  test("should load scenarios page", async ({ page }) => {
+  test("should load scenarios section", async ({ page }) => {
     await scenariosPage.expectPageLoaded();
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/scenarios/);
+    // URL remains /tax-planning (accordion-based, not route-based)
+    await expect(page).toHaveURL(/\/dashboard\/tax-planning$/);
   });
 
-  test("should display Scenarios tab as active", async ({ page }) => {
-    await expect(scenariosPage.scenariosTab).toHaveAttribute("aria-selected", "true");
+  test("should display Tax Details tab as active with Scenarios expanded", async ({ page }) => {
+    await expect(scenariosPage.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(scenariosPage.scenariosContent).toBeVisible();
   });
 
   test.describe("When no baseline exists", () => {

@@ -1,21 +1,30 @@
 import { test, expect } from "@playwright/test";
 import { AdvanceTaxPage } from "../../pages/tax-planning";
 
+/**
+ * Advance Tax Management Tests
+ *
+ * Structure: Tax Details tab → Advance Tax accordion section
+ * The advance tax section is now inside an accordion in the Tax Details tab
+ */
 test.describe("Advance Tax Management", () => {
   let advanceTaxPage: AdvanceTaxPage;
 
   test.beforeEach(async ({ page }) => {
     advanceTaxPage = new AdvanceTaxPage(page);
+    // navigateTo() now handles: go to page → click Tax Details tab → expand Advance Tax accordion
     await advanceTaxPage.navigateTo();
   });
 
-  test("should load advance tax page", async ({ page }) => {
+  test("should load advance tax section", async ({ page }) => {
     await advanceTaxPage.expectPageLoaded();
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/advance-tax/);
+    // URL remains /tax-planning (accordion-based, not route-based)
+    await expect(page).toHaveURL(/\/dashboard\/tax-planning$/);
   });
 
-  test("should display Advance Tax tab as active", async ({ page }) => {
-    await expect(advanceTaxPage.advanceTaxTab).toHaveAttribute("aria-selected", "true");
+  test("should display Tax Details tab as active with Advance Tax expanded", async ({ page }) => {
+    await expect(advanceTaxPage.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(advanceTaxPage.advanceTaxContent).toBeVisible();
   });
 
   test.describe("When no estimate exists", () => {
