@@ -177,4 +177,22 @@ export class EpfPage extends BasePage {
   async expectProjectionChartVisible() {
     await expect(this.projectionChart).toBeVisible();
   }
+
+  async expectSummaryCardsVisible() {
+    await expect(this.totalBalanceCard).toBeVisible();
+  }
+
+  async expectFinancialYearSelected(fy: string) {
+    await expect(this.fySelector).toContainText(fy);
+  }
+
+  async expectEditModeActive() {
+    // In edit mode, save button should be visible and edit button hidden
+    await expect(this.saveChangesButton).toBeVisible();
+  }
+
+  async expectEditModeInactive() {
+    // Not in edit mode, edit button should be visible
+    await expect(this.editModeButton).toBeVisible();
+  }
 }

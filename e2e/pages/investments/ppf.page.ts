@@ -227,4 +227,25 @@ export class PpfPage extends BasePage {
   async expectAddContributionDialogClosed() {
     await expect(this.addContributionDialog).not.toBeVisible();
   }
+
+  async expectFinancialYearSelected(fy: string) {
+    await expect(this.fySelector).toContainText(fy);
+  }
+
+  async expectSummaryCardsVisible() {
+    await expect(this.currentBalanceCard).toBeVisible();
+  }
+
+  // Additional actions for contribution management
+  async saveContribution() {
+    const saveBtn = this.addContributionDialog.getByRole("button", { name: /Save|Add|Submit/i });
+    await saveBtn.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  async cancelAddContribution() {
+    const cancelBtn = this.addContributionDialog.getByRole("button", { name: /Cancel|Close/i });
+    await cancelBtn.click();
+    await this.page.waitForTimeout(300);
+  }
 }
