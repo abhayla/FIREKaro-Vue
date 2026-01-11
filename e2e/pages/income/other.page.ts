@@ -1,13 +1,13 @@
 import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
-import type { OtherIncomeTestData } from "../../fixtures/non-salary-income-data";
+import type { OtherIncomeTestData } from "../../fixtures/income-data";
 
 /**
  * Other Income Page Object
  * Handles interest, dividends, gifts, and other miscellaneous income
  */
 export class OtherIncomePage extends BasePage {
-  readonly url = "/dashboard/non-salary-income/other";
+  readonly url = "/income/other";
 
   constructor(page: Page) {
     super(page);
@@ -18,7 +18,7 @@ export class OtherIncomePage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Non-Salary Income/i });
+    return this.page.getByRole("heading", { name: /Income/i });
   }
 
   get addIncomeButton(): Locator {
@@ -311,9 +311,9 @@ export class OtherIncomePage extends BasePage {
 
   async expectPageLoaded() {
     // Wait for subtitle to be visible (rendered by SectionHeader)
-    await expect(this.page.locator("p.text-body-2").filter({ hasText: "Other Income Sources" })).toBeVisible();
-    // Also check the Add button is ready
-    await expect(this.addIncomeButton).toBeVisible();
+    await expect(this.page.locator("p.text-body-2").filter({ hasText: "Other" })).toBeVisible();
+    // Check the page has loaded by looking for the tab structure (Overview tab is default)
+    await expect(this.page.getByRole("tab", { name: "Overview" })).toBeVisible();
   }
 
   async expectFormDialogVisible() {

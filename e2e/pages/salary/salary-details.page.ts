@@ -12,7 +12,7 @@ export class SalaryDetailsPage extends BasePage {
 
   // Navigation
   async navigateTo() {
-    await this.goto("/dashboard/salary");
+    await this.goto("/income/salary");
     await this.waitForPageLoad();
     // Click on Salary Details tab - use v-tab class instead of role
     const detailsTab = this.page.locator(".v-tab").filter({ hasText: "Salary Details" });

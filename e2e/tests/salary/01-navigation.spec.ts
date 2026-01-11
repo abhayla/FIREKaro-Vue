@@ -4,7 +4,7 @@ import { SalaryOverviewPage } from "../../pages/salary";
 test.describe("Salary Section Navigation", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to salary section
-    await page.goto("/dashboard/salary");
+    await page.goto("/income/salary");
     await page.waitForLoadState("domcontentloaded");
     // Wait for first card to appear (indicates data loaded)
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
@@ -14,7 +14,7 @@ test.describe("Salary Section Navigation", () => {
     // Check page title or salary heading
     const hasTitle = await page.getByText("Salary", { exact: true }).first().isVisible().catch(() => false);
     expect(hasTitle).toBeTruthy();
-    await expect(page).toHaveURL(/\/dashboard\/salary$/);
+    await expect(page).toHaveURL(/\/income\/salary$/);
     // Overview tab should be selected by default - using v-tab selector
     const overviewTab = page.locator(".v-tab").filter({ hasText: "Overview" });
     await expect(overviewTab).toHaveAttribute("aria-selected", "true");
@@ -88,7 +88,7 @@ test.describe("Salary Section Navigation", () => {
       await sidebarSalary.click();
       await page.waitForLoadState("domcontentloaded");
     }
-    await expect(page).toHaveURL(/\/dashboard\/salary/);
+    await expect(page).toHaveURL(/\/income\/salary/);
   });
 
   test("should show data completion indicator in Overview tab", async ({ page }) => {

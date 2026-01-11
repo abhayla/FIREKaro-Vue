@@ -1,13 +1,13 @@
 import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
-import type { CapitalGainsTestData } from "../../fixtures/non-salary-income-data";
+import type { CapitalGainsTestData } from "../../fixtures/income-data";
 
 /**
  * Capital Gains Page Object
  * Handles STCG/LTCG from stocks, mutual funds, property
  */
 export class CapitalGainsPage extends BasePage {
-  readonly url = "/dashboard/non-salary-income/capital-gains";
+  readonly url = "/income/capital-gains";
 
   constructor(page: Page) {
     super(page);
@@ -18,7 +18,7 @@ export class CapitalGainsPage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Non-Salary Income/i });
+    return this.page.getByRole("heading", { name: /Income/i });
   }
 
   get addTransactionButton(): Locator {
@@ -314,8 +314,8 @@ export class CapitalGainsPage extends BasePage {
   async expectPageLoaded() {
     // Wait for subtitle to be visible (rendered by SectionHeader)
     await expect(this.page.locator("p.text-body-2").filter({ hasText: "Capital Gains" })).toBeVisible();
-    // Also check the Add button is ready
-    await expect(this.addTransactionButton).toBeVisible();
+    // Check the page has loaded by looking for the tab structure (Overview tab is default)
+    await expect(this.page.getByRole("tab", { name: "Overview" })).toBeVisible();
   }
 
   async expectFormDialogVisible() {

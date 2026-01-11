@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Page for managing FD, RD, Savings, P2P lending interest
  */
 export class InterestIncomePage extends BasePage {
-  readonly url = "/dashboard/non-salary-income/interest";
+  readonly url = "/income/interest";
 
   constructor(page: Page) {
     super(page);
@@ -200,14 +200,14 @@ export class InterestIncomePage extends BasePage {
 
   async expectPageLoaded() {
     // Wait for the URL to be correct
-    await this.page.waitForURL("**/non-salary-income/interest**");
+    await this.page.waitForURL("**/income/interest**");
     // Wait for any content to render (page may have rendering issues)
     // Try multiple selectors to be more resilient
     try {
-      await expect(this.page.getByRole("heading", { name: /Non-Salary Income/i })).toBeVisible({ timeout: 5000 });
+      await expect(this.page.getByRole("heading", { name: /Income/i })).toBeVisible({ timeout: 5000 });
     } catch {
       // If heading not found, just verify URL is correct
-      await expect(this.page.url()).toContain("/non-salary-income/interest");
+      await expect(this.page.url()).toContain("/income/interest");
     }
   }
 

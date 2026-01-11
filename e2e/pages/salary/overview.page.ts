@@ -2,7 +2,7 @@ import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
 /**
- * Page Object for Salary Overview Tab (/dashboard/salary)
+ * Page Object for Salary Overview Tab (/income/salary)
  * Updated for new 2-tab structure (Overview + Salary Details)
  */
 export class SalaryOverviewPage extends BasePage {
@@ -12,7 +12,7 @@ export class SalaryOverviewPage extends BasePage {
 
   // Navigation
   async navigateTo() {
-    await this.goto("/dashboard/salary");
+    await this.goto("/income/salary");
     await this.waitForPageLoad();
   }
 

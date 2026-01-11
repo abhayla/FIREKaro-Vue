@@ -14,31 +14,22 @@ const userStore = useUserStore();
 // Fetch user session on mount
 userStore.fetchSession();
 
-// Navigation sections (9 sections from Feature-Reorganization-Plan)
+// Navigation sections (8 sections - Salary consolidated under Income)
 const sections = [
   {
-    title: "Salary",
-    icon: "mdi-cash-multiple",
-    route: "/dashboard/salary",
-    // Single page with 2 tabs (Overview + Salary Details) - no sub-pages needed
-  },
-  {
-    title: "Non-Salary Income",
+    title: "Income",
     icon: "mdi-cash-plus",
-    route: "/dashboard/non-salary-income",
+    route: "/income",
     children: [
-      { title: "Overview", route: "/dashboard/non-salary-income" },
-      {
-        title: "Business Income",
-        route: "/dashboard/non-salary-income/business",
-      },
-      { title: "Rental Income", route: "/dashboard/non-salary-income/rental" },
-      {
-        title: "Capital Gains",
-        route: "/dashboard/non-salary-income/capital-gains",
-      },
-      { title: "Other Sources", route: "/dashboard/non-salary-income/other" },
-      { title: "Reports", route: "/dashboard/non-salary-income/reports" },
+      { title: "Overview", route: "/income" },
+      { title: "Salary", route: "/income/salary" },
+      { title: "Business Income", route: "/income/business" },
+      { title: "Rental Income", route: "/income/rental" },
+      { title: "Capital Gains", route: "/income/capital-gains" },
+      { title: "Interest Income", route: "/income/interest" },
+      { title: "Dividend Income", route: "/income/dividends" },
+      { title: "Other Sources", route: "/income/other" },
+      { title: "Reports", route: "/income/reports" },
     ],
   },
   {

@@ -4,8 +4,8 @@ import { Page, Locator, expect } from "@playwright/test";
  * Dashboard section routes for navigation
  */
 export const DASHBOARD_SECTIONS = {
-  salary: "/dashboard/salary",
-  "non-salary-income": "/dashboard/non-salary-income",
+  income: "/income",
+  salary: "/income/salary",
   "tax-planning": "/dashboard/tax-planning",
   expenses: "/dashboard/expenses",
   investments: "/dashboard/investments",

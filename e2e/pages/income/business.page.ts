@@ -1,13 +1,13 @@
 import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
-import type { BusinessIncomeTestData } from "../../fixtures/non-salary-income-data";
+import type { BusinessIncomeTestData } from "../../fixtures/income-data";
 
 /**
  * Business Income Page Object
  * Handles business/profession income (44AD/44ADA)
  */
 export class BusinessIncomePage extends BasePage {
-  readonly url = "/dashboard/non-salary-income/business";
+  readonly url = "/income/business";
 
   constructor(page: Page) {
     super(page);
@@ -18,7 +18,7 @@ export class BusinessIncomePage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Non-Salary Income/i });
+    return this.page.getByRole("heading", { name: /Income/i });
   }
 
   get addBusinessButton(): Locator {
@@ -113,11 +113,37 @@ export class BusinessIncomePage extends BasePage {
     await this.waitForPageLoad();
   }
 
+  // Tab locators
+  get overviewTab(): Locator {
+    return this.page.getByRole("tab", { name: "Overview" });
+  }
+
+  get businessDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: "Business Details" });
+  }
+
+  async switchToDetailsTab() {
+    await this.businessDetailsTab.click();
+    await this.page.waitForTimeout(300);
+    // Wait for Add button to be visible
+    await this.addBusinessButton.waitFor({ state: "visible", timeout: 10000 });
+  }
+
+  async switchToOverviewTab() {
+    await this.overviewTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
   // ============================================
   // Form Actions
   // ============================================
 
   async openAddForm() {
+    // First ensure we're on the Business Details tab where Add button is
+    const isAddButtonVisible = await this.addBusinessButton.isVisible().catch(() => false);
+    if (!isAddButtonVisible) {
+      await this.switchToDetailsTab();
+    }
     await this.addBusinessButton.click();
     await this.businessFormDialog.waitFor({ state: "visible" });
   }
@@ -267,8 +293,8 @@ export class BusinessIncomePage extends BasePage {
   async expectPageLoaded() {
     // Wait for subtitle to be visible (rendered by SectionHeader)
     await expect(this.page.locator("p.text-body-2").filter({ hasText: "Business & Professional" })).toBeVisible();
-    // Also check the Add button is ready
-    await expect(this.addBusinessButton).toBeVisible();
+    // Check the page has loaded by looking for the tab structure (Overview tab is default)
+    await expect(this.page.getByRole("tab", { name: "Overview" })).toBeVisible();
   }
 
   async expectFormDialogVisible() {

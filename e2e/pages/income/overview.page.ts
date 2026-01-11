@@ -2,12 +2,12 @@ import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
 /**
- * Non-Salary Income Overview Page Object
+ * Income Overview Page Object
  * Main overview page showing all income types
  */
-export class NonSalaryOverviewPage extends BasePage {
+export class IncomeOverviewPage extends BasePage {
   // Page URL
-  readonly url = "/dashboard/non-salary-income";
+  readonly url = "/income";
 
   constructor(page: Page) {
     super(page);
@@ -18,7 +18,7 @@ export class NonSalaryOverviewPage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Non-Salary Income/i });
+    return this.page.getByRole("heading", { name: /Income/i });
   }
 
   get addIncomeButton(): Locator {
@@ -52,7 +52,7 @@ export class NonSalaryOverviewPage extends BasePage {
 
   // Summary values
   get totalIncomeValue(): Locator {
-    return this.getSummaryCardByTitle("Total Non-Salary Income").locator(".text-h4, .text-h5, .text-currency").first();
+    return this.getSummaryCardByTitle("Total Income").locator(".text-h4, .text-h5, .text-currency").first();
   }
 
   // Tabs
@@ -197,7 +197,7 @@ export class NonSalaryOverviewPage extends BasePage {
     return (await valueElement.textContent()) || "₹0";
   }
 
-  async getTotalNonSalaryIncome(): Promise<string> {
+  async getTotalIncome(): Promise<string> {
     return (await this.totalIncomeValue.textContent()) || "₹0";
   }
 
