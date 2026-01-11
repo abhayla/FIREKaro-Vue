@@ -61,6 +61,8 @@ const sections = [
       { title: "Track Expenses", route: "/expenses/track" },
       { title: "Budgets", route: "/expenses/budgets" },
       { title: "Recurring", route: "/expenses/recurring" },
+      { title: "Categories", route: "/expenses/categories" },
+      { title: "Reports", route: "/expenses/reports" },
     ],
   },
   {

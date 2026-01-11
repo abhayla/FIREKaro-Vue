@@ -290,6 +290,16 @@ const router = createRouter({
           name: "expenses-recurring",
           component: () => import("@/pages/expenses/recurring.vue"),
         },
+        {
+          path: "reports",
+          name: "expenses-reports",
+          component: () => import("@/pages/expenses/reports.vue"),
+        },
+        {
+          path: "categories",
+          name: "expenses-categories",
+          component: () => import("@/pages/expenses/categories.vue"),
+        },
       ],
     },
     // Legacy URL Redirects
