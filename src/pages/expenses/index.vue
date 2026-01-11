@@ -11,12 +11,13 @@ import {
   getCurrentMonth,
 } from '@/composables/useExpenses'
 
-const tabs = [
+// Section-level tabs for expenses navigation
+const expensesTabs = [
   { title: 'Overview', route: '/expenses' },
   { title: 'Track', route: '/expenses/track' },
   { title: 'Budgets', route: '/expenses/budgets' },
-  { title: 'Reports', route: '/expenses/reports' },
   { title: 'Categories', route: '/expenses/categories' },
+  { title: 'Reports', route: '/expenses/reports' },
 ]
 
 // Current month filter
@@ -52,7 +53,7 @@ const formatDate = (date: string) =>
       title="Expenses"
       subtitle="Track and manage your spending"
       icon="mdi-cart-outline"
-      :tabs="tabs"
+      :tabs="expensesTabs"
     />
 
     <!-- Month Filter -->
