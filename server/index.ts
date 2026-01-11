@@ -31,6 +31,7 @@ import expensesRoutes from './routes/expenses'
 import budgetsRoutes from './routes/budgets'
 import expensesAiRoutes from './routes/expenses-ai'
 import expenseRulesRoutes from './routes/expense-rules'
+import recurringExpensesRoutes from './routes/recurring-expenses'
 
 // Alert routes
 import alertsRoutes from './routes/alerts'
@@ -98,6 +99,7 @@ app.route('/api/expenses', expensesRoutes)
 app.route('/api/expenses/ai', expensesAiRoutes)
 app.route('/api/budgets', budgetsRoutes)
 app.route('/api/expense-rules', expenseRulesRoutes)
+app.route('/api/recurring-expenses', recurringExpensesRoutes)
 
 // API routes - Alerts
 app.route('/api/alerts', alertsRoutes)
