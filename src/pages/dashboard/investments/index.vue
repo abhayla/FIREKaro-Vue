@@ -21,8 +21,10 @@ const tabs = [
   { title: 'Portfolio', route: '/dashboard/investments' },
   { title: 'Stocks', route: '/dashboard/investments/stocks' },
   { title: 'Mutual Funds', route: '/dashboard/investments/mutual-funds' },
-  { title: 'EPF & PPF', route: '/dashboard/investments/epf-ppf' },
+  { title: 'EPF', route: '/dashboard/investments/epf' },
+  { title: 'PPF', route: '/dashboard/investments/ppf' },
   { title: 'NPS', route: '/dashboard/investments/nps' },
+  { title: 'ESOPs', route: '/dashboard/investments/esop' },
   { title: 'Property', route: '/dashboard/investments/property' },
   { title: 'Reports', route: '/dashboard/investments/reports' },
 ]
@@ -389,7 +391,7 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
           <v-card>
             <v-card-title class="d-flex align-center justify-space-between">
               <span class="text-subtitle-1">Retirement Funds</span>
-              <v-btn variant="text" size="small" color="primary" :to="'/dashboard/investments/epf-ppf'">
+              <v-btn variant="text" size="small" color="primary" :to="'/dashboard/investments/epf'">
                 View Details
               </v-btn>
             </v-card-title>

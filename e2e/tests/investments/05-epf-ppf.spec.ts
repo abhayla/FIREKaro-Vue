@@ -1,50 +1,39 @@
 import { test, expect } from "@playwright/test";
-import { EpfPpfPage } from "../../pages/investments";
-import { epfPpfData, getRetirementProjection } from "../../fixtures/investments-data";
+import { EpfPage } from "../../pages/investments";
 
-test.describe("EPF & PPF Accounts", () => {
-  let epfPpfPage: EpfPpfPage;
+/**
+ * Legacy EPF-PPF Tests
+ * These tests verify that the old combined EPF-PPF URL properly redirects
+ * to the new separate EPF page.
+ *
+ * For EPF-specific tests, see 05-epf.spec.ts
+ * For PPF-specific tests, see 05-ppf.spec.ts
+ */
+test.describe("EPF-PPF Legacy Redirect", () => {
+  test("should redirect /epf-ppf to /epf", async ({ page }) => {
+    await page.goto("/dashboard/investments/epf-ppf");
+    await page.waitForLoadState("domcontentloaded");
 
-  test.beforeEach(async ({ page }) => {
-    epfPpfPage = new EpfPpfPage(page);
-    await epfPpfPage.navigateTo();
+    // Should redirect to EPF page
+    await expect(page).toHaveURL(/\/dashboard\/investments\/epf$/);
   });
 
-  test("should display EPF/PPF page correctly", async ({ page }) => {
-    await epfPpfPage.expectPageLoaded();
+  test("should load EPF page after redirect", async ({ page }) => {
+    await page.goto("/dashboard/investments/epf-ppf");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const epfPage = new EpfPage(page);
+    await epfPage.expectPageLoaded();
   });
 
-  test("should show EPF card", async ({ page }) => {
-    await epfPpfPage.expectEpfCardVisible();
-    const epfBalance = await epfPpfPage.getEpfBalance();
-    expect(epfBalance).toContain("₹");
-  });
+  test("should show separate EPF and PPF tabs after redirect", async ({ page }) => {
+    await page.goto("/dashboard/investments/epf-ppf");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
-  test("should show PPF card", async ({ page }) => {
-    await epfPpfPage.expectPpfCardVisible();
-    const ppfBalance = await epfPpfPage.getPpfBalance();
-    expect(ppfBalance).toContain("₹");
-  });
-
-  test("should show summary cards", async ({ page }) => {
-    await expect(epfPpfPage.totalBalanceCard).toBeVisible();
-    await expect(epfPpfPage.annualContributionCard).toBeVisible();
-    await expect(epfPpfPage.projectedMaturityCard).toBeVisible();
-  });
-
-  test("should edit EPF contribution", async ({ page }) => {
-    await epfPpfPage.editEpf();
-    await epfPpfPage.expectFormDialogVisible();
-
-    const epfData = epfPpfData.find((a) => a.type === "EPF")!;
-    await epfPpfPage.updateEpfContribution(epfData.monthlyContribution! + 1000);
-    await epfPpfPage.expectFormDialogClosed();
-  });
-
-  test("should show projected maturity value", async ({ page }) => {
-    const projectedMaturity = await epfPpfPage.getProjectedMaturity();
-    expect(projectedMaturity).toContain("₹");
-    const numericValue = epfPpfPage.parseINR(projectedMaturity);
-    expect(numericValue).toBeGreaterThan(0);
+    // Should now show separate EPF and PPF tabs (not combined)
+    await expect(page.getByRole("tab", { name: "EPF" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "PPF" })).toBeVisible();
   });
 });

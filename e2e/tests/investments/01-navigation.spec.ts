@@ -3,7 +3,8 @@ import {
   InvestmentsOverviewPage,
   StocksPage,
   MutualFundsPage,
-  EpfPpfPage,
+  EpfPage,
+  PpfPage,
   NpsPage,
   PropertyPage,
   InvestmentReportsPage,
@@ -28,14 +29,15 @@ test.describe("Investments Navigation", () => {
     await expect(page.getByRole("tab", { name: "Portfolio" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Stocks" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Mutual Funds" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /EPF.*PPF/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "EPF" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "PPF" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "NPS" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "ESOPs" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Property" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Reports" })).toBeVisible();
   });
 
   test("should navigate to Stocks page", async ({ page }) => {
-    // Use direct navigation since tab clicks have timing issues with Vue Router
     await page.goto("/dashboard/investments/stocks");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
@@ -53,13 +55,30 @@ test.describe("Investments Navigation", () => {
     await mf.expectPageLoaded();
   });
 
-  test("should navigate to EPF/PPF page", async ({ page }) => {
-    await page.goto("/dashboard/investments/epf-ppf");
+  test("should navigate to EPF page", async ({ page }) => {
+    await page.goto("/dashboard/investments/epf");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
-    const epfPpf = new EpfPpfPage(page);
-    await epfPpf.expectPageLoaded();
+    const epf = new EpfPage(page);
+    await epf.expectPageLoaded();
+  });
+
+  test("should navigate to PPF page", async ({ page }) => {
+    await page.goto("/dashboard/investments/ppf");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const ppf = new PpfPage(page);
+    await ppf.expectPageLoaded();
+  });
+
+  test("should redirect old EPF-PPF URL to EPF", async ({ page }) => {
+    await page.goto("/dashboard/investments/epf-ppf");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Should redirect to EPF page
+    await expect(page).toHaveURL(/\/dashboard\/investments\/epf$/);
   });
 
   test("should navigate to NPS page", async ({ page }) => {
@@ -101,5 +120,50 @@ test.describe("Investments Navigation", () => {
     const stocksTab = page.getByRole("tab", { name: "Stocks" });
     await expect(stocksTab).toHaveAttribute("aria-selected", "true");
     await expect(portfolioTab).toHaveAttribute("aria-selected", "false");
+  });
+
+  test("should show two-tab pattern on EPF page", async ({ page }) => {
+    await page.goto("/dashboard/investments/epf");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    // Check for Overview and Item Details tabs
+    await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Item Details" })).toBeVisible();
+  });
+
+  test("should show two-tab pattern on PPF page", async ({ page }) => {
+    await page.goto("/dashboard/investments/ppf");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    // Check for Overview and Item Details tabs
+    await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Item Details" })).toBeVisible();
+  });
+
+  test("should switch between Overview and Item Details tabs without URL change", async ({ page }) => {
+    await page.goto("/dashboard/investments/epf");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+
+    const currentUrl = page.url();
+
+    // Click Item Details tab
+    await page.getByRole("tab", { name: "Item Details" }).click();
+    await page.waitForTimeout(300);
+
+    // URL should not change
+    await expect(page).toHaveURL(currentUrl);
+
+    // Item Details tab should be active
+    await expect(page.getByRole("tab", { name: "Item Details" })).toHaveAttribute("aria-selected", "true");
+
+    // Click back to Overview
+    await page.getByRole("tab", { name: "Overview" }).click();
+    await page.waitForTimeout(300);
+
+    // URL should still be the same
+    await expect(page).toHaveURL(currentUrl);
   });
 });

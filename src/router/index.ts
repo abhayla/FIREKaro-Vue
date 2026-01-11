@@ -133,9 +133,14 @@ const router = createRouter({
             import("@/pages/dashboard/investments/mutual-funds.vue"),
         },
         {
-          path: "investments/epf-ppf",
-          name: "investments-epf-ppf",
-          component: () => import("@/pages/dashboard/investments/epf-ppf.vue"),
+          path: "investments/epf",
+          name: "investments-epf",
+          component: () => import("@/pages/dashboard/investments/epf.vue"),
+        },
+        {
+          path: "investments/ppf",
+          name: "investments-ppf",
+          component: () => import("@/pages/dashboard/investments/ppf.vue"),
         },
         {
           path: "investments/nps",
@@ -318,15 +323,20 @@ const router = createRouter({
     },
     {
       path: "/retirement",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/dashboard/investments/epf",
     },
     {
       path: "/epf",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/dashboard/investments/epf",
     },
     {
       path: "/ppf",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/dashboard/investments/ppf",
+    },
+    // Legacy combined EPF-PPF page redirect
+    {
+      path: "/dashboard/investments/epf-ppf",
+      redirect: "/dashboard/investments/epf",
     },
     {
       path: "/nps",

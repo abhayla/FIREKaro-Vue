@@ -26,8 +26,10 @@ const tabs = [
   { title: 'Portfolio', route: '/dashboard/investments' },
   { title: 'Stocks', route: '/dashboard/investments/stocks' },
   { title: 'Mutual Funds', route: '/dashboard/investments/mutual-funds' },
-  { title: 'EPF & PPF', route: '/dashboard/investments/epf-ppf' },
+  { title: 'EPF', route: '/dashboard/investments/epf' },
+  { title: 'PPF', route: '/dashboard/investments/ppf' },
   { title: 'NPS', route: '/dashboard/investments/nps' },
+  { title: 'ESOPs', route: '/dashboard/investments/esop' },
   { title: 'Property', route: '/dashboard/investments/property' },
   { title: 'Reports', route: '/dashboard/investments/reports' },
 ]
