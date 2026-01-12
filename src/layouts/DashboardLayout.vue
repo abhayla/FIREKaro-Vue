@@ -14,20 +14,22 @@ const userStore = useUserStore();
 // Fetch user session on mount
 userStore.fetchSession();
 
-// Navigation sections (8 sections - Salary + Non-Salary merged into Income)
+// Navigation sections (8 sections - Salary consolidated under Income)
 const sections = [
   {
     title: "Income",
     icon: "mdi-currency-inr",
-    route: "/dashboard/income",
+    route: "/income",
     children: [
-      { title: "Overview", route: "/dashboard/income" },
-      { title: "Salary", route: "/dashboard/income/salary" },
-      { title: "Business Income", route: "/dashboard/income/business" },
-      { title: "Rental Income", route: "/dashboard/income/rental" },
-      { title: "Capital Gains", route: "/dashboard/income/capital-gains" },
-      { title: "Other Sources", route: "/dashboard/income/other" },
-      { title: "Reports", route: "/dashboard/income/reports" },
+      { title: "Overview", route: "/income" },
+      { title: "Salary", route: "/income/salary" },
+      { title: "Business Income", route: "/income/business" },
+      { title: "Rental Income", route: "/income/rental" },
+      { title: "Capital Gains", route: "/income/capital-gains" },
+      { title: "Interest Income", route: "/income/interest" },
+      { title: "Dividend Income", route: "/income/dividends" },
+      { title: "Other Sources", route: "/income/other" },
+      { title: "Reports", route: "/income/reports" },
     ],
   },
   {

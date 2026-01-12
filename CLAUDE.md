@@ -35,7 +35,7 @@ FIREKaro is an Indian financial planning SPA built with Vue 3 + Vite + Vuetify 3
 - API proxy: Frontend requests to `/api/*` are proxied to `http://localhost:3000` (configured in `vite.config.ts`)
 
 ### Dashboard Sections (9 total)
-`salary` | `non-salary-income` | `tax-planning` | `expenses` | `investments` | `liabilities` | `insurance` | `financial-health` | `fire-goals`
+`salary` | `income` | `tax-planning` | `expenses` | `investments` | `liabilities` | `insurance` | `financial-health` | `fire-goals`
 
 ## Commands
 

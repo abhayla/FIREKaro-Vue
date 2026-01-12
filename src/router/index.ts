@@ -13,6 +13,59 @@ const router = createRouter({
       name: "signin",
       component: () => import("@/pages/auth/signin.vue"),
     },
+    // Income Section (moved to top-level /income)
+    {
+      path: "/income",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "income",
+          component: () => import("@/pages/dashboard/income/index.vue"),
+        },
+        {
+          path: "salary",
+          name: "income-salary",
+          component: () => import("@/pages/dashboard/salary/index.vue"),
+        },
+        {
+          path: "business",
+          name: "income-business",
+          component: () => import("@/pages/dashboard/income/business.vue"),
+        },
+        {
+          path: "rental",
+          name: "income-rental",
+          component: () => import("@/pages/dashboard/income/rental.vue"),
+        },
+        {
+          path: "capital-gains",
+          name: "income-capital-gains",
+          component: () => import("@/pages/dashboard/income/capital-gains.vue"),
+        },
+        {
+          path: "interest",
+          name: "income-interest",
+          component: () => import("@/pages/dashboard/income/interest.vue"),
+        },
+        {
+          path: "dividends",
+          name: "income-dividends",
+          component: () => import("@/pages/dashboard/income/dividends.vue"),
+        },
+        {
+          path: "other",
+          name: "income-other",
+          component: () => import("@/pages/dashboard/income/other.vue"),
+        },
+        {
+          path: "reports",
+          name: "income-reports",
+          component: () => import("@/pages/dashboard/income/reports.vue"),
+        },
+      ],
+    },
     {
       path: "/dashboard",
       component: () => import("@/layouts/DashboardLayout.vue"),
@@ -23,61 +76,7 @@ const router = createRouter({
           name: "dashboard",
           component: () => import("@/pages/dashboard/index.vue"),
         },
-        // Section 1: Income (merged Salary + Non-Salary Income)
-        {
-          path: "income",
-          name: "income",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/index.vue"),
-        },
-        {
-          path: "income/salary",
-          name: "income-salary",
-          component: () => import("@/pages/dashboard/salary/index.vue"),
-        },
-        {
-          path: "income/business",
-          name: "income-business",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/business.vue"),
-        },
-        {
-          path: "income/rental",
-          name: "income-rental",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/rental.vue"),
-        },
-        {
-          path: "income/capital-gains",
-          name: "income-capital-gains",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/capital-gains.vue"),
-        },
-        {
-          path: "income/interest",
-          name: "income-interest",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/interest.vue"),
-        },
-        {
-          path: "income/dividends",
-          name: "income-dividends",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/dividends.vue"),
-        },
-        {
-          path: "income/other",
-          name: "income-other",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/other.vue"),
-        },
-        {
-          path: "income/reports",
-          name: "income-reports",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/reports.vue"),
-        },
-        // Section 2: Tax Planning
+// Section 2: Tax Planning (Income is at top-level /income)
         {
           path: "tax-planning",
           name: "tax-planning",
@@ -302,56 +301,42 @@ const router = createRouter({
       ],
     },
     // Legacy URL Redirects
-    // Salary section - redirect to new income/salary path
+    // Income section - /dashboard/income/* redirects to /income/*
+    {
+      path: "/dashboard/income",
+      redirect: "/income",
+    },
+    {
+      path: "/dashboard/income/:path(.*)",
+      redirect: (to) => `/income/${to.params.path}`,
+    },
+    // Salary section - /dashboard/salary redirects to /income/salary
     {
       path: "/dashboard/salary",
-      redirect: "/dashboard/income/salary",
+      redirect: "/income/salary",
     },
     {
       path: "/dashboard/salary/current",
-      redirect: "/dashboard/income/salary",
+      redirect: "/income/salary",
     },
     {
       path: "/dashboard/salary/history",
-      redirect: "/dashboard/income/salary",
+      redirect: "/income/salary",
     },
     {
       path: "/dashboard/salary/reports",
-      redirect: "/dashboard/income/salary",
+      redirect: "/income/salary",
     },
-    // Non-Salary Income section - redirect to new income paths
+    // Legacy non-salary-income redirects (now to /income)
     {
       path: "/dashboard/non-salary-income",
-      redirect: "/dashboard/income",
+      redirect: "/income",
     },
     {
-      path: "/dashboard/non-salary-income/business",
-      redirect: "/dashboard/income/business",
+      path: "/dashboard/non-salary-income/:path(.*)",
+      redirect: (to) => `/income/${to.params.path}`,
     },
-    {
-      path: "/dashboard/non-salary-income/rental",
-      redirect: "/dashboard/income/rental",
-    },
-    {
-      path: "/dashboard/non-salary-income/capital-gains",
-      redirect: "/dashboard/income/capital-gains",
-    },
-    {
-      path: "/dashboard/non-salary-income/interest",
-      redirect: "/dashboard/income/interest",
-    },
-    {
-      path: "/dashboard/non-salary-income/dividends",
-      redirect: "/dashboard/income/dividends",
-    },
-    {
-      path: "/dashboard/non-salary-income/other",
-      redirect: "/dashboard/income/other",
-    },
-    {
-      path: "/dashboard/non-salary-income/reports",
-      redirect: "/dashboard/income/reports",
-    },
+    // Investment shortcut redirects
     {
       path: "/portfolio",
       redirect: "/dashboard/investments",

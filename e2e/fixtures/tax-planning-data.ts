@@ -6,7 +6,7 @@
  */
 
 import { testUserProfile } from './unified-profile';
-import { nonSalaryIncomeSummary } from './non-salary-income-data';
+import { incomeSummary } from './income-data';
 
 // ============================================
 // Types
@@ -226,7 +226,7 @@ export const newRegimeSlabs: TaxSlabTestData[] = [
 
 // Calculate total income
 const salaryIncome = testUserProfile.annualGross;
-const businessIncome = 312800; // From non-salary: 300000 + 12800
+const businessIncome = 312800; // From income: 300000 + 12800
 const rentalIncome = 21600; // Net annual value
 const capitalGains = 220000; // Total taxable gains
 const otherIncome = 170000; // Interest + Dividends

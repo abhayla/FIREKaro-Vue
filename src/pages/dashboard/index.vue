@@ -155,9 +155,9 @@ const userStore = useUserStore();
                 to="/dashboard/expenses/track"
               />
               <v-list-item
-                prepend-icon="mdi-currency-inr"
+                prepend-icon="mdi-cash-plus"
                 title="Record Income"
-                to="/dashboard/income/salary"
+                to="/income"
               />
               <v-list-item
                 prepend-icon="mdi-calculator"

@@ -410,12 +410,11 @@ npm run test:e2e -- e2e/tests/liabilities/
 ## Related Documents
 
 1. `docs/Plans/Feature-Reorganization-Plan.md` - Master navigation
-2. `docs/Salary-Section-Plan.md` - Salary component tracking
-3. `docs/Non-Salary-Income-Plan.md` - Income section plan
-4. `docs/Tax-Planning-Section-Plan.md` - Tax planning
-5. `docs/Expenses-Section-Plan.md` - Expenses section
-6. `docs/Investments-Section-Plan.md` - Investments section
-7. **`docs/Liabilities-Section-Plan.md`** - This plan
+2. `docs/Income-Section-Plan.md` - Income section (Salary + Non-Salary)
+3. `docs/Tax-Planning-Section-Plan.md` - Tax planning
+4. `docs/Expenses-Section-Plan.md` - Expenses section
+5. `docs/Investments-Section-Plan.md` - Investments section
+6. **`docs/Liabilities-Section-Plan.md`** - This plan
 
 ---
 

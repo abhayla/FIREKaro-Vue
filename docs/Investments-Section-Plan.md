@@ -620,11 +620,10 @@ src/services/__tests__/InvestmentReportService.test.ts
 ## Related Plan Documents
 
 1. `docs/Plans/Feature-Reorganization-Plan.md` - Master navigation
-2. `docs/Plans/Salary-Section-Plan.md` - Salary component tracking
-3. `docs/Plans/Non-Salary-Income-Plan.md` - Income section plan
-4. `docs/Plans/Tax-Planning-Section-Plan.md` - Tax planning
-5. `docs/Plans/Expenses-Section-Plan.md` - Expenses section
-6. **`docs/Plans/Investments-Section-Plan.md`** - This plan
+2. `docs/Income-Section-Plan.md` - Income section (Salary + Non-Salary)
+3. `docs/Plans/Tax-Planning-Section-Plan.md` - Tax planning
+4. `docs/Plans/Expenses-Section-Plan.md` - Expenses section
+5. **`docs/Plans/Investments-Section-Plan.md`** - This plan
 
 ---
 
