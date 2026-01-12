@@ -333,27 +333,97 @@ export function useInsurancePolicies(type?: Ref<InsuranceType | 'all'> | Insuran
   const queryClient = useQueryClient()
   const typeValue = computed(() => (typeof type === 'string' ? type : type?.value || 'all'))
 
+  // Helper to transform backend data to frontend format
+  const transformFromBackend = (policy: Record<string, unknown>): InsurancePolicy => {
+    const typeMap: Record<string, InsuranceType> = {
+      LIFE: 'life',
+      HEALTH: 'health',
+      MOTOR: 'motor',
+      HOME: 'home',
+      TRAVEL: 'travel',
+    }
+    const statusMap: Record<string, PolicyStatus> = {
+      ACTIVE: 'active',
+      EXPIRED: 'expired',
+      CANCELLED: 'cancelled',
+      PENDING: 'pending',
+    }
+    const frequencyMap: Record<string, PaymentFrequency> = {
+      MONTHLY: 'monthly',
+      QUARTERLY: 'quarterly',
+      HALF_YEARLY: 'half-yearly',
+      YEARLY: 'yearly',
+    }
+    const taxBenefitMap: Record<string, string> = {
+      SECTION_80C: '80C',
+      SECTION_80D: '80D',
+      BOTH: 'both',
+      NONE: 'none',
+    }
+
+    return {
+      ...policy,
+      type: typeMap[policy.type as string] || (policy.type as string).toLowerCase() as InsuranceType,
+      status: statusMap[policy.status as string] || (policy.status as string).toLowerCase() as PolicyStatus,
+      paymentFrequency: frequencyMap[policy.paymentFrequency as string] || (policy.paymentFrequency as string).toLowerCase() as PaymentFrequency,
+      taxBenefit: policy.taxBenefit ? taxBenefitMap[policy.taxBenefit as string] || (policy.taxBenefit as string).toLowerCase() : undefined,
+    } as InsurancePolicy
+  }
+
   // Fetch policies
   const policiesQuery = useQuery({
     queryKey: computed(() => ['insurance-policies', typeValue.value]),
     queryFn: async () => {
       const url =
         typeValue.value && typeValue.value !== 'all'
-          ? `/api/insurance?type=${typeValue.value}`
+          ? `/api/insurance?type=${typeValue.value.toUpperCase()}`
           : '/api/insurance'
       const res = await fetch(url)
       if (!res.ok) throw new Error('Failed to fetch insurance policies')
-      return res.json() as Promise<InsurancePolicy[]>
+      const data = await res.json()
+      return (data as Record<string, unknown>[]).map(transformFromBackend)
     },
   })
+
+  // Helper to transform frontend data to backend format
+  const transformToBackend = (data: CreatePolicyInput) => {
+    // Map frontend values to backend enum values
+    const typeMap: Record<string, string> = {
+      life: 'LIFE',
+      health: 'HEALTH',
+      motor: 'MOTOR',
+      home: 'HOME',
+      travel: 'TRAVEL',
+    }
+    const frequencyMap: Record<string, string> = {
+      monthly: 'MONTHLY',
+      quarterly: 'QUARTERLY',
+      'half-yearly': 'HALF_YEARLY',
+      yearly: 'YEARLY',
+    }
+    const taxBenefitMap: Record<string, string> = {
+      '80C': 'SECTION_80C',
+      '80D': 'SECTION_80D',
+      both: 'BOTH',
+      none: 'NONE',
+    }
+
+    return {
+      ...data,
+      type: typeMap[data.type] || data.type.toUpperCase(),
+      paymentFrequency: frequencyMap[data.paymentFrequency] || data.paymentFrequency.toUpperCase(),
+      taxBenefit: data.taxBenefit ? taxBenefitMap[data.taxBenefit] || data.taxBenefit.toUpperCase() : null,
+    }
+  }
 
   // Create policy
   const createPolicy = useMutation({
     mutationFn: async (data: CreatePolicyInput) => {
+      const transformedData = transformToBackend(data)
       const res = await fetch('/api/insurance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(transformedData),
       })
       if (!res.ok) throw new Error('Failed to create policy')
       return res.json() as Promise<InsurancePolicy>
@@ -368,10 +438,11 @@ export function useInsurancePolicies(type?: Ref<InsuranceType | 'all'> | Insuran
   // Update policy
   const updatePolicy = useMutation({
     mutationFn: async ({ id, ...data }: UpdatePolicyInput) => {
+      const transformedData = transformToBackend(data as CreatePolicyInput)
       const res = await fetch(`/api/insurance/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(transformedData),
       })
       if (!res.ok) throw new Error('Failed to update policy')
       return res.json() as Promise<InsurancePolicy>
@@ -474,6 +545,36 @@ export function useInsurancePolicies(type?: Ref<InsuranceType | 'all'> | Insuran
   }
 }
 
+// Standalone helper to transform backend data to frontend format
+function transformPolicyFromBackend(policy: Record<string, unknown>): InsurancePolicy {
+  const typeMap: Record<string, InsuranceType> = {
+    LIFE: 'life',
+    HEALTH: 'health',
+    MOTOR: 'motor',
+    HOME: 'home',
+    TRAVEL: 'travel',
+  }
+  const statusMap: Record<string, PolicyStatus> = {
+    ACTIVE: 'active',
+    EXPIRED: 'expired',
+    CANCELLED: 'cancelled',
+    PENDING: 'pending',
+  }
+  const frequencyMap: Record<string, PaymentFrequency> = {
+    MONTHLY: 'monthly',
+    QUARTERLY: 'quarterly',
+    HALF_YEARLY: 'half-yearly',
+    YEARLY: 'yearly',
+  }
+
+  return {
+    ...policy,
+    type: typeMap[policy.type as string] || (policy.type as string)?.toLowerCase() as InsuranceType,
+    status: statusMap[policy.status as string] || (policy.status as string)?.toLowerCase() as PolicyStatus,
+    paymentFrequency: frequencyMap[policy.paymentFrequency as string] || (policy.paymentFrequency as string)?.toLowerCase() as PaymentFrequency,
+  } as InsurancePolicy
+}
+
 // Composable for insurance summary
 export function useInsuranceSummary() {
   return useQuery({
@@ -483,7 +584,8 @@ export function useInsuranceSummary() {
       // For now, we calculate from policies
       const res = await fetch('/api/insurance')
       if (!res.ok) throw new Error('Failed to fetch insurance data')
-      const policies = (await res.json()) as InsurancePolicy[]
+      const rawPolicies = await res.json()
+      const policies = (rawPolicies as Record<string, unknown>[]).map(transformPolicyFromBackend)
 
       const activePolicies = policies.filter((p) => p.status === 'active')
       const now = new Date()
