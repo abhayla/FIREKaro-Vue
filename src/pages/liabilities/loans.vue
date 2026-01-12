@@ -15,15 +15,6 @@ import {
   type Loan
 } from '@/composables/useLiabilities'
 
-// Section-level tabs (for navigation between liabilities pages)
-const tabs = [
-  { title: 'Overview', route: '/liabilities' },
-  { title: 'Loans', route: '/liabilities/loans' },
-  { title: 'Credit Cards', route: '/liabilities/credit-cards' },
-  { title: 'Debt Payoff', route: '/liabilities/debt-payoff' },
-  { title: 'Reports', route: '/liabilities/reports' },
-]
-
 // Internal tab state (Overview vs Details)
 const activeTab = ref('overview')
 
@@ -163,12 +154,11 @@ const handleCloseDialog = () => {
 
 <template>
   <div>
-    <!-- Section Header with section-level navigation tabs -->
+    <!-- Section Header -->
     <SectionHeader
-      title="Liabilities"
-      subtitle="Loan Management"
-      icon="mdi-credit-card-outline"
-      :tabs="tabs"
+      title="Loans"
+      subtitle="Manage your loans"
+      icon="mdi-bank"
     />
 
     <!-- Internal Tab Navigation (Overview / Loan Details) -->

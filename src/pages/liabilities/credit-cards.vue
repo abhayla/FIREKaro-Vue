@@ -14,15 +14,6 @@ import {
   type CreditCard
 } from '@/composables/useLiabilities'
 
-// Section-level tabs (for navigation between liabilities pages)
-const tabs = [
-  { title: 'Overview', route: '/liabilities' },
-  { title: 'Loans', route: '/liabilities/loans' },
-  { title: 'Credit Cards', route: '/liabilities/credit-cards' },
-  { title: 'Debt Payoff', route: '/liabilities/debt-payoff' },
-  { title: 'Reports', route: '/liabilities/reports' },
-]
-
 // Internal tab state (Overview vs Details)
 const activeTab = ref('overview')
 
@@ -101,12 +92,11 @@ const submitPayment = async () => {
 
 <template>
   <div>
-    <!-- Section Header with section-level navigation tabs -->
+    <!-- Section Header -->
     <SectionHeader
-      title="Liabilities"
-      subtitle="Credit Card Management"
-      icon="mdi-credit-card-outline"
-      :tabs="tabs"
+      title="Credit Cards"
+      subtitle="Manage your credit cards"
+      icon="mdi-credit-card-multiple"
     />
 
     <!-- Internal Tab Navigation (Overview / Card Details) -->

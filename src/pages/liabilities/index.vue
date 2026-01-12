@@ -16,14 +16,6 @@ import {
   getNextDueDate
 } from '@/composables/useLiabilities'
 
-const tabs = [
-  { title: 'Overview', route: '/liabilities' },
-  { title: 'Loans', route: '/liabilities/loans' },
-  { title: 'Credit Cards', route: '/liabilities/credit-cards' },
-  { title: 'Debt Payoff', route: '/liabilities/debt-payoff' },
-  { title: 'Reports', route: '/liabilities/reports' },
-]
-
 // Data fetching
 const { data: loans, isLoading: loansLoading } = useLoans()
 const { data: creditCards, isLoading: cardsLoading } = useCreditCards()
@@ -98,7 +90,6 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || ove
       title="Liabilities"
       subtitle="Debt Overview"
       icon="mdi-credit-card-outline"
-      :tabs="tabs"
     />
 
     <!-- Loading State -->
