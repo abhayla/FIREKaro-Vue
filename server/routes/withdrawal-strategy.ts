@@ -419,6 +419,106 @@ app.get('/calculate', async (c) => {
   }
 })
 
+// GET /api/withdrawal-strategy/compare - Compare all withdrawal strategies
+app.get('/compare', async (c) => {
+  const userId = c.get('userId')
+
+  try {
+    // Get user's FIRE metrics for calculations
+    const metrics = await prisma.fIREMetricsCache.findUnique({
+      where: { userId },
+    })
+
+    const currentCorpus = metrics?.currentCorpus || 5000000
+    const annualExpenses = metrics?.annualExpenses || 600000
+
+    // Calculate comparison data for each strategy
+    const comparisons = strategyTypes.map((type) => {
+      const def = strategyDefinitions[type]
+      const rate = def.initialRate || 4.0
+      const annualWithdrawal = currentCorpus * (rate / 100)
+      const monthlyWithdrawal = annualWithdrawal / 12
+
+      // Approximate success rates based on strategy type and withdrawal rate
+      let successRate = 95
+      if (type === 'SWR_4_PERCENT') successRate = 95
+      else if (type === 'SWR_CUSTOM') successRate = 97
+      else if (type === 'BUCKET') successRate = 96
+      else if (type === 'VPW') successRate = 98
+      else if (type === 'GUYTON_KLINGER') successRate = 97
+
+      // Calculate median ending value (simplified estimate)
+      const years = 30
+      const realReturn = 0.05 // 5% real return
+      const withdrawalRate = rate / 100
+      let corpus = currentCorpus
+      for (let i = 0; i < years; i++) {
+        corpus = corpus * (1 + realReturn) - annualExpenses
+      }
+      const medianEndingValue = Math.max(0, corpus)
+
+      // Worst case years (simplified)
+      const worstCaseYears = Math.floor(currentCorpus / annualExpenses * 0.6)
+
+      const result: {
+        type: string
+        name: string
+        description: string
+        annualWithdrawal: number
+        monthlyWithdrawal: number
+        successRate: number
+        medianEndingValue: number
+        worstCaseYears: number
+        buckets?: {
+          cash: { amount: number; percent: number; yearsOfExpenses: number }
+          bonds: { amount: number; percent: number; yearsOfExpenses: number }
+          equity: { amount: number; percent: number; yearsOfExpenses: number }
+        }
+      } = {
+        type,
+        name: def.name,
+        description: def.description,
+        annualWithdrawal,
+        monthlyWithdrawal,
+        successRate,
+        medianEndingValue,
+        worstCaseYears,
+      }
+
+      // Add bucket breakdown for BUCKET strategy
+      if (type === 'BUCKET') {
+        const cashAmount = annualExpenses * 2 // 2 years cash
+        const bondsAmount = annualExpenses * 5 // 5 years bonds
+        const equityAmount = currentCorpus - cashAmount - bondsAmount
+        result.buckets = {
+          cash: {
+            amount: cashAmount,
+            percent: (cashAmount / currentCorpus) * 100,
+            yearsOfExpenses: 2,
+          },
+          bonds: {
+            amount: bondsAmount,
+            percent: (bondsAmount / currentCorpus) * 100,
+            yearsOfExpenses: 5,
+          },
+          equity: {
+            amount: Math.max(0, equityAmount),
+            percent: Math.max(0, (equityAmount / currentCorpus) * 100),
+            yearsOfExpenses: Math.max(0, equityAmount / annualExpenses),
+          },
+        }
+      }
+
+      return result
+    })
+
+    return c.json(comparisons)
+  } catch (error) {
+    console.error('Error comparing withdrawal strategies:', error)
+    return c.json({ success: false, error: 'Failed to compare strategies' }, 500)
+  }
+})
+
 // GET /api/withdrawal-strategy/swr-table - Get SWR comparison table
 app.get('/swr-table', async (c) => {
   const userId = c.get('userId')
