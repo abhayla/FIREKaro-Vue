@@ -87,7 +87,7 @@ server/
 ├── index.ts               # Hono app entry point (registers all routes)
 ├── lib/                   # prisma.ts, auth.ts
 ├── middleware/            # Auth middleware (session validation)
-├── routes/                # 29 route files (CRUD per domain)
+├── routes/                # 31 route files (CRUD per domain)
 └── services/              # Business logic (sync.service.ts)
 
 prisma/schema.prisma       # Database models (~30 core models)
@@ -102,7 +102,8 @@ Routes are organized by domain. Each file in `server/routes/` exports a Hono app
 | **Auth** | Better Auth handles | `/api/auth/*` |
 | **Health** | (inline in index.ts) | `/api/health` |
 | **Salary** | `salary.ts`, `salary-history.ts`, `salary-components.ts`, `income-sources.ts` | `/api/salary`, `/api/salary-history`, `/api/salary-components`, `/api/income-sources` |
-| **Investments** | `investments.ts`, `epf.ts`, `ppf.ts`, `nps.ts`, `esop.ts`, `investment-reports.ts` | `/api/investments`, `/api/epf`, `/api/ppf`, `/api/nps`, `/api/esop`, `/api/investment-reports` |
+| **Investments** | `investments.ts`, `epf.ts`, `ppf.ts`, `nps.ts`, `esop.ts` | `/api/investments`, `/api/epf`, `/api/ppf`, `/api/nps`, `/api/esop` |
+| **Investment Reports** | `investment-reports.ts` | `/api/investment-reports` |
 | **Family** | (via query params on most routes) | `?familyView=true&memberId=...` |
 | **Non-Salary Income** | `business-income.ts`, `rental-income.ts`, `capital-gains.ts`, `interest-income.ts`, `dividend-income.ts`, `other-income.ts` | `/api/business-income`, `/api/rental-income`, `/api/capital-gains`, `/api/interest-income`, `/api/dividend-income`, `/api/other-income` |
 | **Expenses** | `expenses.ts`, `budgets.ts`, `expenses-ai.ts`, `expense-rules.ts` | `/api/expenses`, `/api/budgets`, `/api/expenses/ai`, `/api/expense-rules` |
@@ -112,16 +113,7 @@ Routes are organized by domain. Each file in `server/routes/` exports a Hono app
 | **Other** | `alerts.ts` | `/api/alerts` |
 
 ### Frontend Composables
-Main data-fetching composables in `src/composables/`:
-- `useSalary.ts` - Salary, income sources, salary history
-- `useIncome.ts` - All non-salary income types
-- `useExpenses.ts` - Expenses, budgets, AI categorization
-- `useInvestments.ts` - All investment types (EPF, PPF, NPS, ESOP, etc.)
-- `useLiabilities.ts` - Loans, credit cards, liabilities overview
-- `useInsurance.ts` - Insurance policies
-- `useTax.ts` - Tax scenarios, advance tax, tax reports
-- `useFinancialHealth.ts` - Aggregated financial health metrics
-- `useFIRE.ts` - FIRE goal calculations and projections
+Composables in `src/composables/` provide Vue Query hooks. Pattern: `use{Domain}.ts` exports query/mutation hooks for the corresponding API routes. Check actual files - some are still being implemented.
 
 ### Backend Route Pattern (Hono + Zod)
 ```typescript
@@ -247,10 +239,37 @@ formatINRCompact(500000)   // "5.00 L"
 
 ### Component Styling
 - Use Vuetify components (`v-card`, `v-btn`, `v-data-table`)
-- Currency values: `class="text-currency"` (monospace font)
-- Charts: Import from `@/utils/chartTheme` for consistent colors
+- Currency values: `class="text-currency"` (monospace font, JetBrains Mono)
+- Positive/negative values: `class="text-positive"` / `class="text-negative"`
 - Icons: Material Design Icons (`mdi-*` prefix)
 - Theme colors: `primary`, `secondary`, `success`, `warning`, `error`, `fire-orange`, `fire-green`
+
+### Chart Theming
+Always import from `@/utils/chartTheme` for consistent chart styling:
+```typescript
+import {
+  chartColors,
+  lineChartOptions,
+  barChartOptions,
+  doughnutChartOptions,
+  createAssetAllocationDataset,
+  formatINRForChart
+} from '@/utils/chartTheme'
+
+// Asset allocation doughnut chart
+const chartData = createAssetAllocationDataset({
+  equity: 500000,
+  debt: 300000,
+  gold: 100000,
+  retirement: 400000
+})
+
+// Asset class colors
+chartColors.assetClasses.equity      // #1976d2 - Blue
+chartColors.assetClasses.debt        // #7cb342 - Green
+chartColors.assetClasses.gold        // #ffc107 - Gold
+chartColors.assetClasses.retirement  // #00acc1 - Cyan
+```
 
 ### Financial Year Handling
 Indian financial year runs April-March. Use these utilities from `useSalary.ts`:
@@ -263,8 +282,9 @@ getCalendarMonthYear(0, "2025-26")  // { month: 4, year: 2025 }
 ### E2E Testing (Playwright)
 Tests use Page Object Model pattern:
 - `e2e/pages/base.page.ts` - Base class with common Vuetify helpers
-- `e2e/tests/` - Test specs organized by section
-- `e2e/fixtures/` - Test data per section
+- `e2e/pages/{section}/` - Section-specific page objects
+- `e2e/tests/{section}/` - Test specs organized by section
+- `e2e/fixtures/{section}-data.ts` - Test data per section
 - `e2e/global-setup.ts` - Auth setup (stores session in `e2e/.auth/user.json`)
 
 Playwright auto-starts the dev server before tests. Tests run in headed Chrome by default.
@@ -276,7 +296,15 @@ await page.navigateToDashboardSection('salary')
 await page.selectFinancialYear('2025-26')
 await page.clickSaveButton()
 await page.expectSuccessMessage('Saved')
+await page.fillVuetifyTextField('label', 'value')
+await page.selectVuetifyOption('label', 'optionText')
 ```
+
+Creating new E2E tests:
+1. Create page object in `e2e/pages/{section}/` extending `BasePage`
+2. Add test data in `e2e/fixtures/{section}-data.ts`
+3. Create test file `e2e/tests/{section}/NN-{feature}.spec.ts`
+4. Export page object from `e2e/pages/{section}/index.ts`
 
 ### Unit Testing (Vitest)
 Unit tests are colocated with source files as `*.spec.ts`. Use for pure functions:
@@ -333,14 +361,31 @@ npm run dev
 
 ## Indian Financial Context
 
-### Key Instruments
-- **EPF**: Employee Provident Fund (8.25% interest, employer-matched)
-- **PPF**: Public Provident Fund (7.1%, 15-year lock-in, ₹1.5L/year max)
-- **NPS**: National Pension System (market-linked, 80CCD benefits)
+### Key Instruments (Rules Implemented in Backend)
+
+**EPF** (Employee Provident Fund):
+- Interest: 8.25% (tax-free up to ₹2.5L contribution)
+- Employer match: 12% of basic (3.67% to EPF, 8.33% to EPS)
+
+**PPF** (Public Provident Fund) - `/api/ppf`:
+- Interest: 7.1%, 15-year lock-in, ₹1.5L/year max deposit
+- Partial withdrawal: After 7th year (50% of 4th preceding year balance)
+- Loan facility: 3rd to 6th year (25% of 2nd preceding year balance)
+- Extension: 5-year blocks after maturity (with or without contribution)
+
+**NPS** (National Pension System) - `/api/nps`:
+- 2025 withdrawal rules: 60% lump sum tax-free, 40% mandatory annuity
+- Corpus ≤ ₹5L: 100% can be withdrawn
+- Age-based equity limits: <50 (75%), 50-55 (50%), >55 (25%)
+
+**ESOP/RSU** - `/api/esop`:
+- Vesting types: CLIFF, GRADED, MILESTONE, HYBRID
+- Perquisite tax at vesting (FMV - Exercise Price)
 
 ### Tax Deduction Limits
 - Section 80C: ₹1.5L (EPF, PPF, ELSS, etc.)
 - Section 80CCD(1B): ₹50K additional (NPS)
+- Section 80CCD(2): Employer NPS contribution (no limit, up to 10% of salary)
 - Section 80D: Health insurance premiums
 - Section 24: ₹2L home loan interest
 

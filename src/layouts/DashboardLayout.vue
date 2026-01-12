@@ -18,7 +18,7 @@ userStore.fetchSession();
 const sections = [
   {
     title: "Income",
-    icon: "mdi-cash-plus",
+    icon: "mdi-currency-inr",
     route: "/income",
     children: [
       { title: "Overview", route: "/income" },

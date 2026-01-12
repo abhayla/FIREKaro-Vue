@@ -76,7 +76,7 @@ const router = createRouter({
           name: "dashboard",
           component: () => import("@/pages/dashboard/index.vue"),
         },
-        // Section 3: Tax Planning
+// Section 2: Tax Planning (Income is at top-level /income)
         {
           path: "tax-planning",
           name: "tax-planning",
