@@ -6,101 +6,130 @@ The Liabilities section in FIREKaro helps users track and manage their debts inc
 
 ## Section Structure
 
-The Liabilities section follows a hierarchical navigation pattern:
+The Liabilities section consists of 5 separate pages, each with its own purpose:
 
 ```
-/liabilities           <- Overview page (section-level)
-/liabilities/loans     <- Loans page (with internal tabs)
-/liabilities/credit-cards <- Credit Cards page (with internal tabs)
-/liabilities/debt-payoff <- Debt Payoff strategies
-/liabilities/reports   <- Reports and analytics
+/liabilities              <- Overview/Dashboard page (no tabs)
+/liabilities/loans        <- Loans page (Overview | Details tabs)
+/liabilities/credit-cards <- Credit Cards page (Overview | Details tabs)
+/liabilities/debt-payoff  <- Debt Payoff page (Overview | Details tabs)
+/liabilities/reports      <- Reports page (Debt Summary | Payment History | Interest Analysis | Tax Benefits tabs)
 ```
 
-### Section-Level Navigation
+### Navigation Pattern
 
-All pages within the Liabilities section share a common `SectionHeader` component that provides navigation between:
-- **Overview**: High-level summary of all liabilities
-- **Loans**: Detailed loan management with Overview/Details tabs
-- **Credit Cards**: Credit card management with Overview/Details tabs
-- **Debt Payoff**: Snowball and Avalanche payoff strategies
-- **Reports**: Amortization schedules and analytics
+Each page has its own `SectionHeader` with title and icon. There are **no section-level navigation tabs** - navigation between pages happens via the sidebar.
 
 ### Internal Tab Pattern (Overview + Details)
 
-The **Loans** and **Credit Cards** pages follow a two-tab internal navigation pattern, similar to the Salary section:
+The **Loans**, **Credit Cards**, and **Debt Payoff** pages follow a two-tab internal navigation pattern:
 
 | Tab | Purpose | Content |
 |-----|---------|---------|
 | **Overview** | Read-only summary | Summary metrics, distribution charts, upcoming payments, condensed item list |
-| **Details** | CRUD operations | Full item cards with edit/delete actions, add button, filters |
+| **Details** | Full functionality | Full item cards with CRUD actions, filters, detailed tables |
 
-This pattern provides:
-- Quick glance at key metrics without UI clutter (Overview tab)
-- Full functionality when needed (Details tab)
-- Consistent UX across similar sections
+The **Reports** page has a different tab structure for different report types:
+- Debt Summary
+- Payment History
+- Interest Analysis
+- Tax Benefits
+
+## Page Details
+
+### 1. Index Page (`/liabilities`)
+
+The main dashboard showing a high-level overview of all liabilities.
+
+**Components:**
+- 4 Summary cards: Total Debt, Monthly Payment, Loan Outstanding, Credit Card Debt
+- DTI (Debt-to-Income) Gauge
+- Upcoming Payments list
+- Payoff Progress Chart
+- Top 5 Loans & Credit Cards quick views
+- Quick Action buttons: Add Loan, Add Credit Card, Payoff Strategy, Generate Report
+
+### 2. Loans Page (`/liabilities/loans`)
+
+**Overview Tab:**
+- 4 metric cards: Total Outstanding, Monthly EMI, Total Loans, Avg Interest Rate
+- Loan Distribution by Type (progress bars)
+- Upcoming EMI Payments list
+- Top 5 Loans (condensed view)
+- Tax Benefits Info Card (80C, 24b, 80E)
+
+**Details Tab:**
+- Toolbar with Add Loan button
+- Type filters: dropdown + chip filters (Home, Car, Personal, etc.)
+- Card grid: LoanCard components with actions (View Schedule, Prepay, Edit, Delete)
+
+### 3. Credit Cards Page (`/liabilities/credit-cards`)
+
+**Overview Tab:**
+- 4 metric cards: Total Credit Limit, Outstanding, Available Credit, Reward Points
+- Large Credit Utilization Gauge with status
+- Upcoming Payment Due Dates list
+- Top 5 Cards (condensed view)
+- Credit Score Tips
+
+**Details Tab:**
+- Overall Utilization bar with warnings
+- Toolbar with Add Credit Card button
+- Card grid: CreditCardCard components (visual card design with utilization bar, actions)
+
+### 4. Debt Payoff Page (`/liabilities/debt-payoff`)
+
+**Overview Tab:**
+- 4 metric cards: Total Debt, Minimum Payment, Avg Interest Rate, Extra Payment
+- Extra Payment Slider (₹0 - ₹50K)
+- Strategy Comparison: Snowball vs Avalanche cards
+- Payoff Progress Chart (60-month projection)
+- Strategy Tips
+
+**Details Tab:**
+- Strategy selector (Avalanche/Snowball toggle)
+- Debt Payoff Order table (priority, balance, rate, est. payoff date)
+- Visual Payoff Timeline
+- Comparison Table: Snowball vs Avalanche metrics
+
+### 5. Reports Page (`/liabilities/reports`)
+
+**Tabs:**
+- **Debt Summary**: Overview stats, debt distribution doughnut chart, detailed loan table
+- **Payment History**: Date range filter, payment history table with status
+- **Interest Analysis**: Interest by loan, EMI breakdown bar chart, interest cost analysis
+- **Tax Benefits**: Section 80C, 24(b), 80E deduction cards, benefits table
+
+**Export Options:** PDF, Excel, CSV
 
 ## Component Architecture
 
-### Loans Page Components
+### File Structure
 
 ```
-src/pages/liabilities/loans.vue
-├── SectionHeader (section-level tabs)
-├── v-tabs (internal: Overview | Loan Details)
-├── v-window
-│   ├── LoansOverviewTab.vue
-│   │   ├── Summary metric cards (4x)
-│   │   ├── Debt Distribution by Type
-│   │   ├── Upcoming EMI Payments
-│   │   ├── Condensed Loans List
-│   │   └── Tax Benefits info
-│   └── LoansDetailsTab.vue
-│       ├── Toolbar (Add button, filters)
-│       ├── LoanCard grid (CRUD actions)
-│       └── Empty state
-├── LoanForm dialog
-├── Delete confirmation dialog
-├── Amortization schedule dialog
-└── Prepayment simulation dialog
+src/pages/liabilities/
+├── index.vue              # Dashboard page
+├── loans.vue              # Loans page with tabs
+├── credit-cards.vue       # Credit Cards page with tabs
+├── debt-payoff.vue        # Debt Payoff page with tabs
+└── reports.vue            # Reports page with report type tabs
+
+src/components/liabilities/
+├── LoansOverviewTab.vue         # Loans overview content
+├── LoansDetailsTab.vue          # Loans details with cards
+├── CreditCardsOverviewTab.vue   # Credit cards overview content
+├── CreditCardsDetailsTab.vue    # Credit cards details with cards
+├── DebtPayoffOverviewTab.vue    # Debt payoff overview content
+├── DebtPayoffDetailsTab.vue     # Debt payoff details with tables
+├── LoanCard.vue                 # Individual loan card component
+├── CreditCardCard.vue           # Individual credit card component
+├── LoanForm.vue                 # Add/Edit loan dialog form
+├── CreditCardForm.vue           # Add/Edit credit card dialog form
+├── AmortizationTable.vue        # Loan amortization schedule display
+├── DebtToIncomeGauge.vue        # DTI ratio visualization
+├── PayoffProgressChart.vue      # Debt projection chart
+└── DebtPayoffStrategy.vue       # Snowball vs Avalanche comparison
 ```
-
-### Credit Cards Page Components
-
-```
-src/pages/liabilities/credit-cards.vue
-├── SectionHeader (section-level tabs)
-├── v-tabs (internal: Overview | Card Details)
-├── v-window
-│   ├── CreditCardsOverviewTab.vue
-│   │   ├── Summary metric cards (4x)
-│   │   ├── Credit Utilization Gauge
-│   │   ├── Upcoming Payments
-│   │   ├── Condensed Cards List
-│   │   └── Credit Score Tips
-│   └── CreditCardsDetailsTab.vue
-│       ├── Utilization bar with alerts
-│       ├── Toolbar (Add button)
-│       ├── CreditCardCard grid
-│       └── Empty state
-├── CreditCardForm dialog
-├── Delete confirmation dialog
-├── Payment recording dialog
-└── Statements dialog
-```
-
-### Component Files
-
-| File | Purpose |
-|------|---------|
-| `src/components/liabilities/LoansOverviewTab.vue` | Overview tab content for Loans |
-| `src/components/liabilities/LoansDetailsTab.vue` | Details tab with LoanCard grid |
-| `src/components/liabilities/CreditCardsOverviewTab.vue` | Overview tab content for Credit Cards |
-| `src/components/liabilities/CreditCardsDetailsTab.vue` | Details tab with CreditCardCard grid |
-| `src/components/liabilities/LoanCard.vue` | Individual loan card component |
-| `src/components/liabilities/CreditCardCard.vue` | Individual credit card component |
-| `src/components/liabilities/LoanForm.vue` | Add/Edit loan dialog form |
-| `src/components/liabilities/CreditCardForm.vue` | Add/Edit credit card dialog form |
-| `src/components/liabilities/AmortizationTable.vue` | Loan amortization schedule display |
 
 ## Data Flow
 
@@ -127,19 +156,11 @@ export function useLoans() {
   })
 }
 
-// Mutations
+// Mutations invalidate related queries
 export function useCreateLoan() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (data: LoanInput) => {
-      const res = await fetch('/api/loans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-      if (!res.ok) throw new Error('Failed to create loan')
-      return res.json()
-    },
+    mutationFn: async (data: LoanInput) => { /* POST /api/loans */ },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loans'] })
       queryClient.invalidateQueries({ queryKey: ['liabilities-overview'] })
@@ -170,32 +191,49 @@ emit('go-to-details')
 @go-to-details="activeTab = 'details'"
 ```
 
-### Defensive Coding Pattern
-
-All tab components use defensive array handling for API responses:
-
-```typescript
-const loansList = computed(() => {
-  const data = loans.value
-  return Array.isArray(data) ? data : []
-})
-```
-
 ## API Endpoints
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/loans` | GET | List all loans (supports familyView, memberId params) |
-| `/api/loans` | POST | Create new loan |
-| `/api/loans/:id` | GET | Get single loan |
-| `/api/loans/:id` | PUT | Update loan |
-| `/api/loans/:id` | DELETE | Delete loan |
-| `/api/credit-cards` | GET | List all credit cards |
-| `/api/credit-cards` | POST | Create new credit card |
-| `/api/credit-cards/:id` | PUT | Update credit card |
-| `/api/credit-cards/:id` | DELETE | Delete credit card |
-| `/api/liabilities` | GET | Get liabilities overview/summary |
-| `/api/liabilities/reports` | GET | Get liabilities reports data |
+### Loan Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/loans` | List all loans (supports familyView, memberId params) |
+| GET | `/api/loans/:id` | Get single loan details |
+| POST | `/api/loans` | Create new loan |
+| PUT | `/api/loans/:id` | Update loan |
+| DELETE | `/api/loans/:id` | Delete loan |
+| GET | `/api/loans/:id/payments` | Get payment history |
+| POST | `/api/loans/:id/payments` | Record payment |
+| GET | `/api/loans/:id/amortization` | Generate amortization schedule |
+| POST | `/api/loans/:id/prepay` | Calculate prepayment impact |
+
+### Credit Card Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/credit-cards` | List all credit cards |
+| GET | `/api/credit-cards/:id` | Get single card with statements |
+| POST | `/api/credit-cards` | Create new card |
+| PUT | `/api/credit-cards/:id` | Update card |
+| DELETE | `/api/credit-cards/:id` | Delete card |
+| GET | `/api/credit-cards/:id/statements` | Get statement history |
+| POST | `/api/credit-cards/:id/statements` | Add statement |
+| POST | `/api/credit-cards/:id/pay` | Record payment |
+
+### Overview & Reports Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/liabilities/overview` | Aggregated dashboard data |
+| POST | `/api/liabilities/generate-alerts` | Generate EMI/CC due alerts |
+| GET | `/api/liabilities/debt-payoff-strategies` | Snowball vs Avalanche comparison |
+| GET | `/api/liabilities/reports/debt-summary` | Debt summary by type |
+| GET | `/api/liabilities/reports/payment-history` | Payment history with stats |
+| GET | `/api/liabilities/reports/interest-analysis` | Interest breakdown with insights |
+| GET | `/api/liabilities/reports/credit-health` | Credit health score and factors |
+| GET | `/api/liabilities/reports/export` | Export data for PDF/Excel |
+
+## Data Models
 
 ### Loan Types
 
@@ -207,6 +245,8 @@ type LoanType =
   | 'EDUCATION_LOAN'
   | 'GOLD_LOAN'
   | 'BUSINESS_LOAN'
+  | 'LOAN_AGAINST_PROPERTY'
+  | 'LOAN_AGAINST_SECURITIES'
   | 'OTHER'
 ```
 
@@ -217,18 +257,19 @@ interface Loan {
   id: string
   userId: string
   loanType: LoanType
-  lenderName: string
+  loanName: string
+  lender: string
   accountNumber?: string
   principalAmount: number
   outstandingAmount: number
   interestRate: number
-  tenureMonths: number
-  remainingTenureMonths: number
+  tenure: number
+  remainingTenure: number
   emiAmount: number
-  emiDate: number // Day of month (1-28)
-  startDate: string
   nextEmiDate?: string
-  status: 'ACTIVE' | 'CLOSED' | 'PREPAID'
+  status: 'ACTIVE' | 'CLOSED' | 'DEFAULTED' | 'FORECLOSED'
+  taxBenefitSection?: string
+  maxTaxBenefit?: number
   createdAt: string
   updatedAt: string
 }
@@ -242,44 +283,72 @@ interface CreditCard {
   userId: string
   cardName: string
   bankName: string
-  last4Digits?: string
+  cardNumber: string  // Masked: ****1234
+  cardType: 'VISA' | 'MASTERCARD' | 'RUPAY' | 'AMEX'
   creditLimit: number
+  availableLimit: number
   currentOutstanding: number
-  minimumDue: number
-  dueDate: number // Day of month
-  billingCycleDate?: number
-  interestRate: number
-  rewardPoints?: number
-  status: 'ACTIVE' | 'INACTIVE'
-  createdAt: string
-  updatedAt: string
+  billingCycleDate: number
+  paymentDueDate: number
+  rewardPointsBalance: number
+  interestRateAPR?: number
+  annualFee: number
+  cardExpiryDate?: string
+  isActive: boolean
 }
 ```
 
 ## Key Features
 
 ### Loans
-
-1. **EMI Tracking**: Track monthly EMI payments with due date reminders
-2. **Amortization Schedule**: View complete payment breakdown showing principal vs interest
-3. **Prepayment Simulation**: Calculate impact of lump-sum prepayments on tenure/EMI
-4. **Tax Benefits**: Section 80C (principal) and 24(b) (interest) deduction tracking
-5. **Loan Distribution**: Visual breakdown by loan type
+- EMI Tracking with due date reminders
+- Amortization Schedule generation
+- Prepayment Simulation (reduce EMI vs reduce tenure)
+- Tax Benefits tracking (80C, 24, 80E)
+- Loan Distribution visualization
 
 ### Credit Cards
-
-1. **Credit Utilization**: Real-time utilization tracking with color-coded zones
-2. **Payment Reminders**: Upcoming payment due dates
-3. **Reward Points**: Track accumulated reward points across cards
-4. **Minimum Due Alerts**: Highlight cards with pending minimum payments
-5. **Credit Score Tips**: Actionable tips for maintaining good credit
+- Credit Utilization tracking with color-coded zones
+- Payment Due Date reminders
+- Reward Points tracking
+- Minimum Due Alerts
+- Credit Score Tips
 
 ### Debt Payoff Strategies
+- Snowball Method (smallest balance first)
+- Avalanche Method (highest interest first)
+- Extra Payment Calculator
+- Payoff Timeline Visualization
+- Strategy Comparison
 
-1. **Snowball Method**: Pay smallest debts first for psychological wins
-2. **Avalanche Method**: Pay highest interest debts first for savings
-3. **Extra Payment Calculator**: See impact of additional monthly payments
-4. **Payoff Timeline**: Visualize debt-free date
+### Reports
+- Debt Summary by type
+- Payment History with statistics
+- Interest Analysis with insights
+- Tax Benefits calculation
+- Export (PDF, Excel, CSV)
+
+## Utility Functions
+
+```typescript
+// Currency formatting
+formatINR(150000)          // "₹1,50,000"
+formatINRCompact(10000000) // "1.00 Cr"
+
+// Loan type helpers
+getLoanTypeLabel('HOME_LOAN')  // "Home Loan"
+getLoanTypeIcon('HOME_LOAN')   // "mdi-home"
+getLoanTypeColor('HOME_LOAN')  // "primary"
+
+// Calculations
+calculateEMI(principal, rate, tenure)
+calculatePrepaymentImpact(loan, amount, option)
+generateAmortizationSchedule(loan)
+calculateMinimumDue(outstanding)
+calculateCreditUtilization(outstanding, limit)
+calculateDTI(totalMonthlyDebt, monthlyIncome)
+comparePayoffStrategies(debts, extraPayment)
+```
 
 ## E2E Testing
 
@@ -297,79 +366,15 @@ interface CreditCard {
 
 | File | Coverage |
 |------|----------|
-| `01-navigation.spec.ts` | Tab navigation, internal tabs |
+| `01-navigation.spec.ts` | Page navigation, internal tabs |
 | `02-loans-crud.spec.ts` | Loan CRUD operations |
 | `03-credit-cards.spec.ts` | Credit card CRUD operations |
 | `04-debt-payoff.spec.ts` | Debt payoff strategies |
-| `05-calculations.spec.ts` | Financial calculations |
 | `05-overview.spec.ts` | Overview page functionality |
 | `06-amortization.spec.ts` | Amortization schedules |
-| `06-validation.spec.ts` | Form validation |
 | `07-reports.spec.ts` | Reports functionality |
-
-### Key Test Patterns
-
-#### Internal Tab Navigation
-
-```typescript
-// Locator for internal tabs (vs section-level)
-get overviewTab(): Locator {
-  return this.page.locator('[role="tablist"]').nth(1).getByRole("tab", { name: "Overview" });
-}
-
-// Navigate to details tab before CRUD operations
-async openAddForm() {
-  await this.goToDetailsTab();
-  await this.addLoanButton.click();
-  await this.loanFormDialog.waitFor({ state: "visible" });
-}
-```
-
-## Utility Functions
-
-```typescript
-// src/composables/useLiabilities.ts
-
-// Currency formatting
-formatINR(150000)         // "₹1,50,000"
-formatINRCompact(10000000) // "1.00 Cr"
-
-// Loan type helpers
-getLoanTypeLabel('HOME_LOAN')  // "Home Loan"
-getLoanTypeIcon('HOME_LOAN')   // "mdi-home"
-getLoanTypeColor('HOME_LOAN')  // "primary"
-
-// Calculations
-calculatePrepaymentImpact(loan, amount, option) // Returns savings info
-calculateAmortizationSchedule(loan)             // Returns monthly breakdown
-calculateMinimumDue(card)                       // Returns minimum payment
-```
-
-## Migration Notes
-
-### From v1 (Pre Two-Tab Pattern)
-
-The Loans and Credit Cards pages were restructured to use the two-tab pattern:
-
-**Before:**
-- Single page with all content visible
-- Summary cards, toolbar, and item grid mixed together
-
-**After:**
-- Overview tab: Summary metrics + condensed read-only list
-- Details tab: Full CRUD functionality with item cards
-- Dialogs remain at page level (not in tab components)
-
-### Key Changes
-
-1. Extracted tab content into separate components
-2. Added internal `v-tabs`/`v-window` navigation
-3. Moved summary calculations to Overview tab
-4. Details tab emits events for dialog operations
-5. Defensive `Array.isArray()` pattern for API responses
 
 ## Related Documentation
 
 - [CLAUDE.md](../CLAUDE.md) - Project conventions and patterns
 - [STYLING-GUIDE.md](./STYLING-GUIDE.md) - UI/UX patterns
-- [Plan File](../.claude/plans/breezy-dreaming-rose.md) - Original implementation plan
