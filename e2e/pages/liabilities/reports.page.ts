@@ -3,7 +3,11 @@ import { BasePage } from "../base.page";
 
 /**
  * Liabilities Reports Page Object
- * Handles debt reports, amortization schedules, and exports
+ * Handles debt reports with 4 report type tabs:
+ * - Debt Summary
+ * - Payment History
+ * - Interest Analysis
+ * - Tax Benefits
  */
 export class LiabilitiesReportsPage extends BasePage {
   readonly url = "/liabilities/reports";
@@ -17,20 +21,37 @@ export class LiabilitiesReportsPage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Liabilities/i });
+    return this.page.getByRole("heading", { name: /Reports/i });
   }
 
-  // Report type selection
+  // Report type tabs
+  get debtSummaryTab(): Locator {
+    return this.page.getByRole("tab", { name: "Debt Summary" });
+  }
+
+  get paymentHistoryTab(): Locator {
+    return this.page.getByRole("tab", { name: "Payment History" });
+  }
+
+  get interestAnalysisTab(): Locator {
+    return this.page.getByRole("tab", { name: "Interest Analysis" });
+  }
+
+  get taxBenefitsTab(): Locator {
+    return this.page.getByRole("tab", { name: "Tax Benefits" });
+  }
+
+  // Legacy aliases for backward compatibility
   get amortizationReportOption(): Locator {
-    return this.page.getByRole("tab", { name: /Amortization/i });
+    return this.interestAnalysisTab;
   }
 
   get debtSummaryReportOption(): Locator {
-    return this.page.getByRole("tab", { name: /Summary|Overview/i });
+    return this.debtSummaryTab;
   }
 
   get paymentHistoryOption(): Locator {
-    return this.page.getByRole("tab", { name: /Payment History/i });
+    return this.paymentHistoryTab;
   }
 
   // Loan selector for amortization
@@ -123,8 +144,36 @@ export class LiabilitiesReportsPage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.page.getByRole("heading", { name: /Liabilities/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Reports/i })).toHaveAttribute("aria-selected", "true");
+    await expect(this.pageTitle).toBeVisible();
+    // Verify at least one of the report tabs is visible
+    await expect(this.debtSummaryTab).toBeVisible();
+  }
+
+  async expectTabsVisible() {
+    await expect(this.debtSummaryTab).toBeVisible();
+    await expect(this.paymentHistoryTab).toBeVisible();
+    await expect(this.interestAnalysisTab).toBeVisible();
+    await expect(this.taxBenefitsTab).toBeVisible();
+  }
+
+  async goToDebtSummary() {
+    await this.debtSummaryTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async goToPaymentHistory() {
+    await this.paymentHistoryTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async goToInterestAnalysis() {
+    await this.interestAnalysisTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async goToTaxBenefits() {
+    await this.taxBenefitsTab.click();
+    await this.page.waitForTimeout(300);
   }
 
   async expectAmortizationTableVisible() {

@@ -17,13 +17,12 @@ export class LoansPage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Liabilities/i });
+    return this.page.getByRole("heading", { name: /Loans/i });
   }
 
   // Internal tabs (Overview / Loan Details)
-  // Use nth(1) to get the second tablist (internal tabs) since first is section-level
   get overviewTab(): Locator {
-    return this.page.locator('[role="tablist"]').nth(1).getByRole("tab", { name: "Overview" });
+    return this.page.getByRole("tab", { name: "Overview" });
   }
 
   get detailsTab(): Locator {
@@ -260,9 +259,7 @@ export class LoansPage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.page.getByRole("heading", { name: /Liabilities/i })).toBeVisible();
-    // Section-level tab should be active
-    await expect(this.page.getByRole("tab", { name: /Loans/i }).first()).toHaveAttribute("aria-selected", "true");
+    await expect(this.pageTitle).toBeVisible();
     // Internal tabs should be visible
     await expect(this.overviewTab).toBeVisible();
     await expect(this.detailsTab).toBeVisible();
