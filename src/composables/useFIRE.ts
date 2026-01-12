@@ -246,7 +246,8 @@ export interface GoalMilestone {
 
 export interface CreateGoalInput {
   goalName: string
-  category: GoalCategory
+  goalType: string
+  category: GoalCategory | string
   targetAmount: number
   currentAmount?: number
   targetDate: string
@@ -830,3 +831,13 @@ export const withdrawalStrategyConfig: Record<WithdrawalStrategyType, { name: st
     icon: 'mdi-shield-half-full'
   }
 }
+
+// ============================================
+// Alias exports for backward compatibility
+// ============================================
+
+// Alias for useWithdrawalStrategyComparison
+export const useWithdrawalStrategies = useWithdrawalStrategyComparison
+
+// Type alias for WithdrawalStrategyComparison
+export type WithdrawalStrategy = WithdrawalStrategyComparison
