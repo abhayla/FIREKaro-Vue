@@ -42,7 +42,7 @@ const tabs2 = [
             {{ emergencyFund ? formatINR(emergencyFund.currentAmount, true) : '---' }}
           </div>
           <div class="text-caption text-medium-emphasis">
-            {{ emergencyFund ? `${Math.floor(emergencyFund.currentAmount / emergencyFund.monthlyExpenses)} months covered` : '' }}
+            {{ emergencyFund ? (emergencyFund.monthlyExpenses > 0 ? `${Math.floor(emergencyFund.currentAmount / emergencyFund.monthlyExpenses)} months covered` : 'Set monthly expenses to calculate') : '' }}
           </div>
         </v-card>
       </v-col>
@@ -130,7 +130,7 @@ const tabs2 = [
               </v-alert>
 
               <v-alert
-                v-if="emergencyFund.targetAmount > emergencyFund.currentAmount"
+                v-if="emergencyFund.targetAmount > emergencyFund.currentAmount && cashFlow.netCashFlow > 0"
                 type="success"
                 variant="tonal"
                 density="compact"
@@ -164,7 +164,7 @@ const tabs2 = [
                   {{ formatINR(emergencyFund.breakdown.filter(b => ['instant', 't+0', 't+1'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0), true) }}
                 </div>
                 <div class="text-caption">
-                  Covers {{ Math.floor(emergencyFund.breakdown.filter(b => ['instant', 't+0', 't+1'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) }} months
+                  Covers {{ emergencyFund.monthlyExpenses > 0 ? Math.floor(emergencyFund.breakdown.filter(b => ['instant', 't+0', 't+1'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) : 0 }} months
                 </div>
               </v-card>
             </v-col>
@@ -182,7 +182,7 @@ const tabs2 = [
                   {{ formatINR(emergencyFund.breakdown.filter(b => ['t+2', 'breakable'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0), true) }}
                 </div>
                 <div class="text-caption">
-                  Covers {{ Math.floor(emergencyFund.breakdown.filter(b => ['t+2', 'breakable'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) }} months
+                  Covers {{ emergencyFund.monthlyExpenses > 0 ? Math.floor(emergencyFund.breakdown.filter(b => ['t+2', 'breakable'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) : 0 }} months
                 </div>
               </v-card>
             </v-col>
