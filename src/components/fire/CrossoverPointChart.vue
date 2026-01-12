@@ -9,15 +9,17 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
-const progressPercent = computed(() => props.data.crossoverPercent)
+const progressPercent = computed(() => props.data?.crossoverPercent ?? 0)
 
 const yearsMonthsToGo = computed(() => {
+  if (!props.data?.yearsToGo) return '--'
   const years = Math.floor(props.data.yearsToGo)
   const months = Math.round((props.data.yearsToGo - years) * 12)
   return `${years}y ${months}m`
 })
 
 const crossoverDateFormatted = computed(() => {
+  if (!props.data?.crossoverDate) return '--'
   const date = new Date(props.data.crossoverDate + '-01')
   return date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
 })
@@ -31,17 +33,20 @@ const plotHeight = chartHeight - padding.top - padding.bottom
 
 // Sample 24 data points for the chart
 const chartData = computed(() => {
-  const data = props.data.projectedData
+  const data = props.data?.projectedData
+  if (!data?.length) return []
   const step = Math.max(1, Math.floor(data.length / 24))
   return data.filter((_, i) => i % step === 0).slice(0, 24)
 })
 
 const maxValue = computed(() => {
+  if (!chartData.value.length) return 100000 // default to prevent divide by zero
   const allValues = chartData.value.flatMap(d => [d.expenses, d.investmentIncome])
-  return Math.max(...allValues) * 1.1
+  return Math.max(...allValues) * 1.1 || 100000
 })
 
 const expensesPath = computed(() => {
+  if (chartData.value.length < 2) return ''
   const points = chartData.value.map((d, i) => {
     const x = padding.left + (i / (chartData.value.length - 1)) * plotWidth
     const y = padding.top + plotHeight - (d.expenses / maxValue.value) * plotHeight
@@ -51,6 +56,7 @@ const expensesPath = computed(() => {
 })
 
 const incomePath = computed(() => {
+  if (chartData.value.length < 2) return ''
   const points = chartData.value.map((d, i) => {
     const x = padding.left + (i / (chartData.value.length - 1)) * plotWidth
     const y = padding.top + plotHeight - (d.investmentIncome / maxValue.value) * plotHeight
@@ -92,7 +98,7 @@ const crossoverY = computed(() => {
         <div class="text-center">
           <div class="text-body-2 text-medium-emphasis">Monthly Expenses</div>
           <div class="text-h5 font-weight-bold text-currency" :style="{ color: chartColors.incomeExpense.expense }">
-            {{ formatINR(data.currentExpenses, true) }}
+            {{ formatINR(data?.currentExpenses ?? 0, true) }}
           </div>
         </div>
         <div class="text-center flex-grow-1 mx-4">
@@ -112,7 +118,7 @@ const crossoverY = computed(() => {
         <div class="text-center">
           <div class="text-body-2 text-medium-emphasis">Investment Income</div>
           <div class="text-h5 font-weight-bold text-currency" :style="{ color: chartColors.incomeExpense.income }">
-            {{ formatINR(data.currentInvestmentIncome, true) }}
+            {{ formatINR(data?.currentInvestmentIncome ?? 0, true) }}
           </div>
         </div>
       </div>
@@ -201,14 +207,14 @@ const crossoverY = computed(() => {
           <div class="info-card pa-3 rounded text-center">
             <v-icon icon="mdi-cash-minus" size="20" color="error" />
             <div class="text-caption text-medium-emphasis">Gap to Cover</div>
-            <div class="text-body-1 font-weight-bold">{{ formatINR(data.currentExpenses - data.currentInvestmentIncome, true) }}</div>
+            <div class="text-body-1 font-weight-bold">{{ formatINR((data?.currentExpenses ?? 0) - (data?.currentInvestmentIncome ?? 0), true) }}</div>
           </div>
         </v-col>
         <v-col cols="6" sm="3">
           <div class="info-card pa-3 rounded text-center">
             <v-icon icon="mdi-percent" size="20" color="success" />
             <div class="text-caption text-medium-emphasis">Coverage</div>
-            <div class="text-body-1 font-weight-bold">{{ Math.round((data.currentInvestmentIncome / data.currentExpenses) * 100) }}%</div>
+            <div class="text-body-1 font-weight-bold">{{ (data?.currentExpenses ?? 0) > 0 ? Math.round(((data?.currentInvestmentIncome ?? 0) / data.currentExpenses) * 100) : 0 }}%</div>
           </div>
         </v-col>
       </v-row>

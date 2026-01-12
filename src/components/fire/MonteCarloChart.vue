@@ -10,14 +10,15 @@ const props = defineProps<{
 }>()
 
 const successRateColor = computed(() => {
-  if (props.data.successRate >= 90) return 'success'
-  if (props.data.successRate >= 80) return 'info'
-  if (props.data.successRate >= 70) return 'warning'
+  const rate = props.data?.successRate ?? 0
+  if (rate >= 90) return 'success'
+  if (rate >= 80) return 'info'
+  if (rate >= 70) return 'warning'
   return 'error'
 })
 
 const confidenceZone = computed(() => {
-  const rate = props.data.successRate
+  const rate = props.data?.successRate ?? 0
   if (rate >= 95) return { label: 'Excellent', color: 'success', description: 'Very high confidence in plan success' }
   if (rate >= 80) return { label: 'Healthy', color: 'info', description: 'Plan has good probability of success' }
   if (rate >= 70) return { label: 'Moderate', color: 'warning', description: 'Consider adjustments to improve odds' }
@@ -31,14 +32,16 @@ const padding = { top: 30, right: 30, bottom: 50, left: 70 }
 const plotWidth = chartWidth - padding.left - padding.right
 const plotHeight = chartHeight - padding.top - padding.bottom
 
-const chartData = computed(() => props.data.yearByYearPercentiles)
+const chartData = computed(() => props.data?.yearByYearPercentiles ?? [])
 
 const maxValue = computed(() => {
-  return Math.max(...chartData.value.map(d => d.p90)) * 1.1
+  if (!chartData.value.length) return 1 // Avoid divide by zero
+  return Math.max(...chartData.value.map(d => d.p90)) * 1.1 || 1
 })
 
 // Generate percentile band paths
 const generatePath = (key: 'p10' | 'p25' | 'p50' | 'p75' | 'p90') => {
+  if (chartData.value.length < 2) return ''
   const points = chartData.value.map((d, i) => {
     const x = padding.left + (i / (chartData.value.length - 1)) * plotWidth
     const y = padding.top + plotHeight - (d[key] / maxValue.value) * plotHeight
@@ -55,6 +58,8 @@ const p10Path = computed(() => generatePath('p10'))
 
 // Generate area between two percentiles
 const generateAreaPath = (topKey: 'p10' | 'p25' | 'p50' | 'p75' | 'p90', bottomKey: 'p10' | 'p25' | 'p50' | 'p75' | 'p90') => {
+  if (chartData.value.length < 2) return ''
+
   const topPoints = chartData.value.map((d, i) => {
     const x = padding.left + (i / (chartData.value.length - 1)) * plotWidth
     const y = padding.top + plotHeight - (d[topKey] / maxValue.value) * plotHeight
@@ -103,12 +108,12 @@ const xAxisLabels = computed(() => {
       <v-icon icon="mdi-chart-bell-curve" class="mr-2" />
       Monte Carlo Simulation
       <v-spacer />
-      <v-chip :color="successRateColor" size="small">
-        {{ data.runsCount.toLocaleString() }} simulations
+      <v-chip v-if="data" :color="successRateColor" size="small">
+        {{ (data.runsCount ?? 0).toLocaleString() }} simulations
       </v-chip>
     </v-card-title>
 
-    <v-card-text>
+    <v-card-text v-if="data">
       <!-- Success Rate Gauge -->
       <div class="d-flex justify-center mb-6">
         <div class="success-gauge text-center">
@@ -268,11 +273,15 @@ const xAxisLabels = computed(() => {
       <!-- Interpretation -->
       <v-alert type="info" variant="tonal" density="compact" class="mt-4">
         <div class="text-body-2">
-          Based on {{ data.runsCount.toLocaleString() }} market simulations, your plan has a
-          <strong>{{ data.successRate }}%</strong> chance of not running out of money.
-          The median ending portfolio value is <strong>{{ formatINR(data.medianEndingValue, true) }}</strong>.
+          Based on {{ (data.runsCount ?? 0).toLocaleString() }} market simulations, your plan has a
+          <strong>{{ data.successRate ?? 0 }}%</strong> chance of not running out of money.
+          The median ending portfolio value is <strong>{{ formatINR(data.medianEndingValue ?? 0, true) }}</strong>.
         </div>
       </v-alert>
+    </v-card-text>
+    <v-card-text v-else class="text-center text-medium-emphasis">
+      <v-icon icon="mdi-chart-bell-curve-cumulative" size="48" class="mb-2" />
+      <div>Monte Carlo simulation data is loading...</div>
     </v-card-text>
   </v-card>
 </template>
