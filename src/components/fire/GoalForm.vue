@@ -74,6 +74,17 @@ const categoryOptions = computed(() => {
   }))
 })
 
+// Reset form function (defined before watch to avoid initialization error)
+const resetForm = () => {
+  name.value = ''
+  category.value = 'other'
+  targetAmount.value = 0
+  currentAmount.value = 0
+  targetDate.value = ''
+  monthlySIP.value = 0
+  expectedReturn.value = 10
+}
+
 // Watch for goal changes (editing mode)
 watch(
   () => props.goal,
@@ -93,25 +104,31 @@ watch(
   { immediate: true }
 )
 
-const resetForm = () => {
-  name.value = ''
-  category.value = 'other'
-  targetAmount.value = 0
-  currentAmount.value = 0
-  targetDate.value = ''
-  monthlySIP.value = 0
-  expectedReturn.value = 10
-}
-
 const handleSave = () => {
+  // Map frontend field names to backend expected fields
+  const categoryMap: Record<GoalCategory, string> = {
+    house: 'HOUSE',
+    car: 'CAR',
+    education: 'EDUCATION',
+    travel: 'TRAVEL',
+    emergency: 'EMERGENCY',
+    wedding: 'WEDDING',
+    retirement: 'RETIREMENT',
+    business: 'BUSINESS',
+    parents_care: 'PARENTS_CARE',
+    fire_corpus: 'FIRE_CORPUS',
+    other: 'OTHER'
+  }
+
   const data: CreateGoalInput = {
-    name: name.value,
-    category: category.value,
+    goalName: name.value,
+    goalType: categoryMap[category.value] || 'OTHER',
+    category: (categoryMap[category.value] || 'OTHER') as GoalCategory,
     targetAmount: targetAmount.value,
     currentAmount: currentAmount.value,
     targetDate: targetDate.value,
-    monthlySIP: monthlySIP.value,
-    expectedReturn: expectedReturn.value,
+    monthlyContribution: monthlySIP.value,
+    expectedReturns: expectedReturn.value,
     icon: goalCategoryConfig[category.value]?.icon,
     color: goalCategoryConfig[category.value]?.color
   }

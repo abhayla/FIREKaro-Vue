@@ -9,6 +9,7 @@ const props = defineProps<{
 }>()
 
 const sortedCategories = computed(() => {
+  if (!props.data?.categories?.length) return []
   return [...props.data.categories].sort((a, b) => {
     // Fully covered first, then by coverage percent
     if (a.covered && !b.covered) return -1
@@ -43,18 +44,18 @@ const getStatusColor = (category: ExpenseCoverage['categories'][0]) => {
         <div class="d-flex align-center justify-space-between">
           <div>
             <div class="text-body-1 font-weight-bold">
-              Your investments now cover {{ formatINR(data.totalCovered) }}/month!
+              Your investments now cover {{ formatINR(data?.totalCovered ?? 0) }}/month!
             </div>
             <div class="text-body-2 text-medium-emphasis">
-              {{ data.coveragePercent }}% of your monthly expenses are permanently funded
+              {{ (data?.coveragePercent ?? 0).toFixed(1) }}% of your monthly expenses are permanently funded
             </div>
           </div>
           <div class="text-h4 font-weight-bold text-success">
-            {{ data.coveragePercent }}%
+            {{ (data?.coveragePercent ?? 0).toFixed(1) }}%
           </div>
         </div>
         <v-progress-linear
-          :model-value="data.coveragePercent"
+          :model-value="data?.coveragePercent ?? 0"
           color="success"
           height="8"
           rounded
@@ -92,7 +93,7 @@ const getStatusColor = (category: ExpenseCoverage['categories'][0]) => {
 
             <div class="text-body-2 font-weight-medium mb-1">{{ category.name }}</div>
             <div class="text-h6 font-weight-bold text-currency mb-1">
-              {{ formatINR(category.amount, true) }}
+              {{ formatINR(category.amount ?? 0, true) }}
             </div>
 
             <v-progress-linear
@@ -116,16 +117,16 @@ const getStatusColor = (category: ExpenseCoverage['categories'][0]) => {
       <v-sheet rounded class="pa-4 mt-4 text-center" color="surface-variant">
         <v-icon icon="mdi-lightbulb" color="warning" size="32" class="mb-2" />
         <div class="text-body-1">
-          <span v-if="data.coveragePercent < 25">
+          <span v-if="(data?.coveragePercent ?? 0) < 25">
             Keep investing! Each expense you "unlock" brings you closer to freedom.
           </span>
-          <span v-else-if="data.coveragePercent < 50">
+          <span v-else-if="(data?.coveragePercent ?? 0) < 50">
             Great start! You're building a foundation of passive income.
           </span>
-          <span v-else-if="data.coveragePercent < 75">
+          <span v-else-if="(data?.coveragePercent ?? 0) < 75">
             Halfway there! Your investments are working hard for you.
           </span>
-          <span v-else-if="data.coveragePercent < 100">
+          <span v-else-if="(data?.coveragePercent ?? 0) < 100">
             Almost there! Financial independence is within sight!
           </span>
           <span v-else>

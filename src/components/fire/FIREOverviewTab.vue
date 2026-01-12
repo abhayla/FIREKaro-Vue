@@ -99,7 +99,7 @@ const monthlyPassiveIncome = computed(() => {
         <v-card v-else variant="outlined" class="pa-3 text-center h-100">
           <v-icon icon="mdi-percent" color="info" size="24" class="mb-1" />
           <div class="text-caption text-medium-emphasis">Savings Rate</div>
-          <div class="text-subtitle-1 font-weight-bold">{{ metrics?.savingsRate || 0 }}%</div>
+          <div class="text-subtitle-1 font-weight-bold">{{ (metrics?.savingsRate || 0).toFixed(1) }}%</div>
         </v-card>
       </v-col>
       <v-col cols="6" sm="3">
@@ -236,7 +236,7 @@ const monthlyPassiveIncome = computed(() => {
             <v-row dense class="mt-4">
               <v-col cols="6">
                 <div class="text-body-2 text-medium-emphasis mb-1">Your Savings Rate</div>
-                <div class="text-h5 font-weight-bold">{{ metrics?.savingsRate || 0 }}%</div>
+                <div class="text-h5 font-weight-bold">{{ (metrics?.savingsRate || 0).toFixed(1) }}%</div>
               </v-col>
               <v-col cols="6">
                 <div class="text-body-2 text-medium-emphasis mb-1">Monthly Savings</div>
