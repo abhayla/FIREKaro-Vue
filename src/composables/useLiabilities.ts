@@ -257,7 +257,9 @@ export function useCreditCards() {
     queryFn: async (): Promise<CreditCard[]> => {
       const res = await fetch(`/api/credit-cards${buildQueryParams()}`)
       if (!res.ok) throw new Error('Failed to fetch credit cards')
-      return res.json()
+      const data = await res.json()
+      // API returns { cards: [], summary: {} } - extract the cards array
+      return data.cards || []
     }
   })
 }
