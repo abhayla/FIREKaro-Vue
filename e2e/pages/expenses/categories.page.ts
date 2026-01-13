@@ -2,43 +2,65 @@ import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
 /**
- * Expense Categories & Rules Page Object
+ * Expense Categories Page Object
+ * Standalone page at /expenses/categories with Rules and Categories tabs
  */
 export class ExpenseCategoriesPage extends BasePage {
-  readonly url = "/dashboard/expenses/categories";
+  readonly url = "/expenses/categories";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Page Locators
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Expenses/i });
+    return this.page.getByRole("heading", { name: /Categories.*Rules|Categories/i });
   }
 
-  // Tabs within the categories page
+  // Tab Locators
   get rulesTab(): Locator {
     return this.page.getByRole("tab", { name: /Rules/i });
   }
 
   get categoriesTab(): Locator {
-    return this.page.locator(".v-tabs").getByRole("tab", { name: /Categories/i });
+    return this.page.getByRole("tab", { name: /Categories/i });
   }
 
-  // Rules section
+  // Create Rule Button (next to tabs)
+  get createRuleButton(): Locator {
+    return this.page.getByRole("button", { name: /Create Rule/i });
+  }
+
+  // ============================================
+  // Rules Tab Locators
+  // ============================================
+
   get addRuleButton(): Locator {
-    return this.page.getByRole("button", { name: /Add Rule|New Rule|Create Rule/i });
+    return this.page.getByRole("button", { name: /Create.*Rule|Add Rule|First Rule/i });
   }
 
   get rulesList(): Locator {
-    return this.page.locator(".v-list").filter({ hasText: /Rule|rule/i });
+    return this.page.locator(".v-list").filter({ hasText: /rule/i });
   }
 
   getRuleItem(ruleName: string): Locator {
     return this.page.locator(".v-list-item").filter({ hasText: ruleName });
+  }
+
+  get rulesCountChip(): Locator {
+    return this.page.locator(".v-chip").filter({ hasText: /rules/i });
+  }
+
+  get noRulesMessage(): Locator {
+    return this.page.getByText(/No Rules Yet/i);
+  }
+
+  // AI Suggestions section
+  get aiSuggestionsSection(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /suggested rules|Suggestions/i });
   }
 
   // Rule Editor Dialog
@@ -47,19 +69,19 @@ export class ExpenseCategoriesPage extends BasePage {
   }
 
   get ruleNameField(): Locator {
-    return this.page.getByRole("textbox", { name: /Rule Name|Name/i });
+    return this.ruleEditorDialog.getByRole("textbox", { name: /Rule Name|Name/i });
   }
 
   get ruleTargetCategorySelect(): Locator {
-    return this.page.locator(".v-select").filter({ hasText: /Target Category|Category/i });
+    return this.ruleEditorDialog.locator(".v-select").filter({ hasText: /Target Category|Category/i });
   }
 
   get addConditionButton(): Locator {
-    return this.page.getByRole("button", { name: /Add Condition/i });
+    return this.ruleEditorDialog.getByRole("button", { name: /Add Condition/i });
   }
 
   get testRuleButton(): Locator {
-    return this.page.getByRole("button", { name: /Test Rule|Test/i });
+    return this.ruleEditorDialog.getByRole("button", { name: /Test Rule|Test/i });
   }
 
   get saveRuleButton(): Locator {
@@ -70,22 +92,24 @@ export class ExpenseCategoriesPage extends BasePage {
     return this.ruleEditorDialog.getByRole("button", { name: /Cancel/i });
   }
 
-  // AI Suggestions section
-  get aiSuggestionsSection(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /AI Suggested|Suggestions/i });
+  // ============================================
+  // Categories Tab Locators
+  // ============================================
+
+  get budgetRuleExplanation(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /50\/30\/20/i });
   }
 
-  get refreshSuggestionsButton(): Locator {
-    return this.page.getByRole("button", { name: /Refresh|Get Suggestions/i });
+  get categoriesGrid(): Locator {
+    return this.page.locator(".v-row").filter({ has: this.page.locator(".v-card") });
   }
 
-  // Categories list
-  get categoriesList(): Locator {
-    return this.page.locator(".v-list, .v-row").filter({ has: this.page.locator("[class*='mdi-']") });
+  getCategoryCard(categoryName: string): Locator {
+    return this.page.locator(".v-card").filter({ hasText: categoryName });
   }
 
-  getCategoryItem(categoryName: string): Locator {
-    return this.page.locator(".v-card, .v-list-item").filter({ hasText: categoryName });
+  get categoryTypeChips(): Locator {
+    return this.page.locator(".v-chip").filter({ hasText: /NEEDS|WANTS|SAVINGS/i });
   }
 
   // ============================================
@@ -112,7 +136,10 @@ export class ExpenseCategoriesPage extends BasePage {
   // ============================================
 
   async openAddRuleDialog() {
-    await this.addRuleButton.click();
+    await this.switchToRulesTab();
+    // Try Create Rule button first, then fallback to "Create Your First Rule"
+    const createBtn = this.createRuleButton.or(this.addRuleButton);
+    await createBtn.first().click();
     await this.ruleEditorDialog.waitFor({ state: "visible" });
   }
 
@@ -143,7 +170,7 @@ export class ExpenseCategoriesPage extends BasePage {
         await this.page.waitForTimeout(200);
 
         // Fill condition fields (last added condition row)
-        const conditionRows = this.page.locator("[class*='condition'], .condition-row");
+        const conditionRows = this.ruleEditorDialog.locator("[class*='condition'], .condition-row");
         const lastRow = conditionRows.last();
 
         // Select field
@@ -178,18 +205,21 @@ export class ExpenseCategoriesPage extends BasePage {
   }
 
   async editRule(ruleName: string) {
+    await this.switchToRulesTab();
     const ruleItem = this.getRuleItem(ruleName);
     await ruleItem.getByRole("button", { name: /Edit/i }).click();
     await this.ruleEditorDialog.waitFor({ state: "visible" });
   }
 
   async deleteRule(ruleName: string) {
+    await this.switchToRulesTab();
     const ruleItem = this.getRuleItem(ruleName);
     await ruleItem.getByRole("button", { name: /Delete/i }).click();
     await this.page.waitForTimeout(300);
   }
 
   async toggleRule(ruleName: string) {
+    await this.switchToRulesTab();
     const ruleItem = this.getRuleItem(ruleName);
     await ruleItem.locator(".v-switch, input[type='checkbox']").click();
     await this.page.waitForTimeout(300);
@@ -200,7 +230,15 @@ export class ExpenseCategoriesPage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.page.getByRole("heading", { name: /Expenses/i })).toBeVisible();
+    await expect(this.pageTitle).toBeVisible();
+  }
+
+  async expectRulesTabActive() {
+    await expect(this.rulesTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  async expectCategoriesTabActive() {
+    await expect(this.categoriesTab).toHaveAttribute("aria-selected", "true");
   }
 
   async expectRuleDialogVisible() {
@@ -212,18 +250,46 @@ export class ExpenseCategoriesPage extends BasePage {
   }
 
   async expectRuleInList(ruleName: string) {
+    await this.switchToRulesTab();
     await expect(this.getRuleItem(ruleName)).toBeVisible();
   }
 
   async expectRuleNotInList(ruleName: string) {
+    await this.switchToRulesTab();
     await expect(this.getRuleItem(ruleName)).not.toBeVisible();
   }
 
   async expectCategoryVisible(categoryName: string) {
-    await expect(this.getCategoryItem(categoryName)).toBeVisible();
+    await this.switchToCategoriesTab();
+    await expect(this.getCategoryCard(categoryName)).toBeVisible();
+  }
+
+  async expectBudgetRuleExplanationVisible() {
+    await this.switchToCategoriesTab();
+    await expect(this.budgetRuleExplanation).toBeVisible();
   }
 
   async expectAISuggestionsVisible() {
+    await this.switchToRulesTab();
     await expect(this.aiSuggestionsSection).toBeVisible();
+  }
+
+  // Legacy methods for backwards compatibility
+  async openCategoriesDialog() {
+    // For backwards compatibility - now just navigates to the page
+    await this.navigateTo();
+  }
+
+  async closeCategoriesDialog() {
+    // No-op for standalone page
+  }
+
+  async expectDialogVisible() {
+    // For backwards compatibility - now checks page loaded
+    await this.expectPageLoaded();
+  }
+
+  async expectDialogClosed() {
+    // No-op for standalone page
   }
 }

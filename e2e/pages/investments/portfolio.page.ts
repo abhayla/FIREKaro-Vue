@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles overall portfolio management and asset allocation
  */
 export class PortfolioPage extends BasePage {
-  readonly url = "/dashboard/investments/portfolio";
+  readonly url = "/investments/portfolio";
 
   constructor(page: Page) {
     super(page);

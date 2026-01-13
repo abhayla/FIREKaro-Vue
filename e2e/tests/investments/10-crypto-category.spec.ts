@@ -12,7 +12,7 @@ import { cryptoData, cryptoSummary, testCryptoHolding } from "../../fixtures/inv
  */
 test.describe("Crypto Category", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/investments");
+    await page.goto("/investments");
     await page.waitForLoadState("domcontentloaded");
   });
 
@@ -101,7 +101,7 @@ test.describe("Crypto Category", () => {
 
   test("should display crypto in portfolio breakdown", async ({ page }) => {
     // Navigate to portfolio page
-    await page.goto("/dashboard/investments");
+    await page.goto("/investments");
     await page.waitForLoadState("domcontentloaded");
 
     // Check if crypto category is shown in breakdown
@@ -112,7 +112,7 @@ test.describe("Crypto Category", () => {
 
   test("should include crypto in asset allocation", async ({ page }) => {
     // Navigate to portfolio/reports
-    await page.goto("/dashboard/investments/reports");
+    await page.goto("/investments/reports");
     await page.waitForLoadState("domcontentloaded");
 
     // Check for crypto in allocation breakdown
@@ -161,7 +161,7 @@ test.describe("Crypto Category", () => {
  */
 test.describe("Crypto in Portfolio Overview", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/investments");
+    await page.goto("/investments");
     await page.waitForLoadState("domcontentloaded");
   });
 

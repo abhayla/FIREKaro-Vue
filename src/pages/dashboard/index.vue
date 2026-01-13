@@ -152,12 +152,12 @@ const userStore = useUserStore();
               <v-list-item
                 prepend-icon="mdi-plus"
                 title="Add Expense"
-                to="/dashboard/expenses/track"
+                to="/expenses/track"
               />
               <v-list-item
                 prepend-icon="mdi-cash-plus"
                 title="Record Income"
-                to="/dashboard/salary"
+                to="/income"
               />
               <v-list-item
                 prepend-icon="mdi-calculator"

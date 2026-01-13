@@ -74,6 +74,7 @@ model User {
   budgets                Budget[]
   expenseCategories      ExpenseCategory[]
   expenseCategoryRules   ExpenseCategoryRule[]
+  recurringExpenses      RecurringExpense[]
   alertPreferences       AlertPreference?
   alertDeliveries        AlertDelivery[]
 
@@ -1182,6 +1183,10 @@ model Expense {
   // Family member tracking (optional)
   familyMemberId  String?
 
+  // Recurring expense relation (if generated from a recurring template)
+  recurringExpenseId String?
+  recurringExpense   RecurringExpense? @relation(fields: [recurringExpenseId], references: [id], onDelete: SetNull)
+
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -1190,6 +1195,7 @@ model Expense {
   @@index([userId, date])
   @@index([userId, category])
   @@index([date])
+  @@index([recurringExpenseId])
 }
 
 model Budget {
@@ -1216,6 +1222,61 @@ model Budget {
 
   @@unique([userId, month, year])
   @@index([userId, year])
+}
+
+// Recurring Expense - Templates for auto-generating expenses on schedule
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum RecurringEndType {
+  NEVER
+  AFTER_OCCURRENCES
+  ON_DATE
+}
+
+model RecurringExpense {
+  id                String             @id @default(cuid())
+  userId            String
+
+  // Expense template fields
+  amount            Float
+  description       String
+  category          String
+  subcategory       String?
+  merchant          String?
+  paymentMethod     PaymentMethod      @default(OTHER)
+  tags              String[]           @default([])
+  notes             String?
+
+  // Recurrence settings
+  frequency         RecurringFrequency
+  startDate         DateTime
+  endType           RecurringEndType   @default(NEVER)
+  endAfterCount     Int?               // If endType = AFTER_OCCURRENCES
+  endDate           DateTime?          // If endType = ON_DATE
+
+  // Tracking
+  nextOccurrence    DateTime
+  lastGenerated     DateTime?
+  generatedCount    Int                @default(0)
+  isPaused          Boolean            @default(false)
+
+  // Family support
+  familyMemberId    String?
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generatedExpenses Expense[]
+
+  @@index([userId])
+  @@index([nextOccurrence])
+  @@index([isPaused])
 }
 
 model ExpenseCategory {

@@ -6,9 +6,9 @@ import { Page, Locator, expect } from "@playwright/test";
 export const DASHBOARD_SECTIONS = {
   salary: "/dashboard/salary",
   "non-salary-income": "/dashboard/non-salary-income",
-  "tax-planning": "/dashboard/tax-planning",
+  "tax-planning": "/tax-planning",
   expenses: "/dashboard/expenses",
-  investments: "/dashboard/investments",
+  investments: "/investments",
   liabilities: "/dashboard/liabilities",
   insurance: "/dashboard/insurance",
   "financial-health": "/financial-health",
@@ -543,5 +543,126 @@ export class BasePage {
     } else {
       return `${year - 1}-${year.toString().slice(-2)}`;
     }
+  }
+
+  // ============================================
+  // Family View Helpers
+  // ============================================
+
+  /**
+   * Get the family toggle button in the app bar
+   */
+  get familyToggleButton(): Locator {
+    return this.page.locator("header").getByRole("button").filter({
+      has: this.page.locator("i.mdi-account, i.mdi-account-group"),
+    });
+  }
+
+  /**
+   * Get the family view menu
+   */
+  get familyViewMenu(): Locator {
+    return this.page.locator(".v-menu__content, .v-overlay__content").filter({
+      hasText: /View Mode|Personal|Family/i,
+    });
+  }
+
+  /**
+   * Check if family view is currently active
+   */
+  async isFamilyViewActive(): Promise<boolean> {
+    const icon = this.familyToggleButton.locator("i");
+    const iconClass = await icon.getAttribute("class");
+    return iconClass?.includes("mdi-account-group") ?? false;
+  }
+
+  /**
+   * Open the family view menu
+   */
+  async openFamilyViewMenu() {
+    await this.familyToggleButton.click();
+    await this.familyViewMenu.waitFor({ state: "visible" });
+  }
+
+  /**
+   * Toggle to family view mode
+   */
+  async enableFamilyView() {
+    const isActive = await this.isFamilyViewActive();
+    if (!isActive) {
+      await this.openFamilyViewMenu();
+      await this.page.getByRole("button", { name: /Family/i }).click();
+      await this.page.waitForTimeout(500);
+    }
+  }
+
+  /**
+   * Toggle to personal view mode
+   */
+  async disableFamilyView() {
+    const isActive = await this.isFamilyViewActive();
+    if (isActive) {
+      await this.openFamilyViewMenu();
+      await this.page.getByRole("button", { name: /Personal/i }).click();
+      await this.page.waitForTimeout(500);
+    }
+  }
+
+  /**
+   * Select a specific family member in family view
+   */
+  async selectFamilyMember(memberName: string) {
+    await this.openFamilyViewMenu();
+    // First ensure family view is enabled
+    const familyBtn = this.familyViewMenu.getByRole("button", { name: /Family/i });
+    if (await familyBtn.isVisible()) {
+      await familyBtn.click();
+      await this.page.waitForTimeout(300);
+    }
+    // Then select the member from dropdown
+    const memberSelector = this.familyViewMenu.locator(".v-select");
+    if (await memberSelector.isVisible()) {
+      await memberSelector.click();
+      await this.page.getByRole("option", { name: new RegExp(memberName, "i") }).click();
+      await this.page.waitForTimeout(500);
+    }
+  }
+
+  /**
+   * Select "All Members" in family view
+   */
+  async selectAllFamilyMembers() {
+    await this.selectFamilyMember("All Members");
+  }
+
+  /**
+   * Get currently selected family member name
+   */
+  async getSelectedFamilyMemberName(): Promise<string | null> {
+    const isActive = await this.isFamilyViewActive();
+    if (!isActive) return null;
+
+    await this.openFamilyViewMenu();
+    const selector = this.familyViewMenu.locator(".v-select__selection");
+    const text = await selector.textContent();
+    // Close the menu
+    await this.page.keyboard.press("Escape");
+    return text;
+  }
+
+  /**
+   * Assert family view is enabled
+   */
+  async expectFamilyViewEnabled() {
+    const isActive = await this.isFamilyViewActive();
+    expect(isActive).toBeTruthy();
+  }
+
+  /**
+   * Assert family view is disabled (personal view)
+   */
+  async expectFamilyViewDisabled() {
+    const isActive = await this.isFamilyViewActive();
+    expect(isActive).toBeFalsy();
   }
 }

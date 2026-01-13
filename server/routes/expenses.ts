@@ -86,6 +86,34 @@ app.get('/', async (c) => {
   }
 })
 
+// GET /api/expenses/categories - List expense categories
+// IMPORTANT: This route MUST be defined before /:id to avoid matching "categories" as an expense ID
+app.get('/categories', async (c) => {
+  const userId = c.get('userId')
+
+  try {
+    // Get system categories and user custom categories
+    const categories = await prisma.expenseCategory.findMany({
+      where: {
+        OR: [{ isSystem: true }, { userId }],
+        isActive: true,
+      },
+      orderBy: [{ isSystem: 'desc' }, { displayOrder: 'asc' }, { name: 'asc' }],
+    })
+
+    // If no categories exist, return default categories
+    if (categories.length === 0) {
+      return c.json(getDefaultCategories())
+    }
+
+    return c.json(categories)
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    // Return default categories on error
+    return c.json(getDefaultCategories())
+  }
+})
+
 // GET /api/expenses/:id - Get single expense
 app.get('/:id', async (c) => {
   const userId = c.get('userId')
@@ -241,33 +269,6 @@ app.delete('/:id', async (c) => {
   } catch (error) {
     console.error('Error deleting expense:', error)
     return c.json({ success: false, error: 'Failed to delete expense' }, 500)
-  }
-})
-
-// GET /api/expenses/categories - List expense categories
-app.get('/categories', async (c) => {
-  const userId = c.get('userId')
-
-  try {
-    // Get system categories and user custom categories
-    const categories = await prisma.expenseCategory.findMany({
-      where: {
-        OR: [{ isSystem: true }, { userId }],
-        isActive: true,
-      },
-      orderBy: [{ isSystem: 'desc' }, { displayOrder: 'asc' }, { name: 'asc' }],
-    })
-
-    // If no categories exist, return default categories
-    if (categories.length === 0) {
-      return c.json(getDefaultCategories())
-    }
-
-    return c.json(categories)
-  } catch (error) {
-    console.error('Error fetching categories:', error)
-    // Return default categories on error
-    return c.json(getDefaultCategories())
   }
 })
 

@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
 test.describe("App Bar Family Toggle", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to any dashboard page
-    await page.goto("/dashboard/investments");
+    await page.goto("/investments");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   });
@@ -151,7 +151,7 @@ test.describe("App Bar Family Toggle", () => {
 
   test("should not show page-level family toggle on any page", async ({ page }) => {
     // Check investments page
-    await page.goto("/dashboard/investments");
+    await page.goto("/investments");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
@@ -170,13 +170,13 @@ test.describe("App Bar Family Toggle", () => {
 
   test("should be visible across all dashboard sections", async ({ page }) => {
     const sections = [
-      "/dashboard/investments",
+      "/investments",
       "/dashboard/liabilities",
-      "/financial-health",
-      "/dashboard/tax-planning",
+      "/dashboard/financial-health",
+      "/tax-planning",
       "/dashboard/non-salary-income",
       "/dashboard/salary",
-      "/dashboard/expenses",
+      "/expenses",
       "/dashboard/insurance",
       "/dashboard/fire-goals",
     ];

@@ -56,7 +56,7 @@ const loanSchema = toTypedSchema(
   })
 )
 
-const { handleSubmit, resetForm, values, setValues } = useForm({
+const { handleSubmit, resetForm, values, setValues, defineField } = useForm({
   validationSchema: loanSchema,
   initialValues: {
     loanName: '',
@@ -78,6 +78,25 @@ const { handleSubmit, resetForm, values, setValues } = useForm({
     notes: ''
   }
 })
+
+// Define writable fields using defineField
+const [loanName] = defineField('loanName')
+const [loanType] = defineField('loanType')
+const [lender] = defineField('lender')
+const [loanAccountNumber] = defineField('loanAccountNumber')
+const [principalAmount] = defineField('principalAmount')
+const [outstandingAmount] = defineField('outstandingAmount')
+const [interestRate] = defineField('interestRate')
+const [tenure] = defineField('tenure')
+const [remainingTenure] = defineField('remainingTenure')
+const [loanStartDate] = defineField('loanStartDate')
+const [emiStartDate] = defineField('emiStartDate')
+const [maturityDate] = defineField('maturityDate')
+const [nextEmiDate] = defineField('nextEmiDate')
+const [taxBenefitSection] = defineField('taxBenefitSection')
+const [maxTaxBenefit] = defineField('maxTaxBenefit')
+const [purpose] = defineField('purpose')
+const [notes] = defineField('notes')
 
 // Watch for loan prop changes
 watch(
@@ -112,60 +131,61 @@ watch(
 
 // Auto-calculate maturity date
 watch(
-  [() => values.loanStartDate, () => values.tenure],
-  ([startDate, tenure]) => {
-    if (startDate && tenure) {
+  [loanStartDate, tenure],
+  ([startDate, tenureVal]) => {
+    if (startDate && tenureVal) {
       const start = new Date(startDate)
-      start.setMonth(start.getMonth() + tenure)
-      setValues({ ...values, maturityDate: start.toISOString().split('T')[0] })
+      start.setMonth(start.getMonth() + tenureVal)
+      maturityDate.value = start.toISOString().split('T')[0]
     }
   }
 )
 
 // Auto-set outstanding = principal for new loans
 watch(
-  () => values.principalAmount,
+  principalAmount,
   (principal) => {
     if (!props.isEditing && principal && principal > 0) {
-      setValues({ ...values, outstandingAmount: principal, remainingTenure: values.tenure })
+      outstandingAmount.value = principal
+      remainingTenure.value = tenure.value
     }
   }
 )
 
 // Auto-set remaining tenure for new loans
 watch(
-  () => values.tenure,
-  (tenure) => {
-    if (!props.isEditing && tenure && tenure > 0) {
-      setValues({ ...values, remainingTenure: tenure })
+  tenure,
+  (tenureVal) => {
+    if (!props.isEditing && tenureVal && tenureVal > 0) {
+      remainingTenure.value = tenureVal
     }
   }
 )
 
 // Calculated EMI
 const calculatedEmi = computed(() => {
-  if (values.principalAmount && values.interestRate && values.tenure) {
-    return calculateEMI(values.principalAmount, values.interestRate, values.tenure)
+  if (principalAmount.value && interestRate.value && tenure.value) {
+    return calculateEMI(principalAmount.value, interestRate.value, tenure.value)
   }
   return 0
 })
 
 // Total interest
 const totalInterest = computed(() => {
-  if (calculatedEmi.value && values.tenure) {
-    return calculateTotalInterest(values.principalAmount || 0, calculatedEmi.value, values.tenure)
+  if (calculatedEmi.value && tenure.value) {
+    return calculateTotalInterest(principalAmount.value || 0, calculatedEmi.value, tenure.value)
   }
   return 0
 })
 
 // Total payable
 const totalPayable = computed(() => {
-  return (values.principalAmount || 0) + totalInterest.value
+  return (principalAmount.value || 0) + totalInterest.value
 })
 
 // Tax benefit suggestions based on loan type
 const suggestedTaxBenefit = computed(() => {
-  switch (values.loanType) {
+  switch (loanType.value) {
     case 'HOME_LOAN':
       return { section: '80C + 24(b)', maxBenefit: 350000 }
     case 'EDUCATION_LOAN':
@@ -227,7 +247,7 @@ const handleClose = () => {
             <!-- Loan Name -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="values.loanName"
+                v-model="loanName"
                 label="Loan Name"
                 variant="outlined"
                 density="comfortable"
@@ -240,7 +260,7 @@ const handleClose = () => {
             <!-- Loan Type -->
             <v-col cols="12" md="6">
               <v-select
-                v-model="values.loanType"
+                v-model="loanType"
                 :items="LOAN_TYPES"
                 item-title="label"
                 item-value="value"
@@ -254,7 +274,7 @@ const handleClose = () => {
             <!-- Lender Name -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="values.lender"
+                v-model="lender"
                 label="Lender / Bank Name"
                 variant="outlined"
                 density="comfortable"
@@ -267,7 +287,7 @@ const handleClose = () => {
             <!-- Account Number -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="values.loanAccountNumber"
+                v-model="loanAccountNumber"
                 label="Loan Account Number (Optional)"
                 variant="outlined"
                 density="comfortable"
@@ -278,7 +298,7 @@ const handleClose = () => {
             <!-- Principal Amount -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.principalAmount"
+                v-model.number="principalAmount"
                 label="Principal Amount"
                 type="number"
                 prefix="₹"
@@ -292,7 +312,7 @@ const handleClose = () => {
             <!-- Outstanding Amount -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.outstandingAmount"
+                v-model.number="outstandingAmount"
                 label="Outstanding Amount"
                 type="number"
                 prefix="₹"
@@ -306,7 +326,7 @@ const handleClose = () => {
             <!-- Interest Rate -->
             <v-col cols="12" md="4">
               <v-text-field
-                v-model.number="values.interestRate"
+                v-model.number="interestRate"
                 label="Interest Rate (% p.a.)"
                 type="number"
                 step="0.1"
@@ -320,13 +340,13 @@ const handleClose = () => {
             <!-- Tenure -->
             <v-col cols="12" md="4">
               <v-text-field
-                v-model.number="values.tenure"
+                v-model.number="tenure"
                 label="Total Tenure (Months)"
                 type="number"
                 variant="outlined"
                 density="comfortable"
                 prepend-inner-icon="mdi-calendar-range"
-                :hint="`${Math.floor((values.tenure || 0) / 12)} years ${(values.tenure || 0) % 12} months`"
+                :hint="`${Math.floor((tenure || 0) / 12)} years ${(tenure || 0) % 12} months`"
                 persistent-hint
               />
             </v-col>
@@ -334,7 +354,7 @@ const handleClose = () => {
             <!-- Remaining Tenure -->
             <v-col cols="12" md="4">
               <v-text-field
-                v-model.number="values.remainingTenure"
+                v-model.number="remainingTenure"
                 label="Remaining Tenure (Months)"
                 type="number"
                 variant="outlined"
@@ -346,7 +366,7 @@ const handleClose = () => {
             <!-- Start Date -->
             <v-col cols="12" md="4">
               <v-text-field
-                v-model="values.loanStartDate"
+                v-model="loanStartDate"
                 label="Loan Start Date"
                 type="date"
                 variant="outlined"
@@ -358,7 +378,7 @@ const handleClose = () => {
             <!-- EMI Start Date -->
             <v-col cols="12" md="4">
               <v-text-field
-                v-model="values.emiStartDate"
+                v-model="emiStartDate"
                 label="EMI Start Date"
                 type="date"
                 variant="outlined"
@@ -370,7 +390,7 @@ const handleClose = () => {
             <!-- Next EMI Date -->
             <v-col cols="12" md="4">
               <v-text-field
-                v-model="values.nextEmiDate"
+                v-model="nextEmiDate"
                 label="Next EMI Date"
                 type="date"
                 variant="outlined"
@@ -382,7 +402,7 @@ const handleClose = () => {
             <!-- Purpose -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="values.purpose"
+                v-model="purpose"
                 label="Purpose (Optional)"
                 variant="outlined"
                 density="comfortable"
@@ -394,7 +414,7 @@ const handleClose = () => {
             <!-- Tax Benefit Section -->
             <v-col cols="12" md="3">
               <v-text-field
-                v-model="values.taxBenefitSection"
+                v-model="taxBenefitSection"
                 label="Tax Section"
                 variant="outlined"
                 density="comfortable"
@@ -406,7 +426,7 @@ const handleClose = () => {
             <!-- Max Tax Benefit -->
             <v-col cols="12" md="3">
               <v-text-field
-                v-model.number="values.maxTaxBenefit"
+                v-model.number="maxTaxBenefit"
                 label="Max Tax Benefit"
                 type="number"
                 prefix="₹"
@@ -419,7 +439,7 @@ const handleClose = () => {
             <!-- Notes -->
             <v-col cols="12">
               <v-textarea
-                v-model="values.notes"
+                v-model="notes"
                 label="Notes (Optional)"
                 variant="outlined"
                 density="comfortable"
@@ -451,7 +471,7 @@ const handleClose = () => {
                 </v-col>
                 <v-col cols="6" sm="3">
                   <div class="text-caption text-medium-emphasis">Maturity Date</div>
-                  <div class="text-h6">{{ values.maturityDate ? new Date(values.maturityDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '-' }}</div>
+                  <div class="text-h6">{{ maturityDate ? new Date(maturityDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '-' }}</div>
                 </v-col>
               </v-row>
             </v-card-text>
@@ -465,10 +485,10 @@ const handleClose = () => {
             density="compact"
             class="mt-4"
           >
-            <template v-if="values.loanType === 'HOME_LOAN'">
+            <template v-if="loanType === 'HOME_LOAN'">
               <strong>Tax Benefits:</strong> Claim interest up to Rs. 2L under Section 24(b) and principal up to Rs. 1.5L under Section 80C.
             </template>
-            <template v-else-if="values.loanType === 'EDUCATION_LOAN'">
+            <template v-else-if="loanType === 'EDUCATION_LOAN'">
               <strong>Tax Benefits:</strong> Entire interest paid is deductible under Section 80E for 8 years.
             </template>
           </v-alert>

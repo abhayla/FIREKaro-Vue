@@ -168,7 +168,7 @@ function handleSubmit() {
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="form.propertyName"
-                label="Property Name"
+                label="Property Name *"
                 placeholder="e.g., Green Tower Apt"
                 required
                 :rules="[(v) => !!v || 'Property name is required']"
@@ -190,8 +190,6 @@ function handleSubmit() {
                 v-model="form.propertyAddress"
                 label="Property Address"
                 rows="2"
-                required
-                :rules="[(v) => !!v || 'Address is required']"
               />
             </v-col>
 
@@ -222,9 +220,10 @@ function handleSubmit() {
             <v-col cols="12" md="4">
               <v-text-field
                 v-model.number="form.monthlyRent"
-                label="Monthly Rent"
+                label="Monthly Rent *"
                 type="number"
                 prefix="Rs."
+                required
                 :rules="[(v) => v > 0 || 'Enter monthly rent']"
               />
             </v-col>
@@ -389,9 +388,7 @@ function handleSubmit() {
         <v-btn
           color="primary"
           variant="flat"
-          :disabled="
-            !form.propertyName || !form.propertyAddress || !form.monthlyRent
-          "
+          :disabled="!form.propertyName || !form.monthlyRent"
           @click="handleSubmit"
         >
           {{ isEdit ? "Update" : "Add" }} Property

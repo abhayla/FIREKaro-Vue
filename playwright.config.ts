@@ -25,8 +25,8 @@ export default defineConfig({
   },
 
   use: {
-    // Base URL for all tests (port 5180 for this worktree)
-    baseURL: 'http://localhost:5180',
+    // Base URL for all tests
+    baseURL: 'http://localhost:5181',
 
     // Use Chrome browser
     browserName: 'chromium',
@@ -68,11 +68,11 @@ export default defineConfig({
     },
   ],
 
-  // Auto-start dev server before tests (port 5180 for this worktree)
+  // Auto-start dev server before tests
   webServer: {
-    command: 'npm run dev:frontend -- --port 5180',
-    port: 5180,
-    reuseExistingServer: !process.env.CI,
+    command: 'npm run dev',
+    port: 5181,
+    reuseExistingServer: true,
     timeout: 120000,
   },
 

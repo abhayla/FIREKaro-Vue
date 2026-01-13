@@ -31,6 +31,7 @@ import expensesRoutes from './routes/expenses'
 import budgetsRoutes from './routes/budgets'
 import expensesAiRoutes from './routes/expenses-ai'
 import expenseRulesRoutes from './routes/expense-rules'
+import recurringExpensesRoutes from './routes/recurring-expenses'
 
 // Alert routes
 import alertsRoutes from './routes/alerts'
@@ -60,7 +61,7 @@ app.use('*', logger())
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5193', 'http://localhost:5194'],
     credentials: true,
   })
 )
@@ -102,6 +103,7 @@ app.route('/api/expenses', expensesRoutes)
 app.route('/api/expenses/ai', expensesAiRoutes)
 app.route('/api/budgets', budgetsRoutes)
 app.route('/api/expense-rules', expenseRulesRoutes)
+app.route('/api/recurring-expenses', recurringExpensesRoutes)
 
 // API routes - Alerts
 app.route('/api/alerts', alertsRoutes)

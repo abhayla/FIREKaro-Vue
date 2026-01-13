@@ -2,10 +2,11 @@ import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
 /**
- * Expenses Overview Page Object
+ * Expenses Landing Page Object
+ * This is the main expenses landing page with summary cards, smart alerts, and quick navigation
  */
 export class ExpensesOverviewPage extends BasePage {
-  readonly url = "/dashboard/expenses";
+  readonly url = "/expenses";
 
   constructor(page: Page) {
     super(page);
@@ -19,38 +20,76 @@ export class ExpensesOverviewPage extends BasePage {
     return this.page.getByRole("heading", { name: /Expenses/i });
   }
 
-  // Tabs
-  get overviewTab(): Locator {
-    return this.page.getByRole("tab", { name: "Overview" });
+  // Summary Cards
+  get totalExpensesCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Total Expenses/i });
   }
 
-  get trackTab(): Locator {
-    return this.page.getByRole("tab", { name: /Track|Add/i });
+  get budgetUsageCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Budget Usage/i });
   }
 
-  get budgetsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Budgets/i });
+  get recurringCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Recurring/i }).first();
   }
 
-  get categoriesTab(): Locator {
-    return this.page.getByRole("tab", { name: /Categories/i });
+  get topCategoryCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Top Category/i });
   }
 
-  get reportsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Reports/i });
+  // Smart Alerts
+  get smartAlerts(): Locator {
+    return this.page.locator(".v-alert");
   }
 
-  // Summary cards
-  get totalSpentCard(): Locator {
-    return this.getSummaryCardByTitle("Total Spent");
+  get budgetExceededAlert(): Locator {
+    return this.page.locator(".v-alert").filter({ hasText: /Budget Exceeded|Budget Critical/i });
   }
 
-  get budgetRemainingCard(): Locator {
-    return this.getSummaryCardByTitle("Remaining");
+  get noBudgetAlert(): Locator {
+    return this.page.locator(".v-alert").filter({ hasText: /No Budget Set/i });
   }
 
-  get savingsRateCard(): Locator {
-    return this.getSummaryCardByTitle("Savings Rate");
+  get recurringDueAlert(): Locator {
+    return this.page.locator(".v-alert").filter({ hasText: /Recurring Due/i });
+  }
+
+  // Quick Navigation Cards
+  get quickNavSection(): Locator {
+    return this.page.locator(".v-row").filter({ hasText: /Quick Navigation/i });
+  }
+
+  get trackNavCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Track Expenses/i });
+  }
+
+  get budgetsNavCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Budgets/i }).filter({ hasText: /50\/30\/20/i });
+  }
+
+  get recurringNavCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Recurring/i }).filter({ hasText: /Subscriptions/i });
+  }
+
+  // Quick Actions
+  get quickActionsSection(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Quick Actions/i });
+  }
+
+  get addExpenseButton(): Locator {
+    return this.quickActionsSection.getByRole("button", { name: /Add Expense/i });
+  }
+
+  get setBudgetButton(): Locator {
+    return this.quickActionsSection.getByRole("button", { name: /Set Budget/i });
+  }
+
+  get addRecurringButton(): Locator {
+    return this.quickActionsSection.getByRole("button", { name: /Add Recurring/i });
+  }
+
+  get importCSVButton(): Locator {
+    return this.quickActionsSection.getByRole("button", { name: /Import CSV/i });
   }
 
   // ============================================
@@ -62,12 +101,64 @@ export class ExpensesOverviewPage extends BasePage {
     await this.waitForPageLoad();
   }
 
+  async navigateToTrack() {
+    await this.trackNavCard.click();
+    await this.page.waitForURL(/\/expenses\/track/);
+  }
+
+  async navigateToBudgets() {
+    await this.budgetsNavCard.click();
+    await this.page.waitForURL(/\/expenses\/budgets/);
+  }
+
+  async navigateToRecurring() {
+    await this.recurringNavCard.click();
+    await this.page.waitForURL(/\/expenses\/recurring/);
+  }
+
+  // ============================================
+  // Quick Action Navigation
+  // ============================================
+
+  async clickAddExpense() {
+    await this.addExpenseButton.click();
+    await this.page.waitForURL(/\/expenses\/track/);
+  }
+
+  async clickSetBudget() {
+    await this.setBudgetButton.click();
+    await this.page.waitForURL(/\/expenses\/budgets/);
+  }
+
+  async clickAddRecurring() {
+    await this.addRecurringButton.click();
+    await this.page.waitForURL(/\/expenses\/recurring/);
+  }
+
   // ============================================
   // Getters
   // ============================================
 
-  async getTotalSpent(): Promise<string> {
-    return await this.getSummaryCardValue("Total Spent");
+  async getTotalExpenses(): Promise<string> {
+    const card = this.totalExpensesCard;
+    const value = card.locator(".text-h5, .text-h6").first();
+    return await value.textContent() ?? "";
+  }
+
+  async getBudgetUsage(): Promise<string> {
+    const card = this.budgetUsageCard;
+    const value = card.locator(".text-h5").first();
+    return await value.textContent() ?? "";
+  }
+
+  async getRecurringCount(): Promise<string> {
+    const card = this.recurringCard;
+    const value = card.locator(".text-h5").first();
+    return await value.textContent() ?? "";
+  }
+
+  async getAlertCount(): Promise<number> {
+    return await this.smartAlerts.count();
   }
 
   // ============================================
@@ -76,6 +167,31 @@ export class ExpensesOverviewPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+    // Check for summary cards (landing page specific)
+    await expect(this.totalExpensesCard).toBeVisible();
+  }
+
+  async expectSummaryCardsVisible() {
+    await expect(this.totalExpensesCard).toBeVisible();
+    await expect(this.budgetUsageCard).toBeVisible();
+    await expect(this.recurringCard).toBeVisible();
+    await expect(this.topCategoryCard).toBeVisible();
+  }
+
+  async expectQuickNavVisible() {
+    await expect(this.trackNavCard).toBeVisible();
+    await expect(this.budgetsNavCard).toBeVisible();
+    await expect(this.recurringNavCard).toBeVisible();
+  }
+
+  async expectQuickActionsVisible() {
+    await expect(this.quickActionsSection).toBeVisible();
+    await expect(this.addExpenseButton).toBeVisible();
+    await expect(this.setBudgetButton).toBeVisible();
+    await expect(this.addRecurringButton).toBeVisible();
+  }
+
+  async expectBudgetAlertVisible() {
+    await expect(this.budgetExceededAlert.or(this.noBudgetAlert)).toBeVisible();
   }
 }
