@@ -499,12 +499,12 @@ export interface InterestIncome {
 export interface InterestIncomeInput {
   fiscalYear: string;
   sourceType: InterestSourceType;
-  institutionName: string;
+  institutionName?: string;
   accountNumber?: string;
   branchName?: string;
-  principalAmount?: number;
-  interestRate?: number;
-  interestEarned: number;
+  principalAmount: number;
+  interestRate: number;
+  interestEarned?: number;
   accruedInterest?: number;
   tdsDeducted?: number;
   tdsRate?: number;
@@ -610,7 +610,7 @@ export interface DividendIncomeInput {
   dividendType?: DividendType;
   recordDate?: string;
   exDividendDate?: string;
-  paymentDate: string;
+  paymentDate?: string;
   dividendPerShare?: number;
   numberOfShares?: number;
   dividendAmount: number;
