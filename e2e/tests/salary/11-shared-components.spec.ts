@@ -124,7 +124,7 @@ test.describe("Shared Components in Salary Section", () => {
       page,
     }) => {
       // Navigate and quickly check for loading
-      await page.goto("/dashboard/salary");
+      await page.goto("/income/salary");
       await page.waitForLoadState("domcontentloaded");
 
       // Look for loading indicator or skeleton loader or data - any visible content is fine

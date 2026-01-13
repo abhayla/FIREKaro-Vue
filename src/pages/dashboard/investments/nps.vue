@@ -1,53 +1,57 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import SectionHeader from '@/components/shared/SectionHeader.vue'
-import NPSCalculator from '@/components/investments/NPSCalculator.vue'
-import {
-  useNPS,
-  useUpdateNPS,
-  formatINRCompact,
-  type NPSData
-} from '@/composables/useInvestments'
+import { ref } from "vue";
+import SectionHeader from "@/components/shared/SectionHeader.vue";
+import FinancialYearSelector from "@/components/shared/FinancialYearSelector.vue";
+import NPSOverviewTab from "@/components/investments/tabs/NPSOverviewTab.vue";
+import NPSDetailsTab from "@/components/investments/tabs/NPSDetailsTab.vue";
+import { useFinancialYear } from "@/composables/useSalary";
+import { useNPS, useUpdateNPS, type NPSData } from "@/composables/useInvestments";
 
-const tabs = [
-  { title: 'Portfolio', route: '/dashboard/investments' },
-  { title: 'Stocks', route: '/dashboard/investments/stocks' },
-  { title: 'Mutual Funds', route: '/dashboard/investments/mutual-funds' },
-  { title: 'EPF & PPF', route: '/dashboard/investments/epf-ppf' },
-  { title: 'NPS', route: '/dashboard/investments/nps' },
-  { title: 'Property', route: '/dashboard/investments/property' },
-  { title: 'Reports', route: '/dashboard/investments/reports' },
-]
+// Active tab state
+const activeTab = ref("overview");
+
+// Financial year selection
+const { selectedFinancialYear, setFinancialYear } = useFinancialYear();
 
 // Data fetching
-const { data: npsData, isLoading } = useNPS()
-const updateNPS = useUpdateNPS()
+const updateNPS = useUpdateNPS();
 
-// Mock data for demo
-const mockNPSData: NPSData = {
-  pranNumber: 'PRAN1234567890',
-  tier1Balance: 580000,
-  tier2Balance: 120000,
-  totalContributions: 480000,
-  totalReturns: 220000,
-  assetAllocation: {
-    equityE: 50,
-    corporateBondC: 30,
-    governmentBondG: 15,
-    alternativeA: 5
-  },
-  pensionFundManager: 'SBI Pension Fund',
-  investmentChoice: 'active',
-  lastUpdated: '2024-12-20'
-}
+// Dialog state
+const showContributionDialog = ref(false);
 
-// Use mock data if API returns empty
-const nps = ref(npsData.value ?? mockNPSData)
+// Contribution form data
+const contributionForm = ref({
+  type: "employee" as "employee" | "employer" | "voluntary",
+  tier: "1" as "1" | "2",
+  amount: 0,
+  date: new Date().toISOString().substring(0, 10),
+  reference: "",
+});
 
-// Handlers
+// Handle NPS update
 const handleNPSUpdate = async (data: Partial<NPSData>) => {
-  await updateNPS.mutateAsync(data)
-}
+  await updateNPS.mutateAsync(data);
+};
+
+// Handle add contribution
+const handleAddContribution = () => {
+  showContributionDialog.value = true;
+};
+
+// Save contribution
+const saveContribution = async () => {
+  // Here you would call the API to save the contribution
+  console.log("Saving contribution:", contributionForm.value);
+  showContributionDialog.value = false;
+  // Reset form
+  contributionForm.value = {
+    type: "employee",
+    tier: "1",
+    amount: 0,
+    date: new Date().toISOString().substring(0, 10),
+    reference: "",
+  };
+};
 </script>
 
 <template>
@@ -56,154 +60,108 @@ const handleNPSUpdate = async (data: Partial<NPSData>) => {
       title="Investments"
       subtitle="National Pension System"
       icon="mdi-chart-line"
-      :tabs="tabs"
     />
 
-    <!-- Summary Cards -->
-    <v-row class="mb-6">
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center">
-          <v-icon icon="mdi-account-cash" size="32" color="orange" class="mb-2" />
-          <div class="text-body-2 text-medium-emphasis">Total NPS Corpus</div>
-          <div class="text-h5 font-weight-bold">
-            {{ formatINRCompact(mockNPSData.tier1Balance + (mockNPSData.tier2Balance ?? 0)) }}
-          </div>
-          <div class="text-caption text-success">
-            +{{ formatINRCompact(mockNPSData.totalReturns) }} returns
-          </div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" color="orange" variant="tonal">
-          <v-icon icon="mdi-numeric-1-circle" size="32" class="mb-2" />
-          <div class="text-body-2 text-medium-emphasis">Tier I (Retirement)</div>
-          <div class="text-h5 font-weight-bold">{{ formatINRCompact(mockNPSData.tier1Balance) }}</div>
-          <div class="text-caption">Lock-in till 60</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" variant="outlined">
-          <v-icon icon="mdi-numeric-2-circle" size="32" color="primary" class="mb-2" />
-          <div class="text-body-2 text-medium-emphasis">Tier II (Flexible)</div>
-          <div class="text-h5 font-weight-bold">{{ formatINRCompact(mockNPSData.tier2Balance ?? 0) }}</div>
-          <div class="text-caption">No lock-in</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center">
-          <v-icon icon="mdi-shield-check" size="32" color="success" class="mb-2" />
-          <div class="text-body-2 text-medium-emphasis">80CCD(1B)</div>
-          <div class="text-h5 font-weight-bold">₹50K</div>
-          <div class="text-caption text-medium-emphasis">Additional deduction</div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Tab Navigation and FY Selector -->
+    <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-3">
+      <v-tabs v-model="activeTab" color="primary" density="compact">
+        <v-tab value="overview">Overview</v-tab>
+        <v-tab value="details">Item Details</v-tab>
+      </v-tabs>
 
-    <!-- Account Info -->
-    <v-card variant="outlined" class="mb-6">
-      <v-card-text class="d-flex gap-4 flex-wrap">
-        <v-chip color="primary" variant="tonal">
-          <v-icon icon="mdi-card-account-details" class="mr-1" />
-          PRAN: {{ mockNPSData.pranNumber }}
-        </v-chip>
-        <v-chip color="orange" variant="tonal">
-          <v-icon icon="mdi-bank" class="mr-1" />
-          {{ mockNPSData.pensionFundManager }}
-        </v-chip>
-        <v-chip :color="mockNPSData.investmentChoice === 'active' ? 'success' : 'info'" variant="tonal">
-          <v-icon icon="mdi-tune" class="mr-1" />
-          {{ mockNPSData.investmentChoice === 'active' ? 'Active Choice' : 'Auto Choice' }}
-        </v-chip>
-        <v-chip variant="outlined">
-          <v-icon icon="mdi-calendar" class="mr-1" />
-          Updated: {{ new Date(mockNPSData.lastUpdated).toLocaleDateString('en-IN') }}
-        </v-chip>
-      </v-card-text>
-    </v-card>
+      <FinancialYearSelector v-model="selectedFinancialYear" :dense="true" />
+    </div>
 
-    <!-- Loading State -->
-    <template v-if="isLoading">
-      <v-skeleton-loader type="card, card" />
-    </template>
+    <!-- Tab Content -->
+    <v-window v-model="activeTab">
+      <v-window-item value="overview">
+        <NPSOverviewTab
+          :financial-year="selectedFinancialYear"
+          @go-to-details="activeTab = 'details'"
+        />
+      </v-window-item>
 
-    <!-- NPS Calculator -->
-    <template v-else>
-      <NPSCalculator :nps-data="mockNPSData" @update="handleNPSUpdate" />
-    </template>
+      <v-window-item value="details">
+        <NPSDetailsTab
+          :financial-year="selectedFinancialYear"
+          @add-contribution="handleAddContribution"
+        />
+      </v-window-item>
+    </v-window>
 
-    <!-- NPS Info Cards -->
-    <v-row class="mt-6">
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="h-100">
-          <v-card-title class="text-subtitle-1">
-            <v-icon icon="mdi-information" class="mr-2" />
-            NPS Tax Benefits
-          </v-card-title>
-          <v-card-text>
-            <v-table density="compact">
-              <tbody>
-                <tr>
-                  <td>Section 80CCD(1)</td>
-                  <td>Up to 10% of salary (within 80C limit of ₹1.5L)</td>
-                </tr>
-                <tr>
-                  <td class="font-weight-bold text-success">Section 80CCD(1B)</td>
-                  <td class="font-weight-bold text-success">Additional ₹50,000 (over 80C)</td>
-                </tr>
-                <tr>
-                  <td>Section 80CCD(2)</td>
-                  <td>Employer contribution up to 10% of salary</td>
-                </tr>
-                <tr>
-                  <td>At Maturity</td>
-                  <td>60% lumpsum tax-free, 40% must buy annuity</td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
+    <!-- Add Contribution Dialog -->
+    <v-dialog v-model="showContributionDialog" max-width="500">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-plus" class="mr-2" color="primary" />
+          Add NPS Contribution
+        </v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="saveContribution">
+            <v-select
+              v-model="contributionForm.type"
+              :items="[
+                { title: 'Employee Contribution', value: 'employee' },
+                { title: 'Employer Contribution', value: 'employer' },
+                { title: 'Voluntary Contribution', value: 'voluntary' },
+              ]"
+              label="Contribution Type"
+              variant="outlined"
+              class="mb-3"
+            />
 
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="h-100">
-          <v-card-title class="text-subtitle-1">
-            <v-icon icon="mdi-chart-pie" class="mr-2" />
-            Asset Classes Explained
-          </v-card-title>
-          <v-card-text>
-            <v-list density="compact">
-              <v-list-item>
-                <template #prepend>
-                  <v-avatar color="success" size="32">E</v-avatar>
-                </template>
-                <v-list-item-title>Equity (E)</v-list-item-title>
-                <v-list-item-subtitle>High risk, high return. Max 75% (50% after 50 yrs)</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-avatar color="primary" size="32">C</v-avatar>
-                </template>
-                <v-list-item-title>Corporate Bonds (C)</v-list-item-title>
-                <v-list-item-subtitle>Medium risk. Fixed income from companies</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-avatar color="warning" size="32">G</v-avatar>
-                </template>
-                <v-list-item-title>Government Bonds (G)</v-list-item-title>
-                <v-list-item-subtitle>Low risk. Sovereign guarantee</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-avatar color="purple" size="32">A</v-avatar>
-                </template>
-                <v-list-item-title>Alternative (A)</v-list-item-title>
-                <v-list-item-subtitle>REITs, InvITs, etc. Max 5%</v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+            <v-btn-toggle
+              v-model="contributionForm.tier"
+              mandatory
+              color="primary"
+              class="mb-4 w-100"
+            >
+              <v-btn value="1" class="flex-grow-1">
+                <v-icon icon="mdi-numeric-1-circle" class="mr-1" />
+                Tier I
+              </v-btn>
+              <v-btn value="2" class="flex-grow-1" :disabled="contributionForm.type === 'employer'">
+                <v-icon icon="mdi-numeric-2-circle" class="mr-1" />
+                Tier II
+              </v-btn>
+            </v-btn-toggle>
+
+            <v-text-field
+              v-model.number="contributionForm.amount"
+              label="Amount"
+              type="number"
+              prefix="₹"
+              variant="outlined"
+              class="mb-3"
+              :rules="[(v: number) => v > 0 || 'Amount must be greater than 0']"
+            />
+
+            <v-text-field
+              v-model="contributionForm.date"
+              label="Contribution Date"
+              type="date"
+              variant="outlined"
+              class="mb-3"
+            />
+
+            <v-text-field
+              v-model="contributionForm.reference"
+              label="Reference Number"
+              variant="outlined"
+              placeholder="NPS/2024/XXXXX"
+              hint="Optional transaction reference"
+              persistent-hint
+            />
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showContributionDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="saveContribution">
+            Add Contribution
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>

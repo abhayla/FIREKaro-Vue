@@ -119,7 +119,7 @@ const hasAlerts = computed(() => notificationsStore.alerts.length > 0)
           size="small"
           variant="text"
           color="primary"
-          to="/dashboard/expenses/budgets"
+          to="/expenses/budgets"
         >
           View Budget
         </v-btn>

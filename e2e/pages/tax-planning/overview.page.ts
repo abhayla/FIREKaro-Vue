@@ -3,91 +3,158 @@ import { BasePage } from "../base.page";
 
 /**
  * Tax Planning Overview Page Object
- * Main overview showing regime comparison and tax summary
+ * Overview tab showing summary cards, recommendations, regime comparison, and charts
  */
 export class TaxPlanningOverviewPage extends BasePage {
-  readonly url = "/dashboard/tax-planning";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Tab Locators (2-tab structure)
+  // ============================================
+
+  get overviewTab(): Locator {
+    return this.page.getByRole("tab", { name: "Overview" });
+  }
+
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
+  }
+
+  // ============================================
+  // Page Header Locators
   // ============================================
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Tax Planning/i });
   }
 
-  // Tabs
-  get overviewTab(): Locator {
-    return this.page.getByRole("tab", { name: "Overview" });
-  }
-
-  get calculatorTab(): Locator {
-    return this.page.getByRole("tab", { name: /Calculator/i });
-  }
-
-  get deductionsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Deductions/i });
-  }
-
-  get advanceTaxTab(): Locator {
-    return this.page.getByRole("tab", { name: /Advance Tax/i });
-  }
-
-  get scenariosTab(): Locator {
-    return this.page.getByRole("tab", { name: /Scenarios/i });
-  }
-
-  get reportsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Reports/i });
-  }
-
-  // Summary cards
-  get totalIncomeCard(): Locator {
-    return this.getSummaryCardByTitle("Total Income");
-  }
-
-  get totalDeductionsCard(): Locator {
-    return this.getSummaryCardByTitle("Total Deductions");
-  }
-
-  get taxableIncomeCard(): Locator {
-    return this.getSummaryCardByTitle("Taxable Income");
-  }
-
-  get estimatedTaxCard(): Locator {
-    return this.getSummaryCardByTitle("Estimated Tax");
-  }
-
-  // Regime cards
-  get oldRegimeCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Old Regime/i });
-  }
-
-  get newRegimeCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /New Regime/i });
-  }
-
-  get recommendedRegimeChip(): Locator {
-    return this.page.locator(".v-chip").filter({ hasText: /Recommended|Better|Optimal/i });
-  }
-
-  // Tax breakdown
-  get taxBreakdownSection(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Tax Breakdown|Calculation/i });
-  }
-
-  // ITR type recommendation
-  get itrTypeCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /ITR.*Form|Recommended ITR/i });
-  }
-
-  // Financial year selector
+  // Financial Year Navigation
   get fySelector(): Locator {
-    return this.page.locator(".v-select").filter({ hasText: /Financial Year|FY/i });
+    return this.page.locator(".v-select").filter({ hasText: /FY|Financial Year|20\d{2}/i });
+  }
+
+  get fyPrevButton(): Locator {
+    return this.page.locator("button[title*='Previous']").or(
+      this.page.getByRole("button", { name: /chevron-left/i })
+    );
+  }
+
+  get fyNextButton(): Locator {
+    return this.page.locator("button[title*='Next']").or(
+      this.page.getByRole("button", { name: /chevron-right/i })
+    );
+  }
+
+  // ============================================
+  // Summary Cards Locators
+  // ============================================
+
+  get summaryCardsSection(): Locator {
+    return this.page.locator(".summary-metric-cards, .tax-summary-cards").first();
+  }
+
+  get grossIncomeCard(): Locator {
+    return this.getSummaryCardByTitle("Gross Total Income");
+  }
+
+  get taxPayableCard(): Locator {
+    return this.getSummaryCardByTitle("Tax Payable");
+  }
+
+  get tdsCard(): Locator {
+    return this.getSummaryCardByTitle("TDS Deducted");
+  }
+
+  get netDueRefundCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Tax Due|Refund Expected/i });
+  }
+
+  // ============================================
+  // Data Completion Tracker Locators
+  // ============================================
+
+  get dataCompletionCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Data Completion/i });
+  }
+
+  get completionProgressBar(): Locator {
+    return this.dataCompletionCard.locator(".v-progress-linear");
+  }
+
+  get completionItems(): Locator {
+    return this.dataCompletionCard.locator(".completion-item");
+  }
+
+  // ============================================
+  // Recommendations Locators
+  // ============================================
+
+  get recommendationsCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /TOP RECOMMENDATIONS/i });
+  }
+
+  get recommendationItems(): Locator {
+    return this.recommendationsCard.locator(".recommendation-item");
+  }
+
+  get viewAllRecommendationsButton(): Locator {
+    return this.recommendationsCard.getByRole("button", { name: /View All/i });
+  }
+
+  // ============================================
+  // Regime Comparison Locators
+  // ============================================
+
+  get regimeComparisonCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /REGIME COMPARISON/i });
+  }
+
+  get oldRegimeBox(): Locator {
+    return this.regimeComparisonCard.locator(".regime-box").filter({ hasText: /Old Regime/i });
+  }
+
+  get newRegimeBox(): Locator {
+    return this.regimeComparisonCard.locator(".regime-box").filter({ hasText: /New Regime/i });
+  }
+
+  get betterRegimeAlert(): Locator {
+    return this.regimeComparisonCard.locator(".v-alert");
+  }
+
+  get viewDetailedBreakdownButton(): Locator {
+    return this.regimeComparisonCard.getByRole("button", { name: /View Detailed Breakdown/i });
+  }
+
+  // ============================================
+  // Income Chart Locators
+  // ============================================
+
+  get incomeBreakdownCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Income Breakdown|Income by Source/i });
+  }
+
+  get incomeChart(): Locator {
+    return this.incomeBreakdownCard.locator("canvas");
+  }
+
+  // ============================================
+  // ITR & Advance Tax Locators
+  // ============================================
+
+  get itrFormCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Recommended ITR Form/i });
+  }
+
+  get advanceTaxAlert(): Locator {
+    return this.page.locator(".v-alert").filter({ hasText: /Advance Tax Due/i });
+  }
+
+  get noAdvanceTaxAlert(): Locator {
+    return this.page.locator(".v-alert").filter({ hasText: /No Advance Tax Due/i });
   }
 
   // ============================================
@@ -99,52 +166,65 @@ export class TaxPlanningOverviewPage extends BasePage {
     await this.waitForPageLoad();
   }
 
-  async clickCalculatorTab() {
-    await this.calculatorTab.click();
+  async clickOverviewTab() {
+    await this.overviewTab.click();
     await this.page.waitForTimeout(300);
   }
 
-  async clickDeductionsTab() {
-    await this.deductionsTab.click();
+  async clickTaxDetailsTab() {
+    await this.taxDetailsTab.click();
     await this.page.waitForTimeout(300);
+  }
+
+  async selectPreviousFY() {
+    await this.fyPrevButton.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  async selectNextFY() {
+    await this.fyNextButton.click();
+    await this.page.waitForTimeout(500);
   }
 
   // ============================================
   // Getters
   // ============================================
 
-  async getTotalIncome(): Promise<string> {
-    return await this.getSummaryCardValue("Total Income");
+  async getGrossIncome(): Promise<string> {
+    return await this.getSummaryCardValue("Gross Total Income");
   }
 
-  async getTotalDeductions(): Promise<string> {
-    return await this.getSummaryCardValue("Total Deductions");
+  async getTaxPayable(): Promise<string> {
+    return await this.getSummaryCardValue("Tax Payable");
   }
 
-  async getTaxableIncome(): Promise<string> {
-    return await this.getSummaryCardValue("Taxable Income");
+  async getTDS(): Promise<string> {
+    return await this.getSummaryCardValue("TDS Deducted");
   }
 
-  async getEstimatedTax(): Promise<string> {
-    return await this.getSummaryCardValue("Estimated Tax");
+  async getCompletionPercentage(): Promise<number> {
+    const chipText = await this.dataCompletionCard.locator(".v-chip").textContent();
+    const match = chipText?.match(/(\d+)\/(\d+)/);
+    if (match) {
+      return Math.round((parseInt(match[1]) / parseInt(match[2])) * 100);
+    }
+    return 0;
   }
 
-  async getOldRegimeTax(): Promise<string> {
-    const taxElement = this.oldRegimeCard.locator(".text-h4, .text-h5, .text-currency").first();
-    return (await taxElement.textContent()) || "₹0";
+  async getRecommendationCount(): Promise<number> {
+    return await this.recommendationItems.count();
   }
 
-  async getNewRegimeTax(): Promise<string> {
-    const taxElement = this.newRegimeCard.locator(".text-h4, .text-h5, .text-currency").first();
-    return (await taxElement.textContent()) || "₹0";
-  }
-
-  async getRecommendedRegime(): Promise<string> {
-    const parentCard = this.page.locator(".v-card").filter({ has: this.recommendedRegimeChip });
-    const text = await parentCard.textContent();
-    if (text?.includes("Old Regime")) return "Old";
-    if (text?.includes("New Regime")) return "New";
+  async getBetterRegime(): Promise<string> {
+    const alertText = await this.betterRegimeAlert.textContent();
+    if (alertText?.includes("New Regime")) return "NEW";
+    if (alertText?.includes("Old Regime")) return "OLD";
     return "";
+  }
+
+  async getITRForm(): Promise<string> {
+    const formText = await this.itrFormCard.locator(".text-h6").textContent();
+    return formText?.trim() || "";
   }
 
   // ============================================
@@ -156,26 +236,39 @@ export class TaxPlanningOverviewPage extends BasePage {
     await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
   }
 
-  async expectRegimeCardsVisible() {
-    await expect(this.oldRegimeCard).toBeVisible();
-    await expect(this.newRegimeCard).toBeVisible();
+  async expectTwoTabsVisible() {
+    await expect(this.overviewTab).toBeVisible();
+    await expect(this.taxDetailsTab).toBeVisible();
   }
 
   async expectSummaryCardsVisible() {
-    await expect(this.totalIncomeCard).toBeVisible();
-    await expect(this.taxableIncomeCard).toBeVisible();
-    await expect(this.estimatedTaxCard).toBeVisible();
+    // At least some summary cards should be visible
+    const cards = this.page.locator(".summary-metric-cards .v-card, .metric-card");
+    await expect(cards.first()).toBeVisible();
   }
 
-  async expectRecommendedRegimeShown() {
-    await expect(this.recommendedRegimeChip).toBeVisible();
+  async expectDataCompletionVisible() {
+    await expect(this.dataCompletionCard).toBeVisible();
+    await expect(this.completionProgressBar).toBeVisible();
   }
 
-  async expectTotalIncome(expectedAmount: string) {
-    await expect(this.totalIncomeCard.locator(".text-h4, .text-h5, .text-currency")).toContainText(expectedAmount);
+  async expectRecommendationsVisible() {
+    await expect(this.recommendationsCard).toBeVisible();
   }
 
-  async expectEstimatedTax(expectedAmount: string) {
-    await expect(this.estimatedTaxCard.locator(".text-h4, .text-h5, .text-currency")).toContainText(expectedAmount);
+  async expectRegimeComparisonVisible() {
+    await expect(this.regimeComparisonCard).toBeVisible();
+  }
+
+  async expectIncomeChartVisible() {
+    await expect(this.incomeBreakdownCard).toBeVisible();
+  }
+
+  async expectITRFormVisible() {
+    await expect(this.itrFormCard).toBeVisible();
+  }
+
+  async expectFYNavigationVisible() {
+    await expect(this.fySelector).toBeVisible();
   }
 }

@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles National Pension System investments
  */
 export class NpsPage extends BasePage {
-  readonly url = "/dashboard/investments/nps";
+  readonly url = "/investments/nps";
 
   constructor(page: Page) {
     super(page);
@@ -221,7 +221,8 @@ export class NpsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Investments/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /NPS/i })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the NPS page via URL
+    await expect(this.page).toHaveURL(/\/investments\/nps$/);
   }
 
   async expectAccountDetailsVisible() {

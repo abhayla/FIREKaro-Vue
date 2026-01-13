@@ -14,80 +14,69 @@ const userStore = useUserStore();
 // Fetch user session on mount
 userStore.fetchSession();
 
-// Navigation sections (9 sections from Feature-Reorganization-Plan)
+// Navigation sections (8 sections - Salary consolidated under Income)
 const sections = [
   {
-    title: "Salary",
-    icon: "mdi-cash-multiple",
-    route: "/dashboard/salary",
-    // Single page with 2 tabs (Overview + Salary Details) - no sub-pages needed
-  },
-  {
-    title: "Non-Salary Income",
-    icon: "mdi-cash-plus",
-    route: "/dashboard/non-salary-income",
+    title: "Income",
+    icon: "mdi-currency-inr",
+    route: "/income",
     children: [
-      { title: "Overview", route: "/dashboard/non-salary-income" },
-      {
-        title: "Business Income",
-        route: "/dashboard/non-salary-income/business",
-      },
-      { title: "Rental Income", route: "/dashboard/non-salary-income/rental" },
-      {
-        title: "Capital Gains",
-        route: "/dashboard/non-salary-income/capital-gains",
-      },
-      { title: "Other Sources", route: "/dashboard/non-salary-income/other" },
-      { title: "Reports", route: "/dashboard/non-salary-income/reports" },
+      { title: "Overview", route: "/income" },
+      { title: "Salary", route: "/income/salary" },
+      { title: "Business Income", route: "/income/business" },
+      { title: "Rental Income", route: "/income/rental" },
+      { title: "Capital Gains", route: "/income/capital-gains" },
+      { title: "Interest Income", route: "/income/interest" },
+      { title: "Dividend Income", route: "/income/dividends" },
+      { title: "Other Sources", route: "/income/other" },
+      { title: "Reports", route: "/income/reports" },
     ],
   },
   {
     title: "Tax Planning",
     icon: "mdi-calculator-variant",
-    route: "/dashboard/tax-planning",
-    children: [
-      { title: "Overview", route: "/dashboard/tax-planning" },
-      { title: "Tax Calculator", route: "/dashboard/tax-planning/calculator" },
-      { title: "Deductions", route: "/dashboard/tax-planning/deductions" },
-      { title: "Reports", route: "/dashboard/tax-planning/reports" },
-    ],
+    route: "/tax-planning",
+    // Single page with 2 tabs (Overview + Tax Details) - no sub-pages needed
   },
   {
     title: "Expenses",
     icon: "mdi-cart-outline",
-    route: "/dashboard/expenses",
+    route: "/expenses",
     children: [
-      { title: "Overview", route: "/dashboard/expenses" },
-      { title: "Track Expenses", route: "/dashboard/expenses/track" },
-      { title: "Budgets", route: "/dashboard/expenses/budgets" },
-      { title: "Reports", route: "/dashboard/expenses/reports" },
-      { title: "Categories & Rules", route: "/dashboard/expenses/categories" },
+      { title: "Overview", route: "/expenses" },
+      { title: "Track Expenses", route: "/expenses/track" },
+      { title: "Budgets", route: "/expenses/budgets" },
+      { title: "Recurring", route: "/expenses/recurring" },
+      { title: "Categories", route: "/expenses/categories" },
+      { title: "Reports", route: "/expenses/reports" },
     ],
   },
   {
     title: "Investments",
     icon: "mdi-chart-line",
-    route: "/dashboard/investments",
+    route: "/investments",
     children: [
-      { title: "Portfolio", route: "/dashboard/investments" },
-      { title: "Stocks", route: "/dashboard/investments/stocks" },
-      { title: "Mutual Funds", route: "/dashboard/investments/mutual-funds" },
-      { title: "EPF & PPF", route: "/dashboard/investments/epf-ppf" },
-      { title: "NPS", route: "/dashboard/investments/nps" },
-      { title: "Property", route: "/dashboard/investments/property" },
-      { title: "Reports", route: "/dashboard/investments/reports" },
+      { title: "Portfolio", route: "/investments" },
+      { title: "Stocks", route: "/investments/stocks" },
+      { title: "Mutual Funds", route: "/investments/mutual-funds" },
+      { title: "EPF", route: "/investments/epf" },
+      { title: "PPF", route: "/investments/ppf" },
+      { title: "NPS", route: "/investments/nps" },
+      { title: "ESOPs", route: "/investments/esop" },
+      { title: "Property", route: "/investments/property" },
+      { title: "Reports", route: "/investments/reports" },
     ],
   },
   {
     title: "Liabilities",
     icon: "mdi-credit-card-outline",
-    route: "/dashboard/liabilities",
+    route: "/liabilities",
     children: [
-      { title: "Overview", route: "/dashboard/liabilities" },
-      { title: "Loans", route: "/dashboard/liabilities/loans" },
-      { title: "Credit Cards", route: "/dashboard/liabilities/credit-cards" },
-      { title: "Debt Payoff", route: "/dashboard/liabilities/debt-payoff" },
-      { title: "Reports", route: "/dashboard/liabilities/reports" },
+      { title: "Overview", route: "/liabilities" },
+      { title: "Loans", route: "/liabilities/loans" },
+      { title: "Credit Cards", route: "/liabilities/credit-cards" },
+      { title: "Debt Payoff", route: "/liabilities/debt-payoff" },
+      { title: "Reports", route: "/liabilities/reports" },
     ],
   },
   {
