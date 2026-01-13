@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles real estate investments
  */
 export class PropertyPage extends BasePage {
-  readonly url = "/dashboard/investments/property";
+  readonly url = "/investments/property";
 
   constructor(page: Page) {
     super(page);
@@ -235,7 +235,8 @@ export class PropertyPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Investments/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Property|Real Estate/i })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the Property page via URL
+    await expect(this.page).toHaveURL(/\/investments\/property$/);
   }
 
   async expectFormDialogVisible() {

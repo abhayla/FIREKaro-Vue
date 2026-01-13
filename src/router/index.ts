@@ -103,48 +103,7 @@ const router = createRouter({
           name: "expenses-categories",
           component: () => import("@/pages/dashboard/expenses/categories.vue"),
         },
-        // Section 5: Investments
-        {
-          path: "investments",
-          name: "investments",
-          component: () => import("@/pages/dashboard/investments/index.vue"),
-        },
-        {
-          path: "investments/stocks",
-          name: "investments-stocks",
-          component: () => import("@/pages/dashboard/investments/stocks.vue"),
-        },
-        {
-          path: "investments/mutual-funds",
-          name: "investments-mutual-funds",
-          component: () =>
-            import("@/pages/dashboard/investments/mutual-funds.vue"),
-        },
-        {
-          path: "investments/epf-ppf",
-          name: "investments-epf-ppf",
-          component: () => import("@/pages/dashboard/investments/epf-ppf.vue"),
-        },
-        {
-          path: "investments/nps",
-          name: "investments-nps",
-          component: () => import("@/pages/dashboard/investments/nps.vue"),
-        },
-        {
-          path: "investments/esop",
-          name: "investments-esop",
-          component: () => import("@/pages/dashboard/investments/esop.vue"),
-        },
-        {
-          path: "investments/property",
-          name: "investments-property",
-          component: () => import("@/pages/dashboard/investments/property.vue"),
-        },
-        {
-          path: "investments/reports",
-          name: "investments-reports",
-          component: () => import("@/pages/dashboard/investments/reports.vue"),
-        },
+        // Section 5: Investments - MOVED to top-level /investments route
         // Section 6: Liabilities
         {
           path: "liabilities",
@@ -291,6 +250,60 @@ const router = createRouter({
         },
       ],
     },
+    // Section: Investments (top-level route)
+    {
+      path: "/investments",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "investments",
+          component: () => import("@/pages/dashboard/investments/index.vue"),
+        },
+        {
+          path: "stocks",
+          name: "investments-stocks",
+          component: () => import("@/pages/dashboard/investments/stocks.vue"),
+        },
+        {
+          path: "mutual-funds",
+          name: "investments-mutual-funds",
+          component: () =>
+            import("@/pages/dashboard/investments/mutual-funds.vue"),
+        },
+        {
+          path: "epf",
+          name: "investments-epf",
+          component: () => import("@/pages/dashboard/investments/epf.vue"),
+        },
+        {
+          path: "ppf",
+          name: "investments-ppf",
+          component: () => import("@/pages/dashboard/investments/ppf.vue"),
+        },
+        {
+          path: "nps",
+          name: "investments-nps",
+          component: () => import("@/pages/dashboard/investments/nps.vue"),
+        },
+        {
+          path: "esop",
+          name: "investments-esop",
+          component: () => import("@/pages/dashboard/investments/esop.vue"),
+        },
+        {
+          path: "property",
+          name: "investments-property",
+          component: () => import("@/pages/dashboard/investments/property.vue"),
+        },
+        {
+          path: "reports",
+          name: "investments-reports",
+          component: () => import("@/pages/dashboard/investments/reports.vue"),
+        },
+      ],
+    },
     // Legacy URL Redirects
     // Tax Planning section - old sub-pages redirect to main tax-planning page
     {
@@ -351,39 +364,44 @@ const router = createRouter({
     // Investment shortcut redirects
     {
       path: "/portfolio",
-      redirect: "/dashboard/investments",
+      redirect: "/investments",
     },
     {
       path: "/esop",
-      redirect: "/dashboard/investments/esop",
+      redirect: "/investments/esop",
     },
     {
       path: "/property",
-      redirect: "/dashboard/investments/property",
+      redirect: "/investments/property",
     },
     {
       path: "/retirement",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/investments/epf",
     },
     {
       path: "/epf",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/investments/epf",
     },
     {
       path: "/ppf",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/investments/ppf",
+    },
+    // Legacy combined EPF-PPF page redirect
+    {
+      path: "/investments/epf-ppf",
+      redirect: "/investments/epf",
     },
     {
       path: "/nps",
-      redirect: "/dashboard/investments/nps",
+      redirect: "/investments/nps",
     },
     {
       path: "/stocks",
-      redirect: "/dashboard/investments/stocks",
+      redirect: "/investments/stocks",
     },
     {
       path: "/mutual-funds",
-      redirect: "/dashboard/investments/mutual-funds",
+      redirect: "/investments/mutual-funds",
     },
   ],
 });

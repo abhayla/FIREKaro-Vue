@@ -640,3 +640,162 @@ export function getCryptoBySymbol(symbol: string): CryptoHoldingTestData | undef
 export function getTotalCryptoValue(): number {
   return cryptoData.reduce((sum, c) => sum + c.currentValue, 0);
 }
+
+// ============================================
+// ESOP/RSU Test Data
+// ============================================
+
+export type GrantType = 'ESOP' | 'RSU' | 'RSA' | 'SAR' | 'PHANTOM';
+export type VestingScheduleType = 'CLIFF' | 'GRADED' | 'IMMEDIATE';
+export type GrantStatus = 'ACTIVE' | 'PARTIALLY_VESTED' | 'FULLY_VESTED' | 'EXERCISED' | 'CANCELLED';
+
+export interface ESOPGrantTestData {
+  id?: string;
+  grantType: GrantType;
+  grantDate: string;
+  grantNumber: string;
+  companyName: string;
+  companySymbol?: string;
+  totalUnits: number;
+  grantPrice: number;
+  fairMarketValue: number;
+  currentFMV: number;
+  vestingScheduleType: VestingScheduleType;
+  vestingStartDate: string;
+  cliffMonths: number;
+  totalVestingMonths: number;
+  vestingFrequency: number;
+  status: GrantStatus;
+  vestedUnits: number;
+  exercisedUnits: number;
+  exercisableUnits: number;
+  unvestedUnits: number;
+  forfeitedUnits: number;
+  perquisiteValue: number;
+  taxPaid: number;
+  isListedCompany: boolean;
+  isStartup: boolean;
+  planName: string;
+}
+
+export const esopGrantsData: ESOPGrantTestData[] = [
+  {
+    grantType: "ESOP",
+    grantDate: "2022-04-01",
+    grantNumber: "ESOP-2022-001",
+    companyName: "TechCorp India Pvt Ltd",
+    totalUnits: 10000,
+    grantPrice: 100,
+    fairMarketValue: 150,
+    currentFMV: 450,
+    vestingScheduleType: "GRADED",
+    vestingStartDate: "2022-04-01",
+    cliffMonths: 12,
+    totalVestingMonths: 48,
+    vestingFrequency: 12,
+    status: "PARTIALLY_VESTED",
+    vestedUnits: 5000,
+    exercisedUnits: 2000,
+    exercisableUnits: 3000,
+    unvestedUnits: 5000,
+    forfeitedUnits: 0,
+    perquisiteValue: 700000,
+    taxPaid: 210000,
+    isListedCompany: false,
+    isStartup: true,
+    planName: "ESOP 2022",
+  },
+  {
+    grantType: "RSU",
+    grantDate: "2023-01-15",
+    grantNumber: "RSU-2023-042",
+    companyName: "Global Tech Ltd",
+    companySymbol: "GTECH",
+    totalUnits: 500,
+    grantPrice: 0,
+    fairMarketValue: 2500,
+    currentFMV: 3200,
+    vestingScheduleType: "CLIFF",
+    vestingStartDate: "2023-01-15",
+    cliffMonths: 24,
+    totalVestingMonths: 24,
+    vestingFrequency: 24,
+    status: "ACTIVE",
+    vestedUnits: 0,
+    exercisedUnits: 0,
+    exercisableUnits: 0,
+    unvestedUnits: 500,
+    forfeitedUnits: 0,
+    perquisiteValue: 0,
+    taxPaid: 0,
+    isListedCompany: true,
+    isStartup: false,
+    planName: "RSU Plan 2023",
+  },
+];
+
+export const esopSummary = {
+  totalGrants: esopGrantsData.length,
+  activeGrants: esopGrantsData.filter(
+    (g) => g.status !== "EXERCISED" && g.status !== "CANCELLED"
+  ).length,
+  totalUnits: esopGrantsData.reduce((sum, g) => sum + g.totalUnits, 0),
+  vestedUnits: esopGrantsData.reduce((sum, g) => sum + g.vestedUnits, 0),
+  exercisedUnits: esopGrantsData.reduce((sum, g) => sum + g.exercisedUnits, 0),
+  exercisableUnits: esopGrantsData.reduce((sum, g) => sum + g.exercisableUnits, 0),
+  unvestedUnits: esopGrantsData.reduce((sum, g) => sum + g.unvestedUnits, 0),
+  totalCurrentValue: esopGrantsData.reduce(
+    (sum, g) => sum + g.totalUnits * g.currentFMV,
+    0
+  ),
+  vestedValue: esopGrantsData.reduce(
+    (sum, g) => sum + g.vestedUnits * g.currentFMV,
+    0
+  ),
+  exercisableValue: esopGrantsData.reduce(
+    (sum, g) => sum + g.exercisableUnits * g.currentFMV,
+    0
+  ),
+  unvestedValue: esopGrantsData.reduce(
+    (sum, g) => sum + g.unvestedUnits * g.currentFMV,
+    0
+  ),
+  totalPerquisiteValue: esopGrantsData.reduce((sum, g) => sum + g.perquisiteValue, 0),
+  totalTaxPaid: esopGrantsData.reduce((sum, g) => sum + g.taxPaid, 0),
+  companies: [...new Set(esopGrantsData.map((g) => g.companyName))],
+};
+
+export const testESOPGrant: ESOPGrantTestData = {
+  grantType: "ESOP",
+  grantDate: "2024-01-01",
+  grantNumber: "ESOP-2024-TEST",
+  companyName: "Test Startup Inc",
+  totalUnits: 1000,
+  grantPrice: 50,
+  fairMarketValue: 75,
+  currentFMV: 100,
+  vestingScheduleType: "GRADED",
+  vestingStartDate: "2024-01-01",
+  cliffMonths: 12,
+  totalVestingMonths: 48,
+  vestingFrequency: 12,
+  status: "ACTIVE",
+  vestedUnits: 0,
+  exercisedUnits: 0,
+  exercisableUnits: 0,
+  unvestedUnits: 1000,
+  forfeitedUnits: 0,
+  perquisiteValue: 0,
+  taxPaid: 0,
+  isListedCompany: false,
+  isStartup: true,
+  planName: "Test Plan 2024",
+};
+
+export function getESOPGrantByType(type: GrantType): ESOPGrantTestData | undefined {
+  return esopGrantsData.find(g => g.grantType === type);
+}
+
+export function getExercisableGrants(): ESOPGrantTestData[] {
+  return esopGrantsData.filter(g => g.exercisableUnits > 0);
+}
