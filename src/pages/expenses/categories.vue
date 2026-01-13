@@ -344,10 +344,10 @@ const sortedRules = computed(() => {
                       <div class="text-subtitle-1 font-weight-medium">{{ category.name }}</div>
                       <v-chip
                         size="x-small"
-                        :color="getCategoryTypeColor(category.budgetType)"
+                        :color="getCategoryTypeColor(category.type)"
                         variant="tonal"
                       >
-                        {{ (category.budgetType ?? 'NEEDS').toUpperCase() }}
+                        {{ (category.type ?? 'needs').toUpperCase() }}
                       </v-chip>
                     </div>
                   </div>

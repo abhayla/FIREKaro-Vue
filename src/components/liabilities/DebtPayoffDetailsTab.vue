@@ -303,21 +303,21 @@ const getPayoffDate = (months: number) => {
                 </td>
               </tr>
               <tr>
-                <td>Total Interest Paid</td>
+                <td>Total Interest Saved</td>
                 <td class="text-center font-weight-bold text-success">
-                  {{ formatINRCompact(calculatedStrategies.avalanche?.totalInterest || 0) }}
+                  {{ formatINRCompact(calculatedStrategies.avalanche?.totalInterestSaved || 0) }}
                 </td>
                 <td class="text-center font-weight-bold">
-                  {{ formatINRCompact(calculatedStrategies.snowball?.totalInterest || 0) }}
+                  {{ formatINRCompact(calculatedStrategies.snowball?.totalInterestSaved || 0) }}
                 </td>
               </tr>
               <tr>
                 <td>First Debt Paid Off</td>
                 <td class="text-center">
-                  {{ calculatedStrategies.avalanche?.firstDebtPaid || '-' }}
+                  {{ calculatedStrategies.avalanche?.debts?.[0]?.name || '-' }}
                 </td>
                 <td class="text-center text-primary font-weight-bold">
-                  {{ calculatedStrategies.snowball?.firstDebtPaid || '-' }}
+                  {{ calculatedStrategies.snowball?.debts?.[0]?.name || '-' }}
                 </td>
               </tr>
               <tr>

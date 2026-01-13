@@ -9,18 +9,18 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
-const progressPercent = computed(() => props.data?.crossoverPercent ?? 0)
+const progressPercent = computed(() => props.data?.currentState?.passiveIncomePercent ?? 0)
 
 const yearsMonthsToGo = computed(() => {
-  if (!props.data?.yearsToGo) return '--'
-  const years = Math.floor(props.data.yearsToGo)
-  const months = Math.round((props.data.yearsToGo - years) * 12)
+  if (!props.data?.crossover?.years) return '--'
+  const years = Math.floor(props.data.crossover.years)
+  const months = Math.round((props.data.crossover.years - years) * 12)
   return `${years}y ${months}m`
 })
 
 const crossoverDateFormatted = computed(() => {
-  if (!props.data?.crossoverDate) return '--'
-  const date = new Date(props.data.crossoverDate + '-01')
+  if (!props.data?.crossover?.projectedDate) return '--'
+  const date = new Date(props.data.crossover.projectedDate)
   return date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
 })
 
@@ -32,23 +32,23 @@ const plotWidth = chartWidth - padding.left - padding.right
 const plotHeight = chartHeight - padding.top - padding.bottom
 
 // Sample 24 data points for the chart
-const chartData = computed(() => {
-  const data = props.data?.projectedData
+const chartDataPoints = computed(() => {
+  const data = props.data?.chartData
   if (!data?.length) return []
   const step = Math.max(1, Math.floor(data.length / 24))
-  return data.filter((_, i) => i % step === 0).slice(0, 24)
+  return data.filter((_: unknown, i: number) => i % step === 0).slice(0, 24)
 })
 
 const maxValue = computed(() => {
-  if (!chartData.value.length) return 100000 // default to prevent divide by zero
-  const allValues = chartData.value.flatMap(d => [d.expenses, d.investmentIncome])
+  if (!chartDataPoints.value.length) return 100000 // default to prevent divide by zero
+  const allValues = chartDataPoints.value.flatMap((d: { expenses: number; passiveIncome: number }) => [d.expenses, d.passiveIncome])
   return Math.max(...allValues) * 1.1 || 100000
 })
 
 const expensesPath = computed(() => {
-  if (chartData.value.length < 2) return ''
-  const points = chartData.value.map((d, i) => {
-    const x = padding.left + (i / (chartData.value.length - 1)) * plotWidth
+  if (chartDataPoints.value.length < 2) return ''
+  const points = chartDataPoints.value.map((d: { expenses: number }, i: number) => {
+    const x = padding.left + (i / (chartDataPoints.value.length - 1)) * plotWidth
     const y = padding.top + plotHeight - (d.expenses / maxValue.value) * plotHeight
     return `${x},${y}`
   })
@@ -56,10 +56,10 @@ const expensesPath = computed(() => {
 })
 
 const incomePath = computed(() => {
-  if (chartData.value.length < 2) return ''
-  const points = chartData.value.map((d, i) => {
-    const x = padding.left + (i / (chartData.value.length - 1)) * plotWidth
-    const y = padding.top + plotHeight - (d.investmentIncome / maxValue.value) * plotHeight
+  if (chartDataPoints.value.length < 2) return ''
+  const points = chartDataPoints.value.map((d: { passiveIncome: number }, i: number) => {
+    const x = padding.left + (i / (chartDataPoints.value.length - 1)) * plotWidth
+    const y = padding.top + plotHeight - (d.passiveIncome / maxValue.value) * plotHeight
     return `${x},${y}`
   })
   return `M${points.join(' L')}`
@@ -67,22 +67,22 @@ const incomePath = computed(() => {
 
 // Find crossover point on chart
 const crossoverPointIndex = computed(() => {
-  return chartData.value.findIndex((d, i, arr) => {
+  return chartDataPoints.value.findIndex((d: { passiveIncome: number; expenses: number; isCrossover: boolean }, i: number, arr: Array<{ passiveIncome: number; expenses: number }>) => {
     if (i === 0) return false
-    return arr[i - 1].investmentIncome < arr[i - 1].expenses &&
-           d.investmentIncome >= d.expenses
+    return arr[i - 1].passiveIncome < arr[i - 1].expenses &&
+           d.passiveIncome >= d.expenses
   })
 })
 
 const crossoverX = computed(() => {
   if (crossoverPointIndex.value < 0) return null
-  return padding.left + (crossoverPointIndex.value / (chartData.value.length - 1)) * plotWidth
+  return padding.left + (crossoverPointIndex.value / (chartDataPoints.value.length - 1)) * plotWidth
 })
 
 const crossoverY = computed(() => {
   if (crossoverPointIndex.value < 0) return null
-  const d = chartData.value[crossoverPointIndex.value]
-  return padding.top + plotHeight - (d.investmentIncome / maxValue.value) * plotHeight
+  const d = chartDataPoints.value[crossoverPointIndex.value]
+  return padding.top + plotHeight - (d.passiveIncome / maxValue.value) * plotHeight
 })
 </script>
 
@@ -98,7 +98,7 @@ const crossoverY = computed(() => {
         <div class="text-center">
           <div class="text-body-2 text-medium-emphasis">Monthly Expenses</div>
           <div class="text-h5 font-weight-bold text-currency" :style="{ color: chartColors.incomeExpense.expense }">
-            {{ formatINR(data?.currentExpenses ?? 0, true) }}
+            {{ formatINR(data?.currentState?.monthlyExpenses ?? 0, true) }}
           </div>
         </div>
         <div class="text-center flex-grow-1 mx-4">
@@ -110,7 +110,7 @@ const crossoverY = computed(() => {
             bg-color="grey-lighten-2"
           >
             <template #default>
-              <span class="text-body-2 font-weight-bold">{{ progressPercent }}%</span>
+              <span class="text-body-2 font-weight-bold">{{ Math.round(progressPercent) }}%</span>
             </template>
           </v-progress-linear>
           <div class="text-caption text-medium-emphasis mt-1">to Crossover</div>
@@ -118,7 +118,7 @@ const crossoverY = computed(() => {
         <div class="text-center">
           <div class="text-body-2 text-medium-emphasis">Investment Income</div>
           <div class="text-h5 font-weight-bold text-currency" :style="{ color: chartColors.incomeExpense.income }">
-            {{ formatINR(data?.currentInvestmentIncome ?? 0, true) }}
+            {{ formatINR(data?.currentState?.currentPassiveIncome ?? 0, true) }}
           </div>
         </div>
       </div>
@@ -207,14 +207,14 @@ const crossoverY = computed(() => {
           <div class="info-card pa-3 rounded text-center">
             <v-icon icon="mdi-cash-minus" size="20" color="error" />
             <div class="text-caption text-medium-emphasis">Gap to Cover</div>
-            <div class="text-body-1 font-weight-bold">{{ formatINR((data?.currentExpenses ?? 0) - (data?.currentInvestmentIncome ?? 0), true) }}</div>
+            <div class="text-body-1 font-weight-bold">{{ formatINR((data?.currentState?.monthlyExpenses ?? 0) - (data?.currentState?.currentPassiveIncome ?? 0), true) }}</div>
           </div>
         </v-col>
         <v-col cols="6" sm="3">
           <div class="info-card pa-3 rounded text-center">
             <v-icon icon="mdi-percent" size="20" color="success" />
             <div class="text-caption text-medium-emphasis">Coverage</div>
-            <div class="text-body-1 font-weight-bold">{{ (data?.currentExpenses ?? 0) > 0 ? Math.round(((data?.currentInvestmentIncome ?? 0) / data.currentExpenses) * 100) : 0 }}%</div>
+            <div class="text-body-1 font-weight-bold">{{ (data?.currentState?.monthlyExpenses ?? 0) > 0 ? Math.round(((data?.currentState?.currentPassiveIncome ?? 0) / (data?.currentState?.monthlyExpenses ?? 1)) * 100) : 0 }}%</div>
           </div>
         </v-col>
       </v-row>

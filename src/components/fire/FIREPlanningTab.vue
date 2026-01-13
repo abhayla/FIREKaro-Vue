@@ -123,7 +123,7 @@ const filteredGoals = computed(() => {
 // Goals stats
 const totalTargetAmount = computed(() => goals.value?.reduce((sum, g) => sum + g.targetAmount, 0) || 0)
 const totalCurrentAmount = computed(() => goals.value?.reduce((sum, g) => sum + g.currentAmount, 0) || 0)
-const completedGoals = computed(() => goals.value?.filter(g => g.status === 'completed').length || 0)
+const completedGoals = computed(() => goals.value?.filter(g => g.status === 'COMPLETED').length || 0)
 
 // Category options for filter
 const categoryOptions = Object.entries(goalCategoryConfig).map(([key, config]) => ({
@@ -143,13 +143,13 @@ const handleEdit = (goal: Goal) => {
 }
 
 const handleDelete = async (goal: Goal) => {
-  if (confirm(`Are you sure you want to delete "${goal.name}"?`)) {
+  if (confirm(`Are you sure you want to delete "${goal.goalName}"?`)) {
     await deleteGoalMutation.mutateAsync(goal.id)
   }
 }
 
 const handleViewDetails = (goal: Goal) => {
-  console.log('View details for', goal.name)
+  console.log('View details for', goal.goalName)
 }
 
 const handleSave = async (data: CreateGoalInput) => {
@@ -573,8 +573,8 @@ calculateSIP()
                   <v-card variant="outlined" class="pa-4 text-center h-100">
                     <v-icon icon="mdi-fire" color="fire-orange" size="40" class="mb-2" />
                     <div class="text-body-2 text-medium-emphasis">FIRE Year</div>
-                    <div class="text-h4 font-weight-bold">{{ projections?.fireYear || '--' }}</div>
-                    <div class="text-body-2 text-medium-emphasis">Age {{ projections?.fireAge || '--' }}</div>
+                    <div class="text-h4 font-weight-bold">{{ projections?.summary?.fireYear || '--' }}</div>
+                    <div class="text-body-2 text-medium-emphasis">Age {{ projections?.summary?.targetRetirementAge || '--' }}</div>
                   </v-card>
                 </v-col>
                 <v-col cols="12" md="4">
@@ -582,7 +582,7 @@ calculateSIP()
                     <v-icon icon="mdi-piggy-bank" color="success" size="40" class="mb-2" />
                     <div class="text-body-2 text-medium-emphasis">Peak Corpus</div>
                     <div class="text-h4 font-weight-bold text-currency">
-                      {{ formatINR(Math.max(...(projections?.corpus || [0])), true) }}
+                      {{ formatINR(projections?.summary?.peakCorpusAmount ?? 0, true) }}
                     </div>
                   </v-card>
                 </v-col>

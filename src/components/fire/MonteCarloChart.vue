@@ -32,7 +32,7 @@ const padding = { top: 30, right: 30, bottom: 50, left: 70 }
 const plotWidth = chartWidth - padding.left - padding.right
 const plotHeight = chartHeight - padding.top - padding.bottom
 
-const chartData = computed(() => props.data?.yearByYearPercentiles ?? [])
+const chartData = computed(() => props.data?.yearByYearData ?? [])
 
 const maxValue = computed(() => {
   if (!chartData.value.length) return 1 // Avoid divide by zero
@@ -156,37 +156,37 @@ const xAxisLabels = computed(() => {
         <v-col cols="4" sm="2">
           <div class="stat-box pa-2 rounded text-center">
             <div class="text-caption text-medium-emphasis">10th %ile</div>
-            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentile10, true) }}</div>
+            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentiles?.p10 ?? 0, true) }}</div>
           </div>
         </v-col>
         <v-col cols="4" sm="2">
           <div class="stat-box pa-2 rounded text-center">
             <div class="text-caption text-medium-emphasis">25th %ile</div>
-            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentile25, true) }}</div>
+            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentiles?.p25 ?? 0, true) }}</div>
           </div>
         </v-col>
         <v-col cols="4" sm="2">
           <div class="stat-box pa-2 rounded text-center" style="background: rgba(var(--v-theme-primary), 0.1)">
             <div class="text-caption">Median</div>
-            <div class="text-body-1 font-weight-bold text-currency text-primary">{{ formatINR(data.percentile50, true) }}</div>
+            <div class="text-body-1 font-weight-bold text-currency text-primary">{{ formatINR(data.percentiles?.p50 ?? 0, true) }}</div>
           </div>
         </v-col>
         <v-col cols="4" sm="2">
           <div class="stat-box pa-2 rounded text-center">
             <div class="text-caption text-medium-emphasis">75th %ile</div>
-            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentile75, true) }}</div>
+            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentiles?.p75 ?? 0, true) }}</div>
           </div>
         </v-col>
         <v-col cols="4" sm="2">
           <div class="stat-box pa-2 rounded text-center">
             <div class="text-caption text-medium-emphasis">90th %ile</div>
-            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentile90, true) }}</div>
+            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.percentiles?.p90 ?? 0, true) }}</div>
           </div>
         </v-col>
         <v-col cols="4" sm="2">
           <div class="stat-box pa-2 rounded text-center">
             <div class="text-caption text-medium-emphasis">Median End</div>
-            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.medianEndingValue, true) }}</div>
+            <div class="text-body-2 font-weight-bold text-currency">{{ formatINR(data.medianEndingValue ?? 0, true) }}</div>
           </div>
         </v-col>
       </v-row>

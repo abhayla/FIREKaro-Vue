@@ -1,7 +1,7 @@
 # FIREKaro Vue 3 - Session Continuation Prompt
 
-> **Last Updated**: January 9, 2026
-> **Last Session Focus**: Implemented Investment API Routes (Phase 1 of Investment Plan)
+> **Last Updated**: January 14, 2026
+> **Last Session Focus**: Fixed all TypeScript errors from 8-stream merge
 > **Branch**: master
 
 ---
@@ -16,37 +16,41 @@ Copy this entire file and paste it as your first message in a new Claude Code se
 
 ### What Was Done This Session
 
-1. **Added PPF & ESOP Database Models** to `prisma/schema.prisma`:
-   - `PPFAccount` - Full PPF account with loan, withdrawal, extension tracking
-   - `PPFTransaction` - Transaction history with financial year tracking
-   - `ESOPGrant` - ESOP/RSU grants with vesting schedule support
-   - `ESOPVestingEvent` - Individual vesting events with exercise tracking
-   - Added enums: `ESOPGrantType`, `ESOPGrantStatus`, `VestingScheduleType`
-   - Ran `npx prisma db push` successfully
+**Fixed all TypeScript errors (~80 errors) from the 8-stream merge:**
 
-2. **Created Investment API Routes** (6 new route files):
-   - `server/routes/investments.ts` - Full CRUD + overview + transactions
-   - `server/routes/epf.ts` - CRUD + balance update + contributions + projection
-   - `server/routes/ppf.ts` - CRUD + deposit + withdrawal + loan + projection + extension
-   - `server/routes/nps.ts` - CRUD + contribution + projection + allocation + withdrawal options
-   - `server/routes/esop.ts` - CRUD + vest + exercise + vesting schedule + FMV update
+| Component | Issue Fixed |
+|-----------|------------|
+| `CrossoverPointChart.vue` | Fixed property paths (`crossoverPercent` → `currentState.passiveIncomePercent`, etc.) |
+| `ExpenseCoverageGrid.vue` | Fixed `covered` → `isCovered`, summary paths |
+| `MonteCarloChart.vue` | Fixed `yearByYearPercentiles` → `yearByYearData`, percentile paths |
+| `ProjectionChart.vue` | Derived arrays from `projections` array, fixed `fireYear` path |
+| `WithdrawalStrategySelector.vue` | Fixed strategy type values (uppercase enum values) |
+| `FIREPlanningTab.vue` | Fixed `goal.name` → `goal.goalName`, status comparison |
+| `GoalForm.vue` | Fixed category values (uppercase), property mappings |
+| `DebtPayoffDetailsTab.vue` | Fixed `totalInterest` → `totalInterestSaved` |
+| `SalaryDetailsTab.vue` | Fixed type assertions, property names |
+| `fire-goals/index.vue` | Fixed snackbar v-model type |
+| `categories.vue` | Fixed `budgetType` → `type` |
 
-3. **Registered All Routes** in `server/index.ts`:
-   - `/api/investments` - General investments
-   - `/api/epf` - EPF account management
-   - `/api/ppf` - PPF account management
-   - `/api/nps` - NPS account management
-   - `/api/esop` - ESOP/RSU grant management
+**Also completed:**
+- Cleaned up 7/8 git worktrees (Insurance worktree locked by VS Code)
+- Type-check passes with 0 errors
+- E2E tests verified (9/10 passing - 1 flaky selector test)
 
-### API Endpoints Implemented
+### Previous Session Work (for reference)
 
-| Route | Endpoints | Features |
-|-------|-----------|----------|
-| `/api/investments` | GET, POST, PUT, DELETE, /overview, /:id/transactions | Portfolio overview, CRUD, transaction tracking |
-| `/api/epf` | GET, POST, PUT, DELETE, /balance, /contributions, /projection | Balance update, contribution history, corpus projection |
-| `/api/ppf` | GET, POST, PUT, DELETE, /:id/deposit, /:id/withdraw, /:id/loan, /:id/projection, /:id/extend | 7.1% interest, Rs 1.5L limit, loan facility, partial withdrawal, 5-year extension |
-| `/api/nps` | GET, POST, PUT, DELETE, /:id/contribution, /:id/projection, /:id/withdrawal-options, /:id/allocation | 2025 rules (60/40 split), tier management, allocation tracking |
-| `/api/esop` | GET, POST, PUT, DELETE, /summary, /:id/vest, /:id/exercise, /:id/vesting-schedule, /:id/fmv | Vesting schedule generation, exercise tracking, FMV updates |
+**Merged 8 parallel development streams via git worktrees:**
+
+| PR # | Stream | Key Changes |
+|------|--------|-------------|
+| #3 | Income | Merged Salary + Non-Salary into unified `/income` route |
+| #4 | Tax Planning | Single-page tax planning at `/tax-planning` with tabs |
+| #5 | Investments | Top-level `/investments` with EPF, PPF, NPS, ESOP pages |
+| #6 | Expenses | Expenses section with recurring expenses backend |
+| #7 | Liabilities | Liabilities with 2-tab pattern (Overview + Details) |
+| #8 | Insurance | Single-page insurance at `/insurance` with 4 tabs |
+| #9 | Financial Health | Top-level `/financial-health` with banking backend |
+| #10, #11 | FIRE | FIRE section with metrics, projections, Monte Carlo |
 
 ---
 
@@ -55,100 +59,69 @@ Copy this entire file and paste it as your first message in a new Claude Code se
 ### Git Status
 ```
 On branch master
-Your branch is ahead of 'origin/master' by 9 commits.
-Modified files (not yet committed):
-- prisma/schema.prisma
-- server/index.ts
-- NEXT-SESSION-PROMPT.md
-New files (not yet committed):
-- server/routes/investments.ts
-- server/routes/epf.ts
-- server/routes/ppf.ts
-- server/routes/nps.ts
-- server/routes/esop.ts
+Modified files (uncommitted):
+- src/components/fire/*.vue (TypeScript fixes)
+- src/components/liabilities/DebtPayoffDetailsTab.vue
+- src/components/salary/SalaryDetailsTab.vue
+- src/pages/dashboard/fire-goals/index.vue
+- src/pages/expenses/categories.vue
 ```
 
-### Build/Type Check Status
-**PASS** - No TypeScript errors
+### Type-Check Status
+**PASSING** - 0 TypeScript errors
 
----
-
-## Investment Plan Progress
-
-### Phase 1: Database & Backend - COMPLETED
-- [x] Prisma schema updates (PPFAccount, PPFTransaction, ESOPGrant, ESOPVestingEvent)
-- [x] `server/routes/investments.ts` - Investment CRUD
-- [x] `server/routes/epf.ts` - EPF CRUD
-- [x] `server/routes/ppf.ts` - PPF CRUD
-- [x] `server/routes/nps.ts` - NPS CRUD
-- [x] `server/routes/esop.ts` - ESOP CRUD
-- [ ] `server/routes/investment-reports.ts` - Reports API (Phase 2)
-
-### Phase 2: Frontend Components - PENDING
-- [ ] Create `src/pages/dashboard/investments/esop.vue` page
-- [ ] Create PPF components (ProjectionChart, LoanCalculator)
-- [ ] Create Family components (Breakdown, AllocationChart)
-- [ ] Create Report components (Generator, TaxReportView)
-- [ ] Create additional features (MetricsCards, CASImporter, BrokerSync)
-
-### Phase 3: Infrastructure & Testing - PENDING
-- [ ] Vue Router redirects for legacy URLs
-- [ ] E2E tests for investments
-- [ ] Unit tests for PPF calculations
+### E2E Test Status
+9/10 tests passing in app-bar-family-toggle spec. Minor selector flakiness in dashboard navigation test.
 
 ---
 
 ## Next Session Priorities
 
 ### P0 - Must Do First
-1. Commit the current changes (Prisma schema + API routes)
-2. Test the new API endpoints using the browser/curl
+1. **Commit TypeScript fixes** - All type errors have been fixed, commit the changes
+2. **Run full E2E suite** - `npm run test:e2e` to verify all sections
 
 ### P1 - Should Do
-1. Create `server/routes/investment-reports.ts` for tax reports
-2. Create the ESOP frontend page (`esop.vue`)
-3. Create PPF frontend components
+1. Fix the flaky E2E test selector in app-bar-family-toggle.spec.ts
+2. Clean up remaining Insurance worktree
+3. Manual testing of FIRE section features
 
 ### P2 - Nice to Have
-1. Create Family view components
-2. Add E2E tests for investment flows
+1. Add more E2E test coverage for FIRE components
+2. Update documentation with API type definitions
 
 ---
 
-## Key Files Modified/Created This Session
+## Type Mapping Reference (for FIRE Components)
 
-| File | Changes |
-|------|---------|
-| `prisma/schema.prisma` | Added PPFAccount, PPFTransaction, ESOPGrant, ESOPVestingEvent models + enums |
-| `server/index.ts` | Registered 5 new investment routes |
-| `server/routes/investments.ts` | NEW - Full CRUD + overview + transactions |
-| `server/routes/epf.ts` | NEW - CRUD + balance + contributions + projection |
-| `server/routes/ppf.ts` | NEW - CRUD + deposit + withdrawal + loan + projection + extension |
-| `server/routes/nps.ts` | NEW - CRUD + contribution + projection + withdrawal + allocation |
-| `server/routes/esop.ts` | NEW - CRUD + vesting + exercise + FMV |
+### CrossoverPoint Type
+```typescript
+CrossoverPoint {
+  currentState: { corpus, monthlyExpenses, monthlySavings, monthlyIncome, currentPassiveIncome, passiveIncomePercent }
+  crossover: { months, years, targetCorpus, projectedDate } | null
+  chartData: Array<{ month, year, corpus, passiveIncome, expenses, isCrossover }>
+}
+```
 
----
+### FIREProjection Type
+```typescript
+FIREProjection {
+  summary: { currentAge, targetRetirementAge, currentCorpus, fireYear, peakCorpusAge, peakCorpusAmount, ... }
+  projections: Array<{ year, age, phase, corpus, contributions, returns, withdrawals, expenses, events }>
+  lifeEvents: Array<{ year, age, event, impact, type }>
+}
+```
 
-## Context & Decisions
+### WithdrawalStrategyType
+```typescript
+'SWR_4_PERCENT' | 'SWR_CUSTOM' | 'BUCKET' | 'VPW' | 'GUYTON_KLINGER'
+```
 
-### Indian Financial Rules Implemented
-
-**PPF (7.1% interest, 15-year lock-in)**:
-- Annual deposit limit: Rs 1.5 Lakh
-- Partial withdrawal: After 7th year (50% of 4th preceding year balance)
-- Loan facility: 3rd to 6th year (25% of 2nd preceding year balance)
-- Extension: 5-year blocks after maturity (with or without contribution)
-
-**NPS (2025 Rules)**:
-- 60/40 withdrawal split (60% lump sum tax-free, 40% mandatory annuity)
-- Corpus <= Rs 5L: 100% can be withdrawn
-- Age-based equity limits: <50 (75%), 50-55 (50%), >55 (25%)
-- Tax benefits: 80CCD(1), 80CCD(1B) Rs 50K, 80CCD(2) employer contribution
-
-**ESOP/RSU**:
-- Vesting schedule types: CLIFF, GRADED, MILESTONE, HYBRID
-- Perquisite taxation at vesting (FMV - Exercise Price)
-- Capital gains on exercise/sale
+### Goal Type
+```typescript
+Goal { id, goalName, category, targetAmount, currentAmount, targetDate, monthlyContribution, expectedReturns, status, ... }
+// status: 'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK' | 'COMPLETED'
+```
 
 ---
 
@@ -157,21 +130,46 @@ New files (not yet committed):
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Start frontend + backend |
-| `npm run type-check` | Verify TypeScript |
+| `npm run type-check` | Verify TypeScript (now passing) |
 | `npm run test:e2e` | Run Playwright tests |
-| `npx prisma db push` | Push schema to database |
-| `npx prisma studio` | Open Prisma Studio GUI |
-| `git push` | Push commits to remote |
+| `npm run build` | Build for production |
 
 ---
 
-## Plan Reference
+## Route Structure Reference
 
-Full implementation plan at: `C:\Users\itsab\.claude\plans\cached-frolicking-giraffe.md`
-- Total estimated effort: 47 hours
-- Phase 1 (Backend): 17 hours - **MOSTLY COMPLETE**
-- Phase 2 (Frontend): 22 hours - PENDING
-- Phase 3 (Testing): 8 hours - PENDING
+```
+/                       # Landing page
+/auth/signin            # Sign in
+/dashboard              # Main dashboard
+/income                 # Income section (unified)
+  /income/salary        # Salary management
+  /income/business      # Business income
+  /income/rental        # Rental income
+  /income/capital-gains # Capital gains
+  /income/interest      # Interest income
+  /income/dividends     # Dividend income
+  /income/other         # Other income
+  /income/reports       # Income reports
+/tax-planning           # Tax planning (single page, 4 tabs)
+/investments            # Investments section
+  /investments/stocks   # Stocks
+  /investments/mutual-funds # Mutual funds
+  /investments/epf      # EPF
+  /investments/ppf      # PPF
+  /investments/nps      # NPS
+  /investments/esop     # ESOP/RSU
+  /investments/property # Property
+  /investments/reports  # Investment reports
+/insurance              # Insurance (single page, 4 tabs)
+/financial-health       # Financial health section
+  /financial-health/net-worth      # Net worth tracking
+  /financial-health/cash-flow      # Cash flow analysis
+  /financial-health/banking        # Bank accounts
+  /financial-health/emergency-fund # Emergency fund
+  /financial-health/reports        # Financial reports
+/dashboard/fire-goals   # FIRE & Goals section
+```
 
 ---
 

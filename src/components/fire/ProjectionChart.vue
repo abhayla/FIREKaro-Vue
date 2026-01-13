@@ -9,13 +9,19 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
+// Derived arrays from projections
+const years = computed(() => props.data?.projections?.map(p => p.year) ?? [])
+const corpusValues = computed(() => props.data?.projections?.map(p => p.corpus) ?? [])
+const expenseValues = computed(() => props.data?.projections?.map(p => p.expenses) ?? [])
+const investmentIncomeValues = computed(() => props.data?.projections?.map(p => p.returns) ?? [])
+
 // Year slider
 const selectedYearIndex = ref(0)
 
-const selectedYear = computed(() => props.data?.years?.[selectedYearIndex.value] ?? new Date().getFullYear())
-const selectedCorpus = computed(() => props.data?.corpus?.[selectedYearIndex.value] ?? 0)
-const selectedExpenses = computed(() => props.data?.expenses?.[selectedYearIndex.value] ?? 0)
-const selectedIncome = computed(() => props.data?.investmentIncome?.[selectedYearIndex.value] ?? 0)
+const selectedYear = computed(() => years.value?.[selectedYearIndex.value] ?? new Date().getFullYear())
+const selectedCorpus = computed(() => corpusValues.value?.[selectedYearIndex.value] ?? 0)
+const selectedExpenses = computed(() => expenseValues.value?.[selectedYearIndex.value] ?? 0)
+const selectedIncome = computed(() => investmentIncomeValues.value?.[selectedYearIndex.value] ?? 0)
 
 // Chart dimensions
 const chartWidth = 800
@@ -26,21 +32,20 @@ const plotHeight = chartHeight - padding.top - padding.bottom
 
 // Sample data for performance (max 50 points)
 const chartData = computed(() => {
-  const data = props.data
-  if (!data?.years?.length) return []
-  const step = Math.max(1, Math.floor(data.years.length / 50))
-  return data.years.map((year, i) => ({
+  if (!years.value?.length) return []
+  const step = Math.max(1, Math.floor(years.value.length / 50))
+  return years.value.map((year, i) => ({
     year,
-    corpus: data.corpus?.[i] ?? 0,
-    expenses: data.expenses?.[i] ?? 0,
-    investmentIncome: data.investmentIncome?.[i] ?? 0,
+    corpus: corpusValues.value?.[i] ?? 0,
+    expenses: expenseValues.value?.[i] ?? 0,
+    investmentIncome: investmentIncomeValues.value?.[i] ?? 0,
     index: i
-  })).filter((_, i) => i % step === 0 || i === data.years.length - 1)
+  })).filter((_, i) => i % step === 0 || i === years.value.length - 1)
 })
 
 const maxValue = computed(() => {
-  if (!props.data?.corpus?.length) return 1
-  return Math.max(...props.data.corpus) * 1.1 || 1
+  if (!corpusValues.value?.length) return 1
+  return Math.max(...corpusValues.value) * 1.1 || 1
 })
 
 // Path generators
@@ -62,34 +67,35 @@ const getPath = (values: number[]) => {
   return `M${points.join(' L')}`
 }
 
-const corpusPath = computed(() => getPath(props.data?.corpus ?? []))
-const expensesPath = computed(() => getPath(props.data?.expenses ?? []))
-const incomePath = computed(() => getPath(props.data?.investmentIncome ?? []))
+const corpusPath = computed(() => getPath(corpusValues.value ?? []))
+const expensesPath = computed(() => getPath(expenseValues.value ?? []))
+const incomePath = computed(() => getPath(investmentIncomeValues.value ?? []))
 
 // FIRE year marker
+const fireYear = computed(() => props.data?.summary?.fireYear ?? null)
 const fireYearX = computed(() => {
-  if (!props.data?.years?.length || !props.data?.fireYear) return null
-  const fireIndex = props.data.years.indexOf(props.data.fireYear)
+  if (!years.value?.length || !fireYear.value) return null
+  const fireIndex = years.value.indexOf(fireYear.value)
   if (fireIndex < 0) return null
   const sampledLength = chartData.value.length
   if (sampledLength < 2) return null
-  const originalStep = Math.max(1, Math.floor(props.data.years.length / 50))
+  const originalStep = Math.max(1, Math.floor(years.value.length / 50))
   const adjustedIndex = Math.floor(fireIndex / originalStep)
   return padding.left + (adjustedIndex / (sampledLength - 1)) * plotWidth
 })
 
 // Life event markers
 const lifeEventMarkers = computed(() => {
-  if (!props.data?.lifeEvents?.length || !props.data?.years?.length) return []
+  if (!props.data?.lifeEvents?.length || !years.value?.length) return []
   return props.data.lifeEvents.map(event => {
-    const eventIndex = props.data.years.indexOf(event.year)
+    const eventIndex = years.value.indexOf(event.year)
     if (eventIndex < 0) return null
     const sampledLength = chartData.value.length
     if (sampledLength < 2) return null
-    const originalStep = Math.max(1, Math.floor(props.data.years.length / 50))
+    const originalStep = Math.max(1, Math.floor(years.value.length / 50))
     const adjustedIndex = Math.floor(eventIndex / originalStep)
     const x = padding.left + (adjustedIndex / (sampledLength - 1)) * plotWidth
-    const corpus = props.data.corpus?.[eventIndex] ?? 0
+    const corpus = corpusValues.value?.[eventIndex] ?? 0
     const y = padding.top + plotHeight - (corpus / maxValue.value) * plotHeight
     return { ...event, x, y }
   }).filter(Boolean)
@@ -98,8 +104,8 @@ const lifeEventMarkers = computed(() => {
 // Selected year marker position
 const selectedYearX = computed(() => {
   const sampledLength = chartData.value.length
-  if (sampledLength < 2 || !props.data?.years?.length) return padding.left
-  const originalStep = Math.max(1, Math.floor(props.data.years.length / 50))
+  if (sampledLength < 2 || !years.value?.length) return padding.left
+  const originalStep = Math.max(1, Math.floor(years.value.length / 50))
   const adjustedIndex = Math.floor(selectedYearIndex.value / originalStep)
   return padding.left + (adjustedIndex / (sampledLength - 1)) * plotWidth
 })
@@ -116,16 +122,16 @@ const yAxisLabels = computed(() => {
 
 // X-axis labels (every 10 years)
 const xAxisLabels = computed(() => {
-  const years = props.data?.years ?? []
-  if (!years.length) return []
+  const yearsArray = years.value ?? []
+  if (!yearsArray.length) return []
   const labels = []
   const sampledLength = chartData.value.length
   if (sampledLength < 2) return []
-  for (let i = 0; i < years.length; i += 10) {
-    const originalStep = Math.max(1, Math.floor(years.length / 50))
+  for (let i = 0; i < yearsArray.length; i += 10) {
+    const originalStep = Math.max(1, Math.floor(yearsArray.length / 50))
     const adjustedIndex = Math.floor(i / originalStep)
     const x = padding.left + (adjustedIndex / (sampledLength - 1)) * plotWidth
-    labels.push({ year: years[i], x })
+    labels.push({ year: yearsArray[i], x })
   }
   return labels
 })
@@ -138,13 +144,13 @@ const xAxisLabels = computed(() => {
       100-Year Wealth Projection
     </v-card-title>
 
-    <v-card-text v-if="data?.years?.length">
+    <v-card-text v-if="years?.length">
       <!-- Year Slider -->
       <div class="mb-4">
         <div class="d-flex justify-space-between align-center mb-2">
           <span class="text-body-2">Year: <strong>{{ selectedYear }}</strong></span>
           <span class="text-body-2">
-            <span v-if="selectedYear === data.fireYear" class="text-success font-weight-bold">
+            <span v-if="selectedYear === fireYear" class="text-success font-weight-bold">
               FIRE Year!
             </span>
           </span>
@@ -152,13 +158,13 @@ const xAxisLabels = computed(() => {
         <v-slider
           v-model="selectedYearIndex"
           :min="0"
-          :max="(data.years?.length || 1) - 1"
+          :max="(years?.length || 1) - 1"
           :step="1"
           color="primary"
           thumb-label
           hide-details
         >
-          <template #thumb-label>{{ data.years?.[selectedYearIndex] ?? '' }}</template>
+          <template #thumb-label>{{ years?.[selectedYearIndex] ?? '' }}</template>
         </v-slider>
       </div>
 
@@ -257,7 +263,7 @@ const xAxisLabels = computed(() => {
               fill="#4caf50"
               font-weight="bold"
             >
-              FIRE {{ data.fireYear }}
+              FIRE {{ fireYear }}
             </text>
           </g>
 
@@ -300,13 +306,13 @@ const xAxisLabels = computed(() => {
           />
 
           <!-- Life event markers -->
-          <g v-for="event in lifeEventMarkers" :key="event?.id">
+          <g v-for="(event, idx) in lifeEventMarkers" :key="idx">
             <circle
               v-if="event"
               :cx="event.x"
               :cy="event.y"
               r="6"
-              :fill="event.category === 'financial' ? '#9c27b0' : '#ffc107'"
+              :fill="event.type === 'expense' ? '#f44336' : event.type === 'income' ? '#4caf50' : '#ffc107'"
               stroke="white"
               stroke-width="2"
             />
@@ -326,18 +332,18 @@ const xAxisLabels = computed(() => {
       </div>
 
       <!-- Life Events List -->
-      <div v-if="data.lifeEvents?.length > 0" class="mt-4">
+      <div v-if="data?.lifeEvents?.length > 0" class="mt-4">
         <div class="text-subtitle-2 mb-2">Life Events</div>
         <v-chip-group>
           <v-chip
-            v-for="event in data.lifeEvents"
-            :key="event.id"
+            v-for="(event, idx) in data.lifeEvents"
+            :key="idx"
             size="small"
-            :color="event.category === 'financial' ? 'purple' : 'amber'"
+            :color="event.type === 'expense' ? 'error' : event.type === 'income' ? 'success' : 'amber'"
             variant="tonal"
           >
-            <v-icon :icon="event.icon" start size="14" />
-            {{ event.name }} ({{ event.year }})
+            <v-icon :icon="event.type === 'expense' ? 'mdi-cash-minus' : event.type === 'income' ? 'mdi-cash-plus' : 'mdi-flag'" start size="14" />
+            {{ event.event }} ({{ event.year }})
           </v-chip>
         </v-chip-group>
       </div>

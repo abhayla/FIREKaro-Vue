@@ -17,7 +17,7 @@ const isEditing = computed(() => !!props.goal)
 
 // Form data
 const name = ref('')
-const category = ref<GoalCategory>('other')
+const category = ref<GoalCategory>('OTHER')
 const targetAmount = ref(0)
 const currentAmount = ref(0)
 const targetDate = ref('')
@@ -77,7 +77,7 @@ const categoryOptions = computed(() => {
 // Reset form function (defined before watch to avoid initialization error)
 const resetForm = () => {
   name.value = ''
-  category.value = 'other'
+  category.value = 'OTHER'
   targetAmount.value = 0
   currentAmount.value = 0
   targetDate.value = ''
@@ -90,13 +90,13 @@ watch(
   () => props.goal,
   (newGoal) => {
     if (newGoal) {
-      name.value = newGoal.name
+      name.value = newGoal.goalName
       category.value = newGoal.category
       targetAmount.value = newGoal.targetAmount
       currentAmount.value = newGoal.currentAmount
       targetDate.value = newGoal.targetDate
-      monthlySIP.value = newGoal.monthlySIP
-      expectedReturn.value = newGoal.expectedReturn
+      monthlySIP.value = newGoal.monthlyContribution
+      expectedReturn.value = newGoal.expectedReturns
     } else {
       resetForm()
     }
@@ -105,25 +105,11 @@ watch(
 )
 
 const handleSave = () => {
-  // Map frontend field names to backend expected fields
-  const categoryMap: Record<GoalCategory, string> = {
-    house: 'HOUSE',
-    car: 'CAR',
-    education: 'EDUCATION',
-    travel: 'TRAVEL',
-    emergency: 'EMERGENCY',
-    wedding: 'WEDDING',
-    retirement: 'RETIREMENT',
-    business: 'BUSINESS',
-    parents_care: 'PARENTS_CARE',
-    fire_corpus: 'FIRE_CORPUS',
-    other: 'OTHER'
-  }
-
+  // Create goal input data directly using uppercase category
   const data: CreateGoalInput = {
     goalName: name.value,
-    goalType: categoryMap[category.value] || 'OTHER',
-    category: (categoryMap[category.value] || 'OTHER') as GoalCategory,
+    goalType: category.value,
+    category: category.value,
     targetAmount: targetAmount.value,
     currentAmount: currentAmount.value,
     targetDate: targetDate.value,

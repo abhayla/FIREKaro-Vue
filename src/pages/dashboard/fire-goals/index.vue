@@ -30,6 +30,10 @@ const goToPlanning = () => {
 const showExportMenu = ref(false)
 const isExporting = ref(false)
 const exportError = ref<string | null>(null)
+const showExportError = computed({
+  get: () => !!exportError.value,
+  set: (val: boolean) => { if (!val) exportError.value = null }
+})
 
 // Use the export composable
 const { refetch: fetchExportData } = useFIREExport('json')
@@ -396,10 +400,10 @@ async function generateExcel(data: FIREExportData) {
     </div>
 
     <!-- Export Error Snackbar -->
-    <v-snackbar v-model="exportError" color="error" :timeout="5000">
+    <v-snackbar v-model="showExportError" color="error" :timeout="5000">
       {{ exportError }}
       <template #actions>
-        <v-btn variant="text" @click="exportError = null">Close</v-btn>
+        <v-btn variant="text" @click="showExportError = false">Close</v-btn>
       </template>
     </v-snackbar>
 

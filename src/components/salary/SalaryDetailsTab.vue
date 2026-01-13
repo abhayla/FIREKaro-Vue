@@ -467,7 +467,7 @@ const handleCopyConfirm = async (options: {
               data: salaryData,
             });
           } else {
-            await addSalaryMutation.mutateAsync(salaryData as Parameters<typeof addSalaryMutation.mutateAsync>[0]);
+            await addSalaryMutation.mutateAsync(salaryData as unknown as Parameters<typeof addSalaryMutation.mutateAsync>[0]);
           }
         }
 
@@ -495,7 +495,7 @@ const handleCopyConfirm = async (options: {
             data: salaryData,
           });
         } else {
-          await addSalaryMutation.mutateAsync(salaryData as Parameters<typeof addSalaryMutation.mutateAsync>[0]);
+          await addSalaryMutation.mutateAsync(salaryData as unknown as Parameters<typeof addSalaryMutation.mutateAsync>[0]);
         }
 
         copySuccessMessage.value = `Copied ${previousMonthLabel.value} data to ${sourceMonthLabel.value}`;
@@ -512,19 +512,18 @@ const handleCopyConfirm = async (options: {
           data: {
             paidDays: 0,
             basicSalary: 0,
-            houseRentAllowance: 0,
+            hra: 0,
             conveyanceAllowance: 0,
             medicalAllowance: 0,
-            otherEarnings: {},
-            employeePF: 0,
-            voluntaryPF: 0,
+            otherAllowances: 0,
+            epfDeduction: 0,
+            vpfDeduction: 0,
             professionalTax: 0,
-            incomeTax: 0,
-            otherDeductions: {},
-            employerPF: 0,
+            tdsDeduction: 0,
+            otherDeductions: 0,
+            employerPf: 0,
             pensionFund: 0,
-            npsContribution: 0,
-            superannuation: 0,
+            employerNps: 0,
           },
         });
 

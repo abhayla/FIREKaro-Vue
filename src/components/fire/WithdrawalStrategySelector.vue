@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { WithdrawalStrategy } from '@/composables/useFIRE'
+import type { WithdrawalStrategy, WithdrawalStrategyType } from '@/composables/useFIRE'
 import { formatINR } from '@/composables/useFIRE'
 import { getFireProgressColor, chartColors } from '@/utils/chartTheme'
 
@@ -13,24 +13,26 @@ const emit = defineEmits<{
   (e: 'select', strategy: WithdrawalStrategy): void
 }>()
 
-const selectedStrategy = ref<WithdrawalStrategy['type']>('swr')
+const selectedStrategy = ref<WithdrawalStrategyType>('SWR_4_PERCENT')
 
 const currentStrategy = computed(() => {
   return props.strategies.find(s => s.type === selectedStrategy.value) || props.strategies[0]
 })
 
-const strategyIcons: Record<WithdrawalStrategy['type'], string> = {
-  swr: 'mdi-percent',
-  bucket: 'mdi-bucket-outline',
-  vpw: 'mdi-chart-line-variant',
-  guyton_klinger: 'mdi-shield-check'
+const strategyIcons: Record<WithdrawalStrategyType, string> = {
+  SWR_4_PERCENT: 'mdi-percent',
+  SWR_CUSTOM: 'mdi-tune',
+  BUCKET: 'mdi-bucket-outline',
+  VPW: 'mdi-chart-line-variant',
+  GUYTON_KLINGER: 'mdi-shield-check'
 }
 
-const strategyColors: Record<WithdrawalStrategy['type'], string> = {
-  swr: 'primary',
-  bucket: 'success',
-  vpw: 'info',
-  guyton_klinger: 'warning'
+const strategyColors: Record<WithdrawalStrategyType, string> = {
+  SWR_4_PERCENT: 'primary',
+  SWR_CUSTOM: 'primary',
+  BUCKET: 'success',
+  VPW: 'info',
+  GUYTON_KLINGER: 'warning'
 }
 
 const selectStrategy = (strategy: WithdrawalStrategy) => {
@@ -139,7 +141,7 @@ const bucketWidth = 80
       </v-sheet>
 
       <!-- Bucket Strategy Visualization -->
-      <div v-if="currentStrategy.type === 'bucket' && currentStrategy.buckets" class="bucket-viz">
+      <div v-if="currentStrategy.type === 'BUCKET' && currentStrategy.buckets" class="bucket-viz">
         <div class="text-subtitle-2 mb-3">Bucket Allocation</div>
         <div class="d-flex justify-center align-end ga-6">
           <!-- Cash Bucket -->
