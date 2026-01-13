@@ -86,9 +86,13 @@ const liquidityLabel = (liquidity: string) => {
           <v-icon icon="mdi-information-outline" size="small" class="mr-1" />
           {{ formatINR(remaining, true) }} more needed to reach target
         </div>
-        <div v-else class="text-body-2 text-success mt-2">
+        <div v-else-if="data.targetAmount > 0 && data.currentAmount >= data.targetAmount" class="text-body-2 text-success mt-2">
           <v-icon icon="mdi-check-circle" size="small" class="mr-1" />
           Target reached! You're prepared for emergencies
+        </div>
+        <div v-else class="text-body-2 text-medium-emphasis mt-2">
+          <v-icon icon="mdi-information-outline" size="small" class="mr-1" />
+          Set up your emergency fund to get started
         </div>
       </div>
 

@@ -316,6 +316,50 @@ const router = createRouter({
         },
       ],
     },
+    // Section 8: Financial Health (top-level route)
+    {
+      path: "/financial-health",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "financial-health",
+          component: () =>
+            import("@/pages/dashboard/financial-health/index.vue"),
+        },
+        {
+          path: "net-worth",
+          name: "financial-health-net-worth",
+          component: () =>
+            import("@/pages/dashboard/financial-health/net-worth.vue"),
+        },
+        {
+          path: "cash-flow",
+          name: "financial-health-cash-flow",
+          component: () =>
+            import("@/pages/dashboard/financial-health/cash-flow.vue"),
+        },
+        {
+          path: "banking",
+          name: "financial-health-banking",
+          component: () =>
+            import("@/pages/dashboard/financial-health/banking.vue"),
+        },
+        {
+          path: "emergency-fund",
+          name: "financial-health-emergency-fund",
+          component: () =>
+            import("@/pages/dashboard/financial-health/emergency-fund.vue"),
+        },
+        {
+          path: "reports",
+          name: "financial-health-reports",
+          component: () =>
+            import("@/pages/dashboard/financial-health/reports.vue"),
+        },
+      ],
+    },
     // Legacy URL Redirects
     // Tax Planning section - old sub-pages redirect to main tax-planning page
     {
@@ -397,6 +441,31 @@ const router = createRouter({
     {
       path: "/dashboard/insurance/reports",
       redirect: "/insurance",
+    },
+    // Financial Health section - old routes redirect to new /financial-health
+    {
+      path: "/dashboard/financial-health",
+      redirect: "/financial-health",
+    },
+    {
+      path: "/dashboard/financial-health/net-worth",
+      redirect: "/financial-health/net-worth",
+    },
+    {
+      path: "/dashboard/financial-health/cash-flow",
+      redirect: "/financial-health/cash-flow",
+    },
+    {
+      path: "/dashboard/financial-health/banking",
+      redirect: "/financial-health/banking",
+    },
+    {
+      path: "/dashboard/financial-health/emergency-fund",
+      redirect: "/financial-health/emergency-fund",
+    },
+    {
+      path: "/dashboard/financial-health/reports",
+      redirect: "/financial-health/reports",
     },
     // Investment shortcut redirects
     {

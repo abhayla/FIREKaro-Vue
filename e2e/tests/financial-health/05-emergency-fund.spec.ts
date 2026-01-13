@@ -14,6 +14,28 @@ test.describe("Emergency Fund", () => {
     await emergencyPage.expectPageLoaded();
   });
 
+  // ============================================
+  // Internal Tab Tests (renamed from "Current Status" / "Calculator")
+  // ============================================
+
+  test("should display Overview and Details tabs", async ({ page }) => {
+    await expect(emergencyPage.overviewTab).toBeVisible();
+    await expect(emergencyPage.detailsTab).toBeVisible();
+  });
+
+  test("should default to Overview tab", async ({ page }) => {
+    await emergencyPage.expectOverviewTabActive();
+  });
+
+  test("should switch to Details tab (Calculator)", async ({ page }) => {
+    await emergencyPage.navigateToDetailsTab();
+    await emergencyPage.expectDetailsTabActive();
+  });
+
+  // ============================================
+  // Overview Tab Tests (Progress, Status)
+  // ============================================
+
   test("should show target amount card", async ({ page }) => {
     await expect(emergencyPage.targetAmountCard).toBeVisible();
     const target = await emergencyPage.getTargetAmount();

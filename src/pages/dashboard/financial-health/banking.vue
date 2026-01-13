@@ -14,13 +14,16 @@ import {
 } from '@/composables/useFinancialHealth'
 
 const tabs = [
-  { title: 'Health Score', route: '/dashboard/financial-health' },
-  { title: 'Net Worth', route: '/dashboard/financial-health/net-worth' },
-  { title: 'Cash Flow', route: '/dashboard/financial-health/cash-flow' },
-  { title: 'Banking', route: '/dashboard/financial-health/banking' },
-  { title: 'Emergency Fund', route: '/dashboard/financial-health/emergency-fund' },
-  { title: 'Reports', route: '/dashboard/financial-health/reports' },
+  { title: 'Health Score', route: '/financial-health' },
+  { title: 'Net Worth', route: '/financial-health/net-worth' },
+  { title: 'Cash Flow', route: '/financial-health/cash-flow' },
+  { title: 'Banking', route: '/financial-health/banking' },
+  { title: 'Emergency Fund', route: '/financial-health/emergency-fund' },
+  { title: 'Reports', route: '/financial-health/reports' },
 ]
+
+// Internal tab state for Overview/Details
+const activeTab = ref('overview')
 
 const { data: accounts, isLoading, isError, refetch } = useBankAccounts()
 const createMutation = useCreateBankAccount()
@@ -106,98 +109,153 @@ const handleDeleteAccount = async () => {
       icon="mdi-heart-pulse"
       :tabs="tabs"
     />
-    <!-- Summary Cards -->
-    <v-row class="mb-6">
-      <v-col cols="12" sm="4">
-        <v-card color="primary" variant="tonal" class="pa-4">
-          <div class="text-body-2 text-medium-emphasis">Total Balance</div>
-          <div class="text-h4 font-weight-bold">{{ formatINR(totalBalance, true) }}</div>
-          <div class="text-caption">Across all accounts</div>
-        </v-card>
-      </v-col>
 
-      <v-col cols="12" sm="4">
-        <v-card color="success" variant="tonal" class="pa-4">
-          <div class="text-body-2 text-medium-emphasis">Active Accounts</div>
-          <div class="text-h4 font-weight-bold">{{ activeAccounts.length }}</div>
-          <div class="text-caption">Bank accounts</div>
-        </v-card>
-      </v-col>
+    <!-- Internal Tab Navigation -->
+    <v-tabs v-model="activeTab" color="primary" class="mb-4">
+      <v-tab value="overview">
+        <v-icon icon="mdi-chart-box" size="small" class="mr-2" />
+        Overview
+      </v-tab>
+      <v-tab value="details">
+        <v-icon icon="mdi-format-list-bulleted" size="small" class="mr-2" />
+        Details
+      </v-tab>
+    </v-tabs>
 
-      <v-col cols="12" sm="4">
-        <v-card color="warning" variant="tonal" class="pa-4">
-          <div class="text-body-2 text-medium-emphasis">Fixed Deposits</div>
-          <div class="text-h4 font-weight-bold">{{ fdAccounts.length }}</div>
-          <div class="text-caption">FD/RD accounts</div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Tab Content -->
+    <v-window v-model="activeTab">
+      <!-- Overview Tab -->
+      <v-window-item value="overview">
+        <!-- Summary Cards -->
+        <v-row class="mb-6">
+          <v-col cols="12" sm="4">
+            <v-card color="primary" variant="tonal" class="pa-4">
+              <div class="text-body-2 text-medium-emphasis">Total Balance</div>
+              <div class="text-h4 font-weight-bold">{{ formatINR(totalBalance, true) }}</div>
+              <div class="text-caption">Across all accounts</div>
+            </v-card>
+          </v-col>
 
-    <!-- Actions -->
-    <div class="d-flex justify-space-between align-center mb-4">
-      <div class="text-h6">Your Accounts</div>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="handleAddAccount">
-        Add Account
-      </v-btn>
-    </div>
+          <v-col cols="12" sm="4">
+            <v-card color="success" variant="tonal" class="pa-4">
+              <div class="text-body-2 text-medium-emphasis">Active Accounts</div>
+              <div class="text-h4 font-weight-bold">{{ activeAccounts.length }}</div>
+              <div class="text-caption">Bank accounts</div>
+            </v-card>
+          </v-col>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="text-center py-8">
-      <v-progress-circular indeterminate color="primary" size="48" />
-      <p class="text-body-2 text-medium-emphasis mt-4">Loading accounts...</p>
-    </div>
-
-    <!-- Error State -->
-    <v-alert v-else-if="isError" type="error" variant="tonal" class="mb-6">
-      <v-icon icon="mdi-alert-circle" class="mr-2" />
-      Failed to load accounts. Please try again later.
-      <template #append>
-        <v-btn variant="text" size="small" @click="refetch">Retry</v-btn>
-      </template>
-    </v-alert>
-
-    <!-- Empty State -->
-    <v-card v-else-if="!accounts || accounts.length === 0" variant="outlined" class="text-center pa-8">
-      <v-icon icon="mdi-bank-off" size="64" color="grey" />
-      <div class="text-h6 mt-4">No bank accounts yet</div>
-      <div class="text-body-2 text-medium-emphasis mb-4">
-        Add your first bank account to start tracking
-      </div>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="handleAddAccount">
-        Add Your First Account
-      </v-btn>
-    </v-card>
-
-    <!-- Account Lists -->
-    <template v-else>
-      <!-- Savings & Current Accounts -->
-      <div v-if="savingsAccounts.length > 0" class="mb-6">
-        <div class="text-subtitle-1 font-weight-medium mb-3">Savings & Current Accounts</div>
-        <v-row>
-          <v-col v-for="account in savingsAccounts" :key="account.id" cols="12" sm="6" md="4">
-            <BankAccountCard
-              :account="account"
-              @edit="handleEditAccount"
-              @delete="confirmDelete"
-            />
+          <v-col cols="12" sm="4">
+            <v-card color="warning" variant="tonal" class="pa-4">
+              <div class="text-body-2 text-medium-emphasis">Fixed Deposits</div>
+              <div class="text-h4 font-weight-bold">{{ fdAccounts.length }}</div>
+              <div class="text-caption">FD/RD accounts</div>
+            </v-card>
           </v-col>
         </v-row>
-      </div>
 
-      <!-- Fixed Deposits -->
-      <div v-if="fdAccounts.length > 0">
-        <div class="text-subtitle-1 font-weight-medium mb-3">Fixed & Recurring Deposits</div>
-        <v-row>
-          <v-col v-for="account in fdAccounts" :key="account.id" cols="12" sm="6" md="4">
-            <BankAccountCard
-              :account="account"
-              @edit="handleEditAccount"
-              @delete="confirmDelete"
-            />
-          </v-col>
-        </v-row>
-      </div>
-    </template>
+        <!-- Quick Insights -->
+        <v-card v-if="accounts && accounts.length > 0" class="mb-6">
+          <v-card-title class="d-flex align-center">
+            <v-icon icon="mdi-lightbulb-outline" class="mr-2" />
+            Quick Insights
+          </v-card-title>
+          <v-card-text>
+            <v-list density="compact">
+              <v-list-item prepend-icon="mdi-bank" class="text-primary">
+                <v-list-item-title>{{ activeAccounts.length }} active bank account{{ activeAccounts.length !== 1 ? 's' : '' }} tracked</v-list-item-title>
+              </v-list-item>
+              <v-list-item v-if="fdAccounts.length > 0" prepend-icon="mdi-safe" class="text-warning">
+                <v-list-item-title>{{ fdAccounts.length }} fixed/recurring deposit{{ fdAccounts.length !== 1 ? 's' : '' }} earning interest</v-list-item-title>
+              </v-list-item>
+              <v-list-item v-if="savingsAccounts.length > 0" prepend-icon="mdi-wallet" class="text-success">
+                <v-list-item-title>{{ formatINR(savingsAccounts.reduce((sum, a) => sum + a.balance, 0), true) }} in savings/current accounts</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
+
+        <!-- Empty State for Overview -->
+        <v-card v-if="!isLoading && (!accounts || accounts.length === 0)" variant="outlined" class="text-center pa-8">
+          <v-icon icon="mdi-bank-off" size="64" color="grey" />
+          <div class="text-h6 mt-4">No bank accounts yet</div>
+          <div class="text-body-2 text-medium-emphasis mb-4">
+            Add your first bank account to see insights here
+          </div>
+          <v-btn color="primary" prepend-icon="mdi-plus" @click="activeTab = 'details'">
+            Go to Details
+          </v-btn>
+        </v-card>
+      </v-window-item>
+
+      <!-- Details Tab -->
+      <v-window-item value="details">
+        <!-- Actions -->
+        <div class="d-flex justify-space-between align-center mb-4">
+          <div class="text-h6">Your Accounts</div>
+          <v-btn color="primary" prepend-icon="mdi-plus" @click="handleAddAccount">
+            Add Account
+          </v-btn>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="isLoading" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="48" />
+          <p class="text-body-2 text-medium-emphasis mt-4">Loading accounts...</p>
+        </div>
+
+        <!-- Error State -->
+        <v-alert v-else-if="isError" type="error" variant="tonal" class="mb-6">
+          <v-icon icon="mdi-alert-circle" class="mr-2" />
+          Failed to load accounts. Please try again later.
+          <template #append>
+            <v-btn variant="text" size="small" @click="refetch">Retry</v-btn>
+          </template>
+        </v-alert>
+
+        <!-- Empty State -->
+        <v-card v-else-if="!accounts || accounts.length === 0" variant="outlined" class="text-center pa-8">
+          <v-icon icon="mdi-bank-off" size="64" color="grey" />
+          <div class="text-h6 mt-4">No bank accounts yet</div>
+          <div class="text-body-2 text-medium-emphasis mb-4">
+            Add your first bank account to start tracking
+          </div>
+          <v-btn color="primary" prepend-icon="mdi-plus" @click="handleAddAccount">
+            Add Your First Account
+          </v-btn>
+        </v-card>
+
+        <!-- Account Lists -->
+        <template v-else>
+          <!-- Savings & Current Accounts -->
+          <div v-if="savingsAccounts.length > 0" class="mb-6">
+            <div class="text-subtitle-1 font-weight-medium mb-3">Savings & Current Accounts</div>
+            <v-row>
+              <v-col v-for="account in savingsAccounts" :key="account.id" cols="12" sm="6" md="4">
+                <BankAccountCard
+                  :account="account"
+                  @edit="handleEditAccount"
+                  @delete="confirmDelete"
+                />
+              </v-col>
+            </v-row>
+          </div>
+
+          <!-- Fixed Deposits -->
+          <div v-if="fdAccounts.length > 0">
+            <div class="text-subtitle-1 font-weight-medium mb-3">Fixed & Recurring Deposits</div>
+            <v-row>
+              <v-col v-for="account in fdAccounts" :key="account.id" cols="12" sm="6" md="4">
+                <BankAccountCard
+                  :account="account"
+                  @edit="handleEditAccount"
+                  @delete="confirmDelete"
+                />
+              </v-col>
+            </v-row>
+          </div>
+        </template>
+      </v-window-item>
+    </v-window>
 
     <!-- Add/Edit Form Dialog -->
     <BankAccountForm
