@@ -282,6 +282,27 @@ const router = createRouter({
       ],
     },
     // Legacy URL Redirects
+    // Tax Planning section - old sub-pages redirect to main tax-planning page
+    {
+      path: "/tax-planning/calculator",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/deductions",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/scenarios",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/advance-tax",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/reports",
+      redirect: "/tax-planning",
+    },
     // Salary section - old sub-pages redirect to main salary page
     {
       path: "/dashboard/salary/current",
