@@ -303,6 +303,19 @@ const router = createRouter({
         },
       ],
     },
+    // Section 7: Insurance (Single page with 4 tabs: Overview, Item Details, Calculator, Reports)
+    {
+      path: "/insurance",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "insurance",
+          component: () => import("@/pages/dashboard/insurance/index.vue"),
+        },
+      ],
+    },
     // Legacy URL Redirects
     // Tax Planning section - old sub-pages redirect to main tax-planning page
     {
@@ -359,6 +372,31 @@ const router = createRouter({
     {
       path: "/dashboard/non-salary-income/:path(.*)",
       redirect: (to) => `/income/${to.params.path}`,
+    },
+    // Insurance section - old routes redirect to new /insurance
+    {
+      path: "/dashboard/insurance",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/life",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/health",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/other",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/calculator",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/reports",
+      redirect: "/insurance",
     },
     // Investment shortcut redirects
     {

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import SectionHeader from '@/components/shared/SectionHeader.vue'
 import {
   useInsurancePolicies,
   useInsuranceSummary,
@@ -13,15 +12,6 @@ import {
   getInsuranceTypeIcon,
   getInsuranceTypeColor,
 } from '@/composables/useInsurance'
-
-const tabs = [
-  { title: 'Overview', route: '/dashboard/insurance' },
-  { title: 'Life', route: '/dashboard/insurance/life' },
-  { title: 'Health', route: '/dashboard/insurance/health' },
-  { title: 'Other', route: '/dashboard/insurance/other' },
-  { title: 'Calculator', route: '/dashboard/insurance/calculator' },
-  { title: 'Reports', route: '/dashboard/insurance/reports' },
-]
 
 // Fetch data
 const { activePolicies, isLoading } = useInsurancePolicies()
@@ -126,14 +116,7 @@ const printReport = () => {
 </script>
 
 <template>
-  <div>
-    <SectionHeader
-      title="Insurance"
-      subtitle="Insurance Reports"
-      icon="mdi-shield-check"
-      :tabs="tabs"
-    />
-
+  <div class="py-4">
     <!-- Report Type Selector -->
     <v-card class="mb-6">
       <v-card-text class="d-flex flex-wrap align-center gap-4">
