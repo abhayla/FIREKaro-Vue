@@ -86,6 +86,11 @@ model User {
   // Protection/Insurance relations
   insurancePolicies      InsurancePolicy[]
 
+  // FIRE & Goals relations
+  fireMetricsCache       FIREMetricsCache?
+  withdrawalStrategy     WithdrawalStrategy?
+  monteCarloResults      MonteCarloResult[]
+
   @@index([email])
 }
 
@@ -1117,28 +1122,73 @@ model EmergencyFund {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum GoalCategoryEnum {
+  HOUSE
+  CAR
+  EDUCATION
+  TRAVEL
+  EMERGENCY
+  WEDDING
+  RETIREMENT
+  BUSINESS
+  PARENTS_CARE
+  FIRE_CORPUS
+  OTHER
+}
+
 model FinancialGoal {
-  id                  String    @id @default(cuid())
+  id                  String           @id @default(cuid())
   userId              String
   goalName            String
-  goalType            String    // RETIREMENT, EDUCATION, HOUSE, etc.
+  goalType            String           // RETIREMENT, EDUCATION, HOUSE, etc.
   description         String?
   targetAmount        Float
   targetDate          DateTime
-  currentAmount       Float     @default(0)
-  monthlyContribution Float     @default(0)
-  expectedReturn      Float     @default(12.0)
-  priority            String    @default("MEDIUM")
-  status              String    @default("IN_PROGRESS")
+  currentAmount       Float            @default(0)
+  monthlyContribution Float            @default(0)
+  expectedReturn      Float            @default(12.0)
+  priority            String           @default("MEDIUM")
+  status              String           @default("IN_PROGRESS")
   linkedInvestments   String[]
   linkedSIPs          String[]
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // FIRE-specific fields
+  category            GoalCategoryEnum @default(OTHER)
+  icon                String?          // mdi-icon name
+  color               String?          // hex color
+  sipRecommended      Float?           // AI-calculated recommended SIP
+  projectedDate       DateTime?        // Calculated projected completion date
+  statusColor         String?          // success, warning, error
+  lastCalculatedAt    DateTime?        // When SIP/projection was last calculated
+  currentInsight      String?          // Latest AI-generated insight
+  lastInsightAt       DateTime?        // When insight was generated
+
+  // Relations
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestones          GoalMilestone[]
 
   @@index([userId])
   @@index([status])
+  @@index([category])
+}
+
+model GoalMilestone {
+  id              String        @id @default(cuid())
+  goalId          String
+  percent         Int           // 25, 50, 75, 100
+  achieved        Boolean       @default(false)
+  achievedAt      DateTime?
+  celebrationType String?       // confetti, badge, notification
+  badgeIcon       String?       // mdi-icon for earned badge
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  goal            FinancialGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, percent])
+  @@index([goalId])
 }
 
 // ============================================================================
@@ -1872,4 +1922,132 @@ model TaxWhatIfScenario {
   @@unique([userId, financialYear, name])
   @@index([userId, financialYear])
   @@index([isBaseline])
+}
+
+// ============================================================================
+// FIRE & GOALS MODELS
+// ============================================================================
+
+// FIREMetricsCache - Cache for expensive FIRE calculations
+model FIREMetricsCache {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+
+  // Core FIRE metrics
+  fireNumber          Float
+  currentCorpus       Float
+  progressPercent     Float
+  yearsToFIRE         Float
+  monthsToFIRE        Int
+
+  // FIRE variants
+  leanFIRE            Float
+  regularFIRE         Float
+  fatFIRE             Float
+  coastFIRE           Float
+  coastFIREAge        Int?
+  baristaFIRE         Float?
+  baristaFIREMonthlyIncome Float?
+
+  // Income/expense metrics
+  annualExpenses      Float
+  healthcareExpenses  Float     @default(0)
+  monthlySavings      Float
+  savingsRate         Float
+
+  // Calculation parameters
+  safeWithdrawalRate  Float     @default(3.5)  // India-adjusted (3.5% vs US 4%)
+  expectedReturns     Float     @default(12)
+  inflationRate       Float     @default(6)
+  healthcareInflation Float     @default(8)    // Separate healthcare inflation
+
+  // Freedom Score components (0-100 scale)
+  freedomScore        Int?
+  freedomScoreSave    Int?      // 0-25
+  freedomScoreGrow    Int?      // 0-25
+  freedomScoreProtect Int?      // 0-25
+  freedomScoreReady   Int?      // 0-25
+
+  // Cache metadata
+  calculatedAt        DateTime  @default(now())
+  isStale             Boolean   @default(false)
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([calculatedAt])
+}
+
+// WithdrawalStrategy - User's selected withdrawal strategy preferences
+enum WithdrawalStrategyType {
+  SWR_4_PERCENT
+  SWR_CUSTOM
+  BUCKET
+  VPW
+  GUYTON_KLINGER
+}
+
+model WithdrawalStrategy {
+  id                  String                  @id @default(cuid())
+  userId              String                  @unique
+
+  // Selected strategy
+  activeStrategy      WithdrawalStrategyType  @default(SWR_CUSTOM)
+
+  // SWR preferences (India-adjusted default: 3.5%)
+  customSWR           Float                   @default(3.5)
+
+  // Bucket strategy configuration
+  bucketCashYears     Int                     @default(2)    // Years of expenses in cash
+  bucketBondsYears    Int                     @default(5)    // Years in bonds
+  bucketEquityPercent Float                   @default(60)   // Remaining in equity
+
+  // Guyton-Klinger guardrails
+  gkUpperGuardrail    Float                   @default(1.2)  // +20% (trigger withdrawal decrease)
+  gkLowerGuardrail    Float                   @default(0.8)  // -20% (trigger withdrawal increase)
+  gkMaxIncrease       Float                   @default(1.1)  // Max 10% annual increase
+  gkMaxDecrease       Float                   @default(0.9)  // Max 10% annual decrease
+
+  // VPW (Variable Percentage Withdrawal) preferences
+  vpwStartAge         Int?
+  vpwEndAge           Int?                    @default(95)
+
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  user                User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// MonteCarloResult - Cache for Monte Carlo simulation results
+model MonteCarloResult {
+  id                  String    @id @default(cuid())
+  userId              String
+
+  // Simulation parameters
+  runsCount           Int       @default(10000)
+  yearsSimulated      Int       @default(30)
+  startingCorpus      Float
+  annualWithdrawal    Float
+  equityAllocation    Float
+
+  // Results
+  successRate         Float     // Percentage of runs where portfolio survived
+  medianEndingValue   Float
+  percentile10        Float     // Poor outcome
+  percentile25        Float
+  percentile50        Float     // Median
+  percentile75        Float
+  percentile90        Float     // Good outcome
+
+  // Detailed results stored as JSON
+  yearByYearData      Json?     // Array of {year, p10, p25, p50, p75, p90}
+  scenarioSamples     Json?     // Sample best/median/worst paths for visualization
+
+  // Cache metadata
+  calculatedAt        DateTime  @default(now())
+  expiresAt           DateTime  // Cache expiry (e.g., 24 hours)
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

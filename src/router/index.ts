@@ -200,39 +200,18 @@ const router = createRouter({
           component: () =>
             import("@/pages/dashboard/financial-health/reports.vue"),
         },
-        // Section 9: FIRE & Goals
+      ],
+    },
+    // FIRE & Goals - Top-level route (moved from /dashboard for cleaner URL)
+    {
+      path: "/fire-goals",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
         {
-          path: "fire-goals",
+          path: "",
           name: "fire-goals",
           component: () => import("@/pages/dashboard/fire-goals/index.vue"),
-        },
-        {
-          path: "fire-goals/calculators",
-          name: "fire-goals-calculators",
-          component: () =>
-            import("@/pages/dashboard/fire-goals/calculators.vue"),
-        },
-        {
-          path: "fire-goals/goals",
-          name: "fire-goals-goals",
-          component: () => import("@/pages/dashboard/fire-goals/goals.vue"),
-        },
-        {
-          path: "fire-goals/projections",
-          name: "fire-goals-projections",
-          component: () =>
-            import("@/pages/dashboard/fire-goals/projections.vue"),
-        },
-        {
-          path: "fire-goals/withdrawal",
-          name: "fire-goals-withdrawal",
-          component: () =>
-            import("@/pages/dashboard/fire-goals/withdrawal.vue"),
-        },
-        {
-          path: "fire-goals/reports",
-          name: "fire-goals-reports",
-          component: () => import("@/pages/dashboard/fire-goals/reports.vue"),
         },
       ],
     },
@@ -412,6 +391,52 @@ const router = createRouter({
     {
       path: "/dashboard/non-salary-income",
       redirect: "/income",
+    },
+    // FIRE Goals section - redirect /dashboard/fire-goals to new /fire-goals URL
+    {
+      path: "/dashboard/fire-goals",
+      redirect: "/fire-goals",
+    },
+    {
+      path: "/dashboard/fire-goals/calculators",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/goals",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/projections",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/withdrawal",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/reports",
+      redirect: "/fire-goals",
+    },
+    // New /fire-goals sub-path redirects (for bookmarks)
+    {
+      path: "/fire-goals/calculators",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/fire-goals/goals",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/fire-goals/projections",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/fire-goals/withdrawal",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/fire-goals/reports",
+      redirect: "/fire-goals",
     },
     {
       path: "/dashboard/non-salary-income/:path(.*)",

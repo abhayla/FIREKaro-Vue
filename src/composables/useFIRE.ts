@@ -4,7 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import { computed, type Ref } from 'vue'
+import { computed } from 'vue'
+import { useUiStore } from '@/stores/ui'
 
 // ============================================
 // Types
@@ -22,12 +23,20 @@ export interface FIREMetrics {
   safeWithdrawalRate: number
   expectedReturns: number
   inflationRate: number
-  // FIRE types
+  healthcareInflation: number
+  // FIRE variants
   leanFIRE: number
   regularFIRE: number
   fatFIRE: number
   coastFIRE: number
+  baristaFIRE?: number
   coastFIREAge: number
+  // Freedom score (cached)
+  freedomScore?: number
+  freedomScoreSave?: number
+  freedomScoreGrow?: number
+  freedomScoreProtect?: number
+  freedomScoreReady?: number
 }
 
 export interface FreedomScore {
@@ -50,62 +59,123 @@ export interface ScoreFactor {
 }
 
 export interface CrossoverPoint {
-  crossoverDate: string
-  monthsToGo: number
-  yearsToGo: number
-  currentExpenses: number
-  currentInvestmentIncome: number
-  crossoverPercent: number
-  projectedData: Array<{
-    date: string
+  currentState: {
+    corpus: number
+    monthlyExpenses: number
+    monthlySavings: number
+    monthlyIncome: number
+    currentPassiveIncome: number
+    passiveIncomePercent: number
+  }
+  crossover: {
+    months: number
+    years: number
+    targetCorpus: number
+    projectedDate: string
+  } | null
+  parameters: {
+    swr: number
+    expectedReturns: number
+    inflation: number
+  }
+  chartData: Array<{
+    month: number
+    year: number
+    corpus: number
+    passiveIncome: number
     expenses: number
-    investmentIncome: number
+    isCrossover: boolean
   }>
 }
 
 export interface ExpenseCoverage {
-  totalCovered: number
-  totalExpenses: number
-  coveragePercent: number
+  summary: {
+    currentCorpus: number
+    annualPassiveIncome: number
+    monthlyPassiveIncome: number
+    totalAnnualExpenses: number
+    overallCoveragePercent: number
+    categoriesCovered: number
+    totalCategories: number
+    swr: number
+  }
   categories: Array<{
-    name: string
-    amount: number
-    covered: boolean
+    category: string
+    annualAmount: number
+    monthlyAmount: number
+    priority: number
+    cumulativeExpense: number
+    isCovered: boolean
     coveragePercent: number
-    icon: string
+    status: 'covered' | 'partial' | 'not_covered'
+    statusColor: string
   }>
+  insights: string[]
 }
 
 export interface FIREProjection {
-  years: number[]
-  corpus: number[]
-  expenses: number[]
-  investmentIncome: number[]
-  contributions: number[]
-  fireYear: number
-  fireAge: number
+  summary: {
+    currentAge: number
+    targetRetirementAge: number
+    currentCorpus: number
+    fireYear: number | null
+    peakCorpusAge: number
+    peakCorpusAmount: number
+    depletionAge: number | null
+    projectionSuccess: boolean
+  }
+  parameters: {
+    preRetirementReturns: number
+    postRetirementReturns: number
+    generalInflation: number
+    healthcareInflation: number
+    swr: number
+    monthlySavings: number
+  }
+  projections: Array<{
+    year: number
+    age: number
+    phase: 'accumulation' | 'retirement'
+    corpus: number
+    contributions: number
+    returns: number
+    withdrawals: number
+    expenses: number
+    events: LifeEvent[]
+  }>
   lifeEvents: LifeEvent[]
+  sensitivityAnalysis: Array<{
+    variable: string
+    impact: { yearsChange: number; corpusChange: number }
+    riskLevel: string
+  }>
 }
 
 export interface LifeEvent {
-  id: string
-  name: string
   year: number
-  amount: number
-  type: 'income' | 'expense' | 'one_time'
-  category: 'financial' | 'lifestyle'
-  icon: string
+  age: number
+  event: string
+  impact: number
+  type: 'expense' | 'income' | 'milestone'
 }
 
 export interface MonteCarloResult {
+  id: string
+  runsCount: number
+  yearsSimulated: number
+  startingCorpus: number
+  annualWithdrawal: number
+  equityAllocation: number
   successRate: number
   medianEndingValue: number
-  percentile10: number
-  percentile25: number
-  percentile50: number
-  percentile75: number
-  percentile90: number
-  yearByYearPercentiles: Array<{
+  percentiles: {
+    p10: number
+    p25: number
+    p50: number
+    p75: number
+    p90: number
+  }
+  yearByYearData: Array<{
     year: number
     p10: number
     p25: number
@@ -113,59 +183,105 @@ export interface MonteCarloResult {
     p75: number
     p90: number
   }>
-  scenarios: {
-    best: number[]
-    median: number[]
+  scenarioSamples: {
     worst: number[]
+    poor: number[]
+    median: number[]
+    good: number[]
+    best: number[]
   }
-  runsCount: number
+  interpretation: {
+    status: 'excellent' | 'good' | 'fair' | 'poor'
+    message: string
+    recommendations: string[]
+  }
+  cached: boolean
+  calculatedAt: string
+  expiresAt: string
 }
 
 export interface Goal {
   id: string
-  name: string
+  goalName: string
   category: GoalCategory
   targetAmount: number
   currentAmount: number
   targetDate: string
-  monthlySIP: number
-  expectedReturn: number
-  status: 'on_track' | 'at_risk' | 'off_track' | 'completed'
+  monthlyContribution: number
+  expectedReturns: number
+  status: 'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK' | 'COMPLETED'
   progressPercent: number
-  icon: string
-  color: string
-  projectedDate: string
-  monthsRemaining: number
+  icon: string | null
+  color: string | null
+  projectedDate: string | null
+  sipRecommended: number | null
+  currentInsight: string | null
+  milestones: GoalMilestone[]
   createdAt: string
   updatedAt: string
 }
 
 export type GoalCategory =
-  | 'house'
-  | 'car'
-  | 'education'
-  | 'travel'
-  | 'emergency'
-  | 'wedding'
-  | 'retirement'
-  | 'business'
-  | 'parents_care'
-  | 'other'
+  | 'HOUSE'
+  | 'CAR'
+  | 'EDUCATION'
+  | 'TRAVEL'
+  | 'EMERGENCY'
+  | 'WEDDING'
+  | 'RETIREMENT'
+  | 'BUSINESS'
+  | 'PARENTS_CARE'
+  | 'FIRE_CORPUS'
+  | 'OTHER'
+
+export interface GoalMilestone {
+  id: string
+  goalId: string
+  percent: number
+  achieved: boolean
+  achievedAt: string | null
+  celebrationType: string | null
+  badgeIcon: string | null
+}
 
 export interface CreateGoalInput {
-  name: string
-  category: GoalCategory
+  goalName: string
+  goalType: string
+  category: GoalCategory | string
   targetAmount: number
   currentAmount?: number
   targetDate: string
-  monthlySIP?: number
-  expectedReturn?: number
+  monthlyContribution?: number
+  expectedReturns?: number
   icon?: string
   color?: string
 }
 
-export interface WithdrawalStrategy {
-  type: 'swr' | 'bucket' | 'vpw' | 'guyton_klinger'
+export interface WithdrawalStrategyPrefs {
+  id: string
+  userId: string
+  activeStrategy: WithdrawalStrategyType
+  customSWR: number
+  bucketCashYears: number
+  bucketBondsYears: number
+  bucketEquityPercent: number
+  gkUpperGuardrail: number
+  gkLowerGuardrail: number
+  gkMaxIncrease: number
+  gkMaxDecrease: number
+  vpwStartAge: number | null
+  vpwEndAge: number
+}
+
+export type WithdrawalStrategyType =
+  | 'SWR_4_PERCENT'
+  | 'SWR_CUSTOM'
+  | 'BUCKET'
+  | 'VPW'
+  | 'GUYTON_KLINGER'
+
+export interface WithdrawalStrategyComparison {
+  type: WithdrawalStrategyType
   name: string
   description: string
   annualWithdrawal: number
@@ -180,6 +296,49 @@ export interface WithdrawalStrategy {
   }
 }
 
+export interface FIREExportData {
+  reportInfo: {
+    title: string
+    generatedAt: string
+    userName: string
+    userEmail: string
+    format: string
+  }
+  summary: {
+    currentAge: number
+    targetRetirementAge: number
+    yearsToFIRE: number
+    fireNumber: number
+    currentCorpus: number
+    progressPercent: number
+    freedomScore: number
+    savingsRate: number
+    monthlyPassiveIncome: number
+  }
+  fireVariants: {
+    leanFIRE: number
+    regularFIRE: number
+    fatFIRE: number
+    coastFIRE: number
+    baristaFIRE: number
+  }
+  freedomScore: {
+    total: number
+    save: number
+    grow: number
+    protect: number
+    ready: number
+  }
+  portfolioSummary: Record<string, unknown>
+  goals: Array<Record<string, unknown>>
+  goalsSummary: Record<string, unknown>
+  withdrawalStrategy: Record<string, unknown> | null
+  monteCarlo: Record<string, unknown> | null
+  protection: Record<string, unknown>
+  assumptions: Record<string, unknown>
+  recommendations: string[]
+}
+
 export interface FIREMilestone {
   percent: number
   label: string
@@ -189,407 +348,178 @@ export interface FIREMilestone {
 }
 
 // ============================================
-// API Functions
+// Helper to build query params with family view
 // ============================================
 
-async function fetchFIREMetrics(): Promise<FIREMetrics> {
-  const res = await fetch('/api/fire/metrics')
-  if (!res.ok) {
-    // Return mock data if API not ready
-    return {
-      fireNumber: 25500000,
-      currentCorpus: 8500000,
-      progressPercent: 33,
-      yearsToFIRE: 5.8,
-      monthsToFIRE: 70,
-      annualExpenses: 1020000,
-      monthlySavings: 85000,
-      savingsRate: 42,
-      safeWithdrawalRate: 4,
-      expectedReturns: 12,
-      inflationRate: 6,
-      leanFIRE: 15300000,
-      regularFIRE: 25500000,
-      fatFIRE: 38250000,
-      coastFIRE: 4200000,
-      coastFIREAge: 45
+function buildQueryParams() {
+  const uiStore = useUiStore()
+  const params = new URLSearchParams()
+  if (uiStore.isFamilyView) {
+    params.append('familyView', 'true')
+    if (uiStore.selectedFamilyMemberId) {
+      params.append('familyMemberId', uiStore.selectedFamilyMemberId)
     }
   }
-  return res.json()
-}
-
-async function fetchFreedomScore(): Promise<FreedomScore> {
-  const res = await fetch('/api/fire/freedom-score')
-  if (!res.ok) {
-    // Return mock data if API not ready
-    return {
-      total: 72,
-      domains: {
-        save: {
-          score: 20,
-          maxScore: 25,
-          factors: [
-            { name: 'Savings Rate', score: 15, maxScore: 18, description: '42% savings rate' },
-            { name: 'Expense Control', score: 5, maxScore: 7, description: 'Expenses under budget' }
-          ]
-        },
-        grow: {
-          score: 18,
-          maxScore: 25,
-          factors: [
-            { name: 'Portfolio Growth', score: 12, maxScore: 15, description: '12% annual returns' },
-            { name: 'Net Worth Trend', score: 6, maxScore: 10, description: 'Growing steadily' }
-          ]
-        },
-        protect: {
-          score: 16,
-          maxScore: 25,
-          factors: [
-            { name: 'Emergency Fund', score: 8, maxScore: 10, description: '6 months covered' },
-            { name: 'Insurance', score: 6, maxScore: 10, description: 'Term + Health active' },
-            { name: 'Diversification', score: 2, maxScore: 5, description: 'Moderate diversification' }
-          ]
-        },
-        ready: {
-          score: 18,
-          maxScore: 25,
-          factors: [
-            { name: 'FIRE Progress', score: 10, maxScore: 15, description: '68% to crossover' },
-            { name: 'Goals On Track', score: 4, maxScore: 5, description: '3 of 4 on track' },
-            { name: 'Withdrawal Plan', score: 4, maxScore: 5, description: 'Bucket strategy set' }
-          ]
-        }
-      },
-      status: 'good',
-      message: 'Solid foundation. Small tweaks can accelerate your journey.'
-    }
-  }
-  return res.json()
-}
-
-async function fetchCrossoverPoint(): Promise<CrossoverPoint> {
-  const res = await fetch('/api/fire/crossover')
-  if (!res.ok) {
-    // Return mock data if API not ready
-    const months = Array.from({ length: 120 }, (_, i) => {
-      const date = new Date()
-      date.setMonth(date.getMonth() + i)
-      return {
-        date: date.toISOString().slice(0, 7),
-        expenses: 85000 * Math.pow(1.06 / 12, i),
-        investmentIncome: 52000 * Math.pow(1.12 / 12, i)
-      }
-    })
-    return {
-      crossoverDate: '2031-11',
-      monthsToGo: 70,
-      yearsToGo: 5.8,
-      currentExpenses: 85000,
-      currentInvestmentIncome: 52000,
-      crossoverPercent: 61,
-      projectedData: months
-    }
-  }
-  return res.json()
-}
-
-async function fetchExpenseCoverage(): Promise<ExpenseCoverage> {
-  const res = await fetch('/api/fire/expense-coverage')
-  if (!res.ok) {
-    // Return mock data
-    return {
-      totalCovered: 36000,
-      totalExpenses: 85000,
-      coveragePercent: 42,
-      categories: [
-        { name: 'Groceries', amount: 15000, covered: true, coveragePercent: 100, icon: 'mdi-cart' },
-        { name: 'Utilities', amount: 5000, covered: true, coveragePercent: 100, icon: 'mdi-flash' },
-        { name: 'Internet', amount: 2000, covered: true, coveragePercent: 100, icon: 'mdi-wifi' },
-        { name: 'Transport', amount: 6000, covered: true, coveragePercent: 100, icon: 'mdi-car' },
-        { name: 'Insurance', amount: 8000, covered: true, coveragePercent: 100, icon: 'mdi-shield' },
-        { name: 'Housing', amount: 25000, covered: false, coveragePercent: 48, icon: 'mdi-home' },
-        { name: 'Lifestyle', amount: 12000, covered: false, coveragePercent: 0, icon: 'mdi-shopping' },
-        { name: 'Misc', amount: 12000, covered: false, coveragePercent: 0, icon: 'mdi-dots-horizontal' }
-      ]
-    }
-  }
-  return res.json()
-}
-
-async function fetchFIREProjections(): Promise<FIREProjection> {
-  const res = await fetch('/api/fire/projections')
-  if (!res.ok) {
-    // Return mock 100-year projection
-    const currentYear = new Date().getFullYear()
-    const years = Array.from({ length: 50 }, (_, i) => currentYear + i)
-    const corpus = years.map((_, i) => {
-      const base = 5000000
-      const growth = Math.pow(1.12, i)
-      const contributions = 300000 * i
-      return Math.round(base * growth + contributions)
-    })
-    return {
-      years,
-      corpus,
-      expenses: years.map((_, i) => Math.round(1000000 * Math.pow(1.06, i))),
-      investmentIncome: corpus.map(c => Math.round(c * 0.04)),
-      contributions: years.map(() => 300000),
-      fireYear: currentYear + 6,
-      fireAge: 38,
-      lifeEvents: [
-        { id: '1', name: 'House Purchase', year: currentYear + 2, amount: 2000000, type: 'expense', category: 'financial', icon: 'mdi-home' },
-        { id: '2', name: 'Child Birth', year: currentYear + 3, amount: 0, type: 'expense', category: 'lifestyle', icon: 'mdi-baby-carriage' },
-        { id: '3', name: 'Child Education', year: currentYear + 18, amount: 5000000, type: 'expense', category: 'financial', icon: 'mdi-school' }
-      ]
-    }
-  }
-  return res.json()
-}
-
-async function fetchMonteCarlo(): Promise<MonteCarloResult> {
-  const res = await fetch('/api/fire/monte-carlo')
-  if (!res.ok) {
-    // Return mock Monte Carlo results
-    const yearByYearPercentiles = Array.from({ length: 30 }, (_, i) => ({
-      year: new Date().getFullYear() + i,
-      p10: Math.round(5000000 * Math.pow(1.04, i)),
-      p25: Math.round(5000000 * Math.pow(1.07, i)),
-      p50: Math.round(5000000 * Math.pow(1.10, i)),
-      p75: Math.round(5000000 * Math.pow(1.13, i)),
-      p90: Math.round(5000000 * Math.pow(1.16, i))
-    }))
-    return {
-      successRate: 87,
-      medianEndingValue: 85000000,
-      percentile10: 25000000,
-      percentile25: 45000000,
-      percentile50: 85000000,
-      percentile75: 140000000,
-      percentile90: 220000000,
-      yearByYearPercentiles,
-      scenarios: {
-        best: yearByYearPercentiles.map(y => y.p90),
-        median: yearByYearPercentiles.map(y => y.p50),
-        worst: yearByYearPercentiles.map(y => y.p10)
-      },
-      runsCount: 10000
-    }
-  }
-  return res.json()
-}
-
-async function fetchGoals(): Promise<Goal[]> {
-  const res = await fetch('/api/goals')
-  if (!res.ok) {
-    // Return mock goals
-    return [
-      {
-        id: '1',
-        name: 'House Down Payment',
-        category: 'house',
-        targetAmount: 2000000,
-        currentAmount: 1560000,
-        targetDate: '2025-12-31',
-        monthlySIP: 40000,
-        expectedReturn: 10,
-        status: 'on_track',
-        progressPercent: 78,
-        icon: 'mdi-home',
-        color: '#1976d2',
-        projectedDate: '2025-10-15',
-        monthsRemaining: 11,
-        createdAt: '2024-01-15',
-        updatedAt: '2025-01-08'
-      },
-      {
-        id: '2',
-        name: 'Emergency Fund',
-        category: 'emergency',
-        targetAmount: 600000,
-        currentAmount: 600000,
-        targetDate: '2024-12-31',
-        monthlySIP: 0,
-        expectedReturn: 6,
-        status: 'completed',
-        progressPercent: 100,
-        icon: 'mdi-lifebuoy',
-        color: '#ff9800',
-        projectedDate: '2024-11-01',
-        monthsRemaining: 0,
-        createdAt: '2023-06-01',
-        updatedAt: '2024-11-01'
-      },
-      {
-        id: '3',
-        name: 'Europe Trip',
-        category: 'travel',
-        targetAmount: 500000,
-        currentAmount: 280000,
-        targetDate: '2026-06-30',
-        monthlySIP: 15000,
-        expectedReturn: 8,
-        status: 'at_risk',
-        progressPercent: 56,
-        icon: 'mdi-airplane',
-        color: '#00bcd4',
-        projectedDate: '2026-08-15',
-        monthsRemaining: 18,
-        createdAt: '2024-06-01',
-        updatedAt: '2025-01-08'
-      }
-    ]
-  }
-  return res.json()
-}
-
-async function createGoal(input: CreateGoalInput): Promise<Goal> {
-  const res = await fetch('/api/goals', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input)
-  })
-  if (!res.ok) throw new Error('Failed to create goal')
-  return res.json()
-}
-
-async function updateGoal(id: string, input: Partial<CreateGoalInput>): Promise<Goal> {
-  const res = await fetch(`/api/goals/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input)
-  })
-  if (!res.ok) throw new Error('Failed to update goal')
-  return res.json()
-}
-
-async function deleteGoal(id: string): Promise<void> {
-  const res = await fetch(`/api/goals/${id}`, {
-    method: 'DELETE'
-  })
-  if (!res.ok) throw new Error('Failed to delete goal')
-}
-
-async function fetchWithdrawalStrategies(): Promise<WithdrawalStrategy[]> {
-  const res = await fetch('/api/withdrawal-strategy')
-  if (!res.ok) {
-    // Return mock strategies
-    const corpus = 25500000 // 2.55 Cr
-    return [
-      {
-        type: 'swr',
-        name: '4% Rule (SWR)',
-        description: 'Fixed inflation-adjusted withdrawal of 4% of initial portfolio',
-        annualWithdrawal: corpus * 0.04,
-        monthlyWithdrawal: (corpus * 0.04) / 12,
-        successRate: 95,
-        medianEndingValue: 45000000,
-        worstCaseYears: 33
-      },
-      {
-        type: 'bucket',
-        name: 'Bucket Strategy',
-        description: 'Three-bucket approach: Cash, Bonds, Equity for sequence risk mitigation',
-        annualWithdrawal: 1000000,
-        monthlyWithdrawal: 83333,
-        successRate: 92,
-        medianEndingValue: 38000000,
-        worstCaseYears: 30,
-        buckets: {
-          cash: { amount: corpus * 0.08, percent: 8, yearsOfExpenses: 2 },
-          bonds: { amount: corpus * 0.20, percent: 20, yearsOfExpenses: 5 },
-          equity: { amount: corpus * 0.72, percent: 72, yearsOfExpenses: 18 }
-        }
-      },
-      {
-        type: 'vpw',
-        name: 'Variable Percentage Withdrawal (VPW)',
-        description: 'Withdrawal adjusts to market performance, portfolio never depletes',
-        annualWithdrawal: 1100000,
-        monthlyWithdrawal: 91667,
-        successRate: 100,
-        medianEndingValue: 25000000,
-        worstCaseYears: 45
-      },
-      {
-        type: 'guyton_klinger',
-        name: 'Guyton-Klinger',
-        description: 'Dynamic guardrails allow higher initial withdrawal with adjustments',
-        annualWithdrawal: 1300000,
-        monthlyWithdrawal: 108333,
-        successRate: 88,
-        medianEndingValue: 32000000,
-        worstCaseYears: 28
-      }
-    ]
-  }
-  return res.json()
+  return params.toString() ? `?${params.toString()}` : ''
 }
 
 // ============================================
-// Vue Query Hooks
+// Vue Query Hooks - FIRE Metrics
 // ============================================
 
 export function useFIREMetrics() {
+  const uiStore = useUiStore()
   return useQuery({
-    queryKey: ['fire', 'metrics'],
-    queryFn: fetchFIREMetrics,
+    queryKey: computed(() => ['fire', 'metrics', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<FIREMetrics> => {
+      const res = await fetch(`/api/fire/metrics${buildQueryParams()}`)
+      if (!res.ok) throw new Error('Failed to fetch FIRE metrics')
+      return res.json()
+    },
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 }
 
 export function useFreedomScore() {
+  const uiStore = useUiStore()
   return useQuery({
-    queryKey: ['fire', 'freedom-score'],
-    queryFn: fetchFreedomScore,
+    queryKey: computed(() => ['fire', 'freedom-score', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<FreedomScore> => {
+      const res = await fetch(`/api/fire/freedom-score${buildQueryParams()}`)
+      if (!res.ok) throw new Error('Failed to fetch freedom score')
+      return res.json()
+    },
     staleTime: 5 * 60 * 1000
   })
 }
 
 export function useCrossoverPoint() {
+  const uiStore = useUiStore()
   return useQuery({
-    queryKey: ['fire', 'crossover'],
-    queryFn: fetchCrossoverPoint,
+    queryKey: computed(() => ['fire', 'crossover', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<CrossoverPoint> => {
+      const res = await fetch(`/api/fire/crossover${buildQueryParams()}`)
+      if (!res.ok) throw new Error('Failed to fetch crossover point')
+      return res.json()
+    },
     staleTime: 5 * 60 * 1000
   })
 }
 
 export function useExpenseCoverage() {
+  const uiStore = useUiStore()
   return useQuery({
-    queryKey: ['fire', 'expense-coverage'],
-    queryFn: fetchExpenseCoverage,
+    queryKey: computed(() => ['fire', 'expense-coverage', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<ExpenseCoverage> => {
+      const res = await fetch(`/api/fire/expense-coverage${buildQueryParams()}`)
+      if (!res.ok) throw new Error('Failed to fetch expense coverage')
+      return res.json()
+    },
     staleTime: 5 * 60 * 1000
   })
 }
 
 export function useFIREProjections() {
+  const uiStore = useUiStore()
   return useQuery({
-    queryKey: ['fire', 'projections'],
-    queryFn: fetchFIREProjections,
+    queryKey: computed(() => ['fire', 'projections', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<FIREProjection> => {
+      const res = await fetch(`/api/fire/projections${buildQueryParams()}`)
+      if (!res.ok) throw new Error('Failed to fetch FIRE projections')
+      return res.json()
+    },
     staleTime: 10 * 60 * 1000 // 10 minutes
   })
 }
 
-export function useMonteCarlo() {
+export function useMonteCarlo(options?: { runs?: number; years?: number; refresh?: boolean }) {
+  const uiStore = useUiStore()
   return useQuery({
-    queryKey: ['fire', 'monte-carlo'],
-    queryFn: fetchMonteCarlo,
+    queryKey: computed(() => [
+      'fire',
+      'monte-carlo',
+      options?.runs,
+      options?.years,
+      options?.refresh,
+      uiStore.isFamilyView,
+      uiStore.selectedFamilyMemberId
+    ]),
+    queryFn: async (): Promise<MonteCarloResult> => {
+      const params = new URLSearchParams()
+      if (options?.runs) params.append('runs', options.runs.toString())
+      if (options?.years) params.append('years', options.years.toString())
+      if (options?.refresh) params.append('refresh', 'true')
+
+      // Add family view params
+      if (uiStore.isFamilyView) {
+        params.append('familyView', 'true')
+        if (uiStore.selectedFamilyMemberId) {
+          params.append('familyMemberId', uiStore.selectedFamilyMemberId)
+        }
+      }
+
+      const queryString = params.toString() ? `?${params.toString()}` : ''
+      const res = await fetch(`/api/fire/monte-carlo${queryString}`)
+      if (!res.ok) throw new Error('Failed to run Monte Carlo simulation')
+      return res.json()
+    },
     staleTime: 10 * 60 * 1000
   })
 }
 
+// ============================================
+// Vue Query Hooks - Goals
+// ============================================
+
 export function useGoals() {
+  const uiStore = useUiStore()
   return useQuery({
-    queryKey: ['goals'],
-    queryFn: fetchGoals,
+    queryKey: computed(() => ['goals', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<Goal[]> => {
+      const res = await fetch(`/api/goals${buildQueryParams()}`)
+      if (!res.ok) throw new Error('Failed to fetch goals')
+      return res.json()
+    },
     staleTime: 2 * 60 * 1000 // 2 minutes
   })
 }
 
-export function useWithdrawalStrategies() {
+export function useGoal(goalId: string) {
   return useQuery({
-    queryKey: ['withdrawal-strategies'],
-    queryFn: fetchWithdrawalStrategies,
-    staleTime: 10 * 60 * 1000
+    queryKey: ['goal', goalId],
+    queryFn: async (): Promise<Goal> => {
+      const res = await fetch(`/api/goals/${goalId}`)
+      if (!res.ok) throw new Error('Failed to fetch goal')
+      return res.json()
+    },
+    enabled: !!goalId,
+    staleTime: 2 * 60 * 1000
+  })
+}
+
+export function useGoalMilestones(goalId: string) {
+  return useQuery({
+    queryKey: ['goal', goalId, 'milestones'],
+    queryFn: async (): Promise<GoalMilestone[]> => {
+      const res = await fetch(`/api/goals/${goalId}/milestones`)
+      if (!res.ok) throw new Error('Failed to fetch milestones')
+      return res.json()
+    },
+    enabled: !!goalId,
+    staleTime: 2 * 60 * 1000
+  })
+}
+
+export function useGoalInsight(goalId: string) {
+  return useQuery({
+    queryKey: ['goal', goalId, 'insight'],
+    queryFn: async (): Promise<{ insight: string; generatedAt: string }> => {
+      const res = await fetch(`/api/goals/${goalId}/insight`)
+      if (!res.ok) throw new Error('Failed to fetch goal insight')
+      return res.json()
+    },
+    enabled: !!goalId,
+    staleTime: 5 * 60 * 1000
   })
 }
 
@@ -597,9 +527,18 @@ export function useCreateGoal() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: createGoal,
+    mutationFn: async (input: CreateGoalInput): Promise<Goal> => {
+      const res = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      })
+      if (!res.ok) throw new Error('Failed to create goal')
+      return res.json()
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['fire'] })
     }
   })
 }
@@ -608,10 +547,19 @@ export function useUpdateGoal() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateGoalInput> }) =>
-      updateGoal(id, data),
-    onSuccess: () => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateGoalInput> }): Promise<Goal> => {
+      const res = await fetch(`/api/goals/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      if (!res.ok) throw new Error('Failed to update goal')
+      return res.json()
+    },
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goal', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['fire'] })
     }
   })
 }
@@ -620,10 +568,112 @@ export function useDeleteGoal() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: deleteGoal,
+    mutationFn: async (id: string): Promise<void> => {
+      const res = await fetch(`/api/goals/${id}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) throw new Error('Failed to delete goal')
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['fire'] })
     }
+  })
+}
+
+export function useUpdateGoalProgress() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, amount }: { id: string; amount: number }): Promise<Goal> => {
+      const res = await fetch(`/api/goals/${id}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount })
+      })
+      if (!res.ok) throw new Error('Failed to update progress')
+      return res.json()
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goal', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['fire'] })
+    }
+  })
+}
+
+// ============================================
+// Vue Query Hooks - Withdrawal Strategy
+// ============================================
+
+export function useWithdrawalStrategyPrefs() {
+  return useQuery({
+    queryKey: ['withdrawal-strategy', 'prefs'],
+    queryFn: async (): Promise<WithdrawalStrategyPrefs> => {
+      const res = await fetch('/api/withdrawal-strategy')
+      if (!res.ok) throw new Error('Failed to fetch withdrawal strategy preferences')
+      return res.json()
+    },
+    staleTime: 10 * 60 * 1000
+  })
+}
+
+export function useUpdateWithdrawalStrategy() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: Partial<WithdrawalStrategyPrefs>): Promise<WithdrawalStrategyPrefs> => {
+      const res = await fetch('/api/withdrawal-strategy', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      if (!res.ok) throw new Error('Failed to update withdrawal strategy')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['withdrawal-strategy'] })
+      queryClient.invalidateQueries({ queryKey: ['fire'] })
+    }
+  })
+}
+
+export function useWithdrawalStrategyComparison() {
+  const uiStore = useUiStore()
+  return useQuery({
+    queryKey: computed(() => ['withdrawal-strategy', 'compare', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<WithdrawalStrategyComparison[]> => {
+      const res = await fetch(`/api/withdrawal-strategy/compare${buildQueryParams()}`)
+      if (!res.ok) throw new Error('Failed to fetch strategy comparison')
+      return res.json()
+    },
+    staleTime: 10 * 60 * 1000
+  })
+}
+
+// ============================================
+// Vue Query Hooks - Export
+// ============================================
+
+export function useFIREExport(format: 'json' | 'pdf' | 'xlsx' = 'json') {
+  const uiStore = useUiStore()
+  return useQuery({
+    queryKey: computed(() => ['fire', 'export', format, uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
+    queryFn: async (): Promise<{ success: boolean; format: string; data: FIREExportData; exportInfo: Record<string, unknown> }> => {
+      const params = new URLSearchParams()
+      params.append('format', format)
+      if (uiStore.isFamilyView) {
+        params.append('familyView', 'true')
+        if (uiStore.selectedFamilyMemberId) {
+          params.append('familyMemberId', uiStore.selectedFamilyMemberId)
+        }
+      }
+      const res = await fetch(`/api/fire/export?${params.toString()}`)
+      if (!res.ok) throw new Error('Failed to export FIRE data')
+      return res.json()
+    },
+    enabled: false, // Only fetch when manually triggered
+    staleTime: 0 // Always fresh for exports
   })
 }
 
@@ -665,20 +715,20 @@ export const formatINR = (amount: number, compact = false): string => {
 
 export const getGoalStatusColor = (status: Goal['status']): string => {
   switch (status) {
-    case 'on_track': return 'success'
-    case 'at_risk': return 'warning'
-    case 'off_track': return 'error'
-    case 'completed': return 'primary'
+    case 'ON_TRACK': return 'success'
+    case 'AT_RISK': return 'warning'
+    case 'OFF_TRACK': return 'error'
+    case 'COMPLETED': return 'primary'
     default: return 'grey'
   }
 }
 
 export const getGoalStatusIcon = (status: Goal['status']): string => {
   switch (status) {
-    case 'on_track': return 'mdi-check-circle'
-    case 'at_risk': return 'mdi-alert-circle'
-    case 'off_track': return 'mdi-close-circle'
-    case 'completed': return 'mdi-trophy'
+    case 'ON_TRACK': return 'mdi-check-circle'
+    case 'AT_RISK': return 'mdi-alert-circle'
+    case 'OFF_TRACK': return 'mdi-close-circle'
+    case 'COMPLETED': return 'mdi-trophy'
     default: return 'mdi-circle-outline'
   }
 }
@@ -712,16 +762,17 @@ export const getFIREMilestones = (progressPercent: number): FIREMilestone[] => {
 }
 
 export const goalCategoryConfig: Record<GoalCategory, { icon: string; color: string; label: string }> = {
-  house: { icon: 'mdi-home', color: '#1976d2', label: 'House' },
-  car: { icon: 'mdi-car', color: '#43a047', label: 'Car' },
-  education: { icon: 'mdi-school', color: '#7b1fa2', label: 'Education' },
-  travel: { icon: 'mdi-airplane', color: '#00bcd4', label: 'Travel' },
-  emergency: { icon: 'mdi-lifebuoy', color: '#ff9800', label: 'Emergency Fund' },
-  wedding: { icon: 'mdi-ring', color: '#e91e63', label: 'Wedding' },
-  retirement: { icon: 'mdi-beach', color: '#8d6e63', label: 'Retirement' },
-  business: { icon: 'mdi-briefcase', color: '#607d8b', label: 'Business' },
-  parents_care: { icon: 'mdi-account-heart', color: '#f44336', label: 'Parents Care' },
-  other: { icon: 'mdi-star', color: '#9c27b0', label: 'Other' }
+  HOUSE: { icon: 'mdi-home', color: '#1976d2', label: 'House' },
+  CAR: { icon: 'mdi-car', color: '#43a047', label: 'Car' },
+  EDUCATION: { icon: 'mdi-school', color: '#7b1fa2', label: 'Education' },
+  TRAVEL: { icon: 'mdi-airplane', color: '#00bcd4', label: 'Travel' },
+  EMERGENCY: { icon: 'mdi-lifebuoy', color: '#ff9800', label: 'Emergency Fund' },
+  WEDDING: { icon: 'mdi-ring', color: '#e91e63', label: 'Wedding' },
+  RETIREMENT: { icon: 'mdi-beach', color: '#8d6e63', label: 'Retirement' },
+  BUSINESS: { icon: 'mdi-briefcase', color: '#607d8b', label: 'Business' },
+  PARENTS_CARE: { icon: 'mdi-account-heart', color: '#f44336', label: 'Parents Care' },
+  FIRE_CORPUS: { icon: 'mdi-fire', color: '#ff5722', label: 'FIRE Corpus' },
+  OTHER: { icon: 'mdi-star', color: '#9c27b0', label: 'Other' }
 }
 
 // Calculate recommended SIP for a goal
@@ -751,3 +802,42 @@ export function calculateRecommendedSIP(
 
   return Math.round(sip)
 }
+
+// Get withdrawal strategy display info
+export const withdrawalStrategyConfig: Record<WithdrawalStrategyType, { name: string; description: string; icon: string }> = {
+  SWR_4_PERCENT: {
+    name: '4% Rule',
+    description: 'Classic safe withdrawal rate - withdraw 4% of initial portfolio annually, adjusted for inflation',
+    icon: 'mdi-percent'
+  },
+  SWR_CUSTOM: {
+    name: 'Custom SWR',
+    description: 'Custom safe withdrawal rate tailored to your risk tolerance (3.5% recommended for India)',
+    icon: 'mdi-tune'
+  },
+  BUCKET: {
+    name: 'Bucket Strategy',
+    description: 'Three-bucket approach: Cash (2yr), Bonds (5yr), Equity (rest) for sequence risk mitigation',
+    icon: 'mdi-bucket'
+  },
+  VPW: {
+    name: 'Variable Percentage Withdrawal',
+    description: 'Withdrawal adjusts to portfolio performance and remaining years - portfolio never fully depletes',
+    icon: 'mdi-chart-line-variant'
+  },
+  GUYTON_KLINGER: {
+    name: 'Guyton-Klinger Guardrails',
+    description: 'Dynamic withdrawals with guardrails (±20%) allowing higher initial withdrawal with market adjustments',
+    icon: 'mdi-shield-half-full'
+  }
+}
+
+// ============================================
+// Alias exports for backward compatibility
+// ============================================
+
+// Alias for useWithdrawalStrategyComparison
+export const useWithdrawalStrategies = useWithdrawalStrategyComparison
+
+// Type alias for WithdrawalStrategyComparison
+export type WithdrawalStrategy = WithdrawalStrategyComparison
