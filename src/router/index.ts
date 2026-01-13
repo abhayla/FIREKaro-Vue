@@ -13,6 +13,31 @@ const router = createRouter({
       name: "signin",
       component: () => import("@/pages/auth/signin.vue"),
     },
+    // Legacy FIRE Goals redirects - More specific paths MUST come before less specific
+    {
+      path: "/dashboard/fire-goals/calculators",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/goals",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/projections",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/withdrawal",
+      redirect: "/fire-goals?tab=planning",
+    },
+    {
+      path: "/dashboard/fire-goals/reports",
+      redirect: "/fire-goals",
+    },
+    {
+      path: "/dashboard/fire-goals",
+      redirect: "/fire-goals",
+    },
     // Income Section (moved to top-level /income)
     {
       path: "/income",
@@ -77,92 +102,93 @@ const router = createRouter({
           component: () => import("@/pages/dashboard/index.vue"),
         },
 // Income is at top-level /income, Tax Planning is at top-level /tax-planning, Investments is at top-level /investments
-        // Section 4: Expenses
-        {
-          path: "expenses",
-          name: "expenses",
-          component: () => import("@/pages/dashboard/expenses/index.vue"),
-        },
-        {
-          path: "expenses/track",
-          name: "expenses-track",
-          component: () => import("@/pages/dashboard/expenses/track.vue"),
-        },
-        {
-          path: "expenses/budgets",
-          name: "expenses-budgets",
-          component: () => import("@/pages/dashboard/expenses/budgets.vue"),
-        },
-        {
-          path: "expenses/reports",
-          name: "expenses-reports",
-          component: () => import("@/pages/dashboard/expenses/reports.vue"),
-        },
-        {
-          path: "expenses/categories",
-          name: "expenses-categories",
-          component: () => import("@/pages/dashboard/expenses/categories.vue"),
-        },
-        // Section 6: Liabilities
-        {
-          path: "liabilities",
-          name: "liabilities",
-          component: () => import("@/pages/dashboard/liabilities/index.vue"),
-        },
-        {
-          path: "liabilities/loans",
-          name: "liabilities-loans",
-          component: () => import("@/pages/dashboard/liabilities/loans.vue"),
-        },
-        {
-          path: "liabilities/credit-cards",
-          name: "liabilities-credit-cards",
-          component: () =>
-            import("@/pages/dashboard/liabilities/credit-cards.vue"),
-        },
-        {
-          path: "liabilities/debt-payoff",
-          name: "liabilities-debt-payoff",
-          component: () =>
-            import("@/pages/dashboard/liabilities/debt-payoff.vue"),
-        },
-        {
-          path: "liabilities/reports",
-          name: "liabilities-reports",
-          component: () => import("@/pages/dashboard/liabilities/reports.vue"),
-        },
-        // Section 7: Insurance
+        // Section 4: Expenses - TODO: Pages not yet created
+        // {
+        //   path: "expenses",
+        //   name: "expenses",
+        //   component: () => import("@/pages/dashboard/expenses/index.vue"),
+        // },
+        // {
+        //   path: "expenses/track",
+        //   name: "expenses-track",
+        //   component: () => import("@/pages/dashboard/expenses/track.vue"),
+        // },
+        // {
+        //   path: "expenses/budgets",
+        //   name: "expenses-budgets",
+        //   component: () => import("@/pages/dashboard/expenses/budgets.vue"),
+        // },
+        // {
+        //   path: "expenses/reports",
+        //   name: "expenses-reports",
+        //   component: () => import("@/pages/dashboard/expenses/reports.vue"),
+        // },
+        // {
+        //   path: "expenses/categories",
+        //   name: "expenses-categories",
+        //   component: () => import("@/pages/dashboard/expenses/categories.vue"),
+        // },
+        // Section 6: Liabilities - TODO: Pages not yet created
+        // {
+        //   path: "liabilities",
+        //   name: "liabilities",
+        //   component: () => import("@/pages/dashboard/liabilities/index.vue"),
+        // },
+        // {
+        //   path: "liabilities/loans",
+        //   name: "liabilities-loans",
+        //   component: () => import("@/pages/dashboard/liabilities/loans.vue"),
+        // },
+        // {
+        //   path: "liabilities/credit-cards",
+        //   name: "liabilities-credit-cards",
+        //   component: () =>
+        //     import("@/pages/dashboard/liabilities/credit-cards.vue"),
+        // },
+        // {
+        //   path: "liabilities/debt-payoff",
+        //   name: "liabilities-debt-payoff",
+        //   component: () =>
+        //     import("@/pages/dashboard/liabilities/debt-payoff.vue"),
+        // },
+        // {
+        //   path: "liabilities/reports",
+        //   name: "liabilities-reports",
+        //   component: () => import("@/pages/dashboard/liabilities/reports.vue"),
+        // },
+        // Section 7: Insurance (only index.vue exists - subpages TODO)
         {
           path: "insurance",
-          name: "insurance",
+          name: "dashboard-insurance",
           component: () => import("@/pages/dashboard/insurance/index.vue"),
         },
-        {
-          path: "insurance/life",
-          name: "insurance-life",
-          component: () => import("@/pages/dashboard/insurance/life.vue"),
-        },
-        {
-          path: "insurance/health",
-          name: "insurance-health",
-          component: () => import("@/pages/dashboard/insurance/health.vue"),
-        },
-        {
-          path: "insurance/other",
-          name: "insurance-other",
-          component: () => import("@/pages/dashboard/insurance/other.vue"),
-        },
-        {
-          path: "insurance/calculator",
-          name: "insurance-calculator",
-          component: () =>
-            import("@/pages/dashboard/insurance/calculator.vue"),
-        },
-        {
-          path: "insurance/reports",
-          name: "insurance-reports",
-          component: () => import("@/pages/dashboard/insurance/reports.vue"),
-        },
+        // Insurance sub-pages - TODO: Not yet created
+        // {
+        //   path: "insurance/life",
+        //   name: "insurance-life",
+        //   component: () => import("@/pages/dashboard/insurance/life.vue"),
+        // },
+        // {
+        //   path: "insurance/health",
+        //   name: "insurance-health",
+        //   component: () => import("@/pages/dashboard/insurance/health.vue"),
+        // },
+        // {
+        //   path: "insurance/other",
+        //   name: "insurance-other",
+        //   component: () => import("@/pages/dashboard/insurance/other.vue"),
+        // },
+        // {
+        //   path: "insurance/calculator",
+        //   name: "insurance-calculator",
+        //   component: () =>
+        //     import("@/pages/dashboard/insurance/calculator.vue"),
+        // },
+        // {
+        //   path: "insurance/reports",
+        //   name: "insurance-reports",
+        //   component: () => import("@/pages/dashboard/insurance/reports.vue"),
+        // },
         // Section 8: Financial Health
         {
           path: "financial-health",
@@ -392,32 +418,7 @@ const router = createRouter({
       path: "/dashboard/non-salary-income",
       redirect: "/income",
     },
-    // FIRE Goals section - redirect /dashboard/fire-goals to new /fire-goals URL
-    {
-      path: "/dashboard/fire-goals",
-      redirect: "/fire-goals",
-    },
-    {
-      path: "/dashboard/fire-goals/calculators",
-      redirect: "/fire-goals?tab=planning",
-    },
-    {
-      path: "/dashboard/fire-goals/goals",
-      redirect: "/fire-goals?tab=planning",
-    },
-    {
-      path: "/dashboard/fire-goals/projections",
-      redirect: "/fire-goals?tab=planning",
-    },
-    {
-      path: "/dashboard/fire-goals/withdrawal",
-      redirect: "/fire-goals?tab=planning",
-    },
-    {
-      path: "/dashboard/fire-goals/reports",
-      redirect: "/fire-goals",
-    },
-    // New /fire-goals sub-path redirects (for bookmarks)
+    // /fire-goals sub-path redirects (for bookmarks)
     {
       path: "/fire-goals/calculators",
       redirect: "/fire-goals?tab=planning",

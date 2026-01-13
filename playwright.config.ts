@@ -26,7 +26,7 @@ export default defineConfig({
 
   use: {
     // Base URL for all tests
-    baseURL: 'http://localhost:5181',
+    baseURL: 'http://localhost:5173',
 
     // Use Chrome browser
     browserName: 'chromium',
@@ -71,7 +71,7 @@ export default defineConfig({
   // Auto-start dev server before tests
   webServer: {
     command: 'npm run dev',
-    port: 5181,
+    port: 5173,
     reuseExistingServer: true,
     timeout: 120000,
   },
