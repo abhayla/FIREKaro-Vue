@@ -41,13 +41,14 @@ const sections = [
   {
     title: "Expenses",
     icon: "mdi-cart-outline",
-    route: "/dashboard/expenses",
+    route: "/expenses",
     children: [
-      { title: "Overview", route: "/dashboard/expenses" },
-      { title: "Track Expenses", route: "/dashboard/expenses/track" },
-      { title: "Budgets", route: "/dashboard/expenses/budgets" },
-      { title: "Reports", route: "/dashboard/expenses/reports" },
-      { title: "Categories & Rules", route: "/dashboard/expenses/categories" },
+      { title: "Overview", route: "/expenses" },
+      { title: "Track Expenses", route: "/expenses/track" },
+      { title: "Budgets", route: "/expenses/budgets" },
+      { title: "Recurring", route: "/expenses/recurring" },
+      { title: "Categories", route: "/expenses/categories" },
+      { title: "Reports", route: "/expenses/reports" },
     ],
   },
   {

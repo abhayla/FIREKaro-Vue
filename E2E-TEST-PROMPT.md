@@ -1,14 +1,12 @@
-# E2E Testing - Investments Section
+# E2E Testing - Expenses Section
 
-## Quick Start
-
-### Trigger Prompt
+## Trigger Prompt
 
 ```
-Perform E2E testing for the Investments section:
+Perform E2E testing for the Expenses section:
 
 1. Start dev server: npm run dev
-2. Use test data from e2e/fixtures/investments-data.ts
+2. Use test data from e2e/fixtures/expenses-data.ts
 3. For each feature below:
    - Navigate to the page
    - Perform test actions (add, edit, delete, view)
@@ -19,307 +17,147 @@ Perform E2E testing for the Investments section:
 5. Report results as PASS/FAIL for each feature
 ```
 
-### Test Commands
+---
 
-```bash
-# Run all investment tests
-npm run test:e2e -- e2e/tests/investments/
+## Section Details
 
-# Run specific test file
-npm run test:e2e -- e2e/tests/investments/05-epf.spec.ts
-
-# Run tests with UI mode (debugging)
-npm run test:e2e:ui -- e2e/tests/investments/
-
-# Run tests matching pattern
-npm run test:e2e -- --grep "ESOP"
-```
+- **Routes**: `/expenses/*` (top-level, not under /dashboard)
+- **Test Data**: `e2e/fixtures/expenses-data.ts`
+- **Page Objects**: `e2e/pages/expenses/`
+- **Components**: `src/components/expenses/`
 
 ---
 
-## Test Architecture
+## URL Structure
 
-### Page Object Model (POM)
-
-All tests use the Page Object Model pattern:
-- **Base class**: `e2e/pages/base.page.ts` - Common Vuetify helpers
-- **Page objects**: `e2e/pages/investments/*.page.ts` - Feature-specific pages
-- **Test fixtures**: `e2e/fixtures/investments-data.ts` - Test data
-
-### Key Patterns
-
-#### Two-Tab Pattern (EPF/PPF/NPS/ESOP)
-```
-/dashboard/investments/{type}
-├── Overview Tab (default)
-│   ├── Summary cards (balance, returns, etc.)
-│   ├── DataCompletionGrid (X/12 months indicator) - NEW v2.1
-│   ├── Charts (allocation, projection)
-│   └── Quick view list
-└── Item Details Tab
-    ├── Monthly/contribution grid
-    ├── Edit mode toggle
-    ├── Copy menu button (copy/import dialog) - NEW v2.1
-    └── Add/delete operations
-```
-
-#### Family View Toggle
-```
-App Bar → Family Toggle Button (mdi-account/mdi-account-group)
-├── Personal View (default, single user icon)
-└── Family View (group icon)
-    ├── All Members (aggregated)
-    └── Individual Member filter
-```
-
-#### Financial Year Selector
-```
-FY Selector dropdown (available on EPF, PPF, NPS, Reports)
-├── Current FY (default, e.g., "2025-26")
-├── Previous FYs available
-└── Data updates on selection
-```
+| Route | Description |
+|-------|-------------|
+| `/expenses` | Landing page with summary cards, alerts, quick nav |
+| `/expenses/track` | Track section (Overview + Expense Details tabs) |
+| `/expenses/budgets` | Budgets section (Overview + Budget Details tabs) |
+| `/expenses/recurring` | Recurring section (Overview + Recurring Details tabs) |
 
 ---
 
-## Test Files (16 Total)
+## Features to Test
 
-### Navigation & Core
+### Landing Page (`/expenses`)
+- [ ] Page loads with 4 summary cards
+- [ ] Total Expenses card displays correctly (₹ format)
+- [ ] Budget Usage card shows percentage
+- [ ] Recurring Count card shows active count
+- [ ] Top Category card displays highest spending
+- [ ] Smart alerts display (budget warnings, upcoming recurring)
+- [ ] Quick navigation cards visible (Track, Budgets, Recurring)
+- [ ] Quick action buttons work (Add Expense, Set Budget, Add Recurring)
 
-| File | Tests | Purpose |
-|------|-------|---------|
-| `01-navigation.spec.ts` | ~15 | Tab navigation between investment types |
-| `02-portfolio-overview.spec.ts` | ~20 | Portfolio summary, asset allocation, total value |
+### Track Section (`/expenses/track`)
 
-### Investment Types
+#### Overview Tab
+- [ ] Tab navigation works (Overview/Expense Details)
+- [ ] Summary metrics display (Total Spent, Transactions, Avg, Budget Used)
+- [ ] Category pie chart renders
+- [ ] 6-month trend chart renders
+- [ ] Recent expenses list shows last 5-10 items
+- [ ] Export buttons visible (PDF, Excel, CSV, JSON)
+- [ ] Budget vs Actual cards show Needs/Wants/Savings
 
-| File | Tests | Purpose |
-|------|-------|---------|
-| `03-stocks.spec.ts` | ~25 | Stock CRUD, P&L calculation, current price |
-| `04-mutual-funds.spec.ts` | ~20 | MF operations, NAV tracking, SIP |
-| `05-epf.spec.ts` | ~42 | EPF two-tab pattern, edit mode, VPF, interest calc, DataCompletionGrid, CopyDialog |
-| `05-ppf.spec.ts` | ~34 | PPF contributions, annual limits (₹1.5L), maturity, DataCompletionGrid, CopyDialog |
-| `05-epf-ppf.spec.ts` | ~5 | Legacy redirect test |
-| `06-nps.spec.ts` | ~20 | NPS allocations (E/C/G), Tier 1/2 |
-| `07-property.spec.ts` | ~15 | Property investments, rental yield |
-| `08-esop.spec.ts` | ~35 | ESOP/RSU grants, vesting schedule, FMV, tax calc |
-| `10-crypto-category.spec.ts` | ~10 | Crypto investments |
+#### Expense Details Tab
+- [ ] Expenses list displays with all entries
+- [ ] Month selector filter works
+- [ ] Category filter works
+- [ ] Search field filters results
+- [ ] Add Expense button opens form dialog
+- [ ] Edit expense works
+- [ ] Delete expense works with confirmation
+- [ ] CSV Import button opens modal
+- [ ] Scan Receipt button opens OCR dialog
 
-### Features & Cross-Cutting
+### Categories Dialog (from Track page)
+- [ ] Gear icon opens Categories dialog
+- [ ] Rules tab displays with Add Rule button
+- [ ] Create new rule works
+- [ ] Edit rule works
+- [ ] Delete rule works
+- [ ] Toggle rule enabled/disabled works
+- [ ] Categories tab shows all categories (read-only)
+- [ ] Budget type labels display (Needs/Wants/Savings)
+- [ ] Dialog closes properly
 
-| File | Tests | Purpose |
-|------|-------|---------|
-| `08-reports.spec.ts` | ~25 | PDF/Excel export, tax reports, performance metrics |
-| `09-new-features.spec.ts` | ~30 | Yield calc, SIP timeline, compounding, snapshots |
-| `11-family-view.spec.ts` | ~15 | Family toggle, member selection, aggregation |
-| `12-financial-year.spec.ts` | ~20 | FY selector, data filtering, persistence |
-| `13-edge-cases.spec.ts` | ~25 | Validation, errors, boundary values, loading states |
+### Budgets Section (`/expenses/budgets`)
 
----
+#### Overview Tab
+- [ ] 50/30/20 summary cards display (Needs 50%, Wants 30%, Savings 20%)
+- [ ] Progress bars show budget usage
+- [ ] Budget vs Actual comparison visible
+- [ ] Over-budget warning displays when exceeded
+- [ ] Monthly trend chart renders
 
-## Page Objects (12 Total)
+#### Budget Details Tab
+- [ ] Monthly income field displays/editable
+- [ ] Set Budget button opens form
+- [ ] Budget form saves correctly
+- [ ] Copy from Previous Month works
+- [ ] Budget history table displays
+- [ ] Per-category budget limits editable
 
-| Page Object | Class | Key Methods |
-|-------------|-------|-------------|
-| `overview.page.ts` | `InvestmentsOverviewPage` | `getTotalValue()`, `getAssetAllocation()`, `expectSummaryCardsVisible()` |
-| `stocks.page.ts` | `StocksPage` | `addStock()`, `editStock()`, `deleteStock()`, `openAddForm()` |
-| `mutual-funds.page.ts` | `MutualFundsPage` | `addFund()`, `addTransaction()`, `getCurrentNAV()` |
-| `epf.page.ts` | `EpfPage` | `navigateToDetails()`, `enterEditMode()`, `getTotalBalance()`, `openCopyMenu()`, `expectDataCompletionGridVisible()` |
-| `ppf.page.ts` | `PpfPage` | `addContribution()`, `getCurrentBalance()`, `expectContributionGridVisible()`, `openCopyMenu()`, `expectDataCompletionGridVisible()` |
-| `epf-ppf.page.ts` | `EpfPpfPage` | Legacy redirect support |
-| `nps.page.ts` | `NpsPage` | `getAllocation()`, `updateAllocation()`, `addContribution()` |
-| `esop.page.ts` | `ESOPPage` | `addGrant()`, `updateFMV()`, `exerciseOptions()`, `getVestedValue()` |
-| `property.page.ts` | `PropertyPage` | `addProperty()`, `getRentalYield()`, `getCurrentValue()` |
-| `reports.page.ts` | `InvestmentReportsPage` | `exportToPDF()`, `exportToExcel()`, `getXIRR()`, `selectReportType()` |
-| `portfolio.page.ts` | `PortfolioPage` | `addSnapshot()`, `editSnapshot()`, `deleteSnapshot()` |
-| `index.ts` | - | Barrel exports for all page objects |
+### Recurring Section (`/expenses/recurring`) - NEW
 
-### New Locators (v2.1)
+#### Overview Tab
+- [ ] Summary cards display (Active, Paused, Monthly Total, Upcoming)
+- [ ] Due This Week section shows upcoming items
+- [ ] By Frequency breakdown displays
 
-| Page Object | New Locators | Purpose |
-|-------------|--------------|---------|
-| `epf.page.ts` | `dataCompletionGrid`, `dataCompletionChip`, `copyMenuButton`, `copyDialog` | DataCompletionGrid & CopyDialog |
-| `ppf.page.ts` | `dataCompletionGrid`, `dataCompletionChip`, `copyMenuButton`, `copyDialog` | DataCompletionGrid & CopyDialog |
-
----
-
-## Features Checklist
-
-### Navigation & Overview (`/dashboard/investments`)
-- [x] Page loads with portfolio summary
-- [x] Total investment value displays
-- [x] Asset allocation chart renders
-- [x] Returns percentage displays
-- [x] Tab navigation works (Stocks, MF, EPF, PPF, etc.)
-- [x] Yield summary displays
-
-### Stocks (`/dashboard/investments/stocks`)
-- [x] Holdings list displays
-- [x] Add new holding works
-- [x] Edit holding works
-- [x] Delete holding works
-- [x] Current price displays
-- [x] P&L calculation correct
-
-### Mutual Funds (`/dashboard/investments/mutual-funds`)
-- [x] Funds list displays
-- [x] Add new fund works
-- [x] Add transaction (buy/sell) works
-- [x] Current NAV displays
-- [x] Returns calculation correct
-- [x] Category filtering works
-
-### EPF (`/dashboard/investments/epf`) - Two-Tab Pattern
-- [x] Overview tab displays summary cards
-- [x] Item Details tab shows monthly grid
-- [x] Financial year selector works
-- [x] Edit mode enables field editing
-- [x] VPF contribution entry works
-- [x] Interest calculation at 8.25%
-- [x] UAN display (when available)
-- [x] Projection chart renders
-- [x] DataCompletionGrid shows on Overview tab (v2.1)
-- [x] Copy menu button visible on Details tab (v2.1)
-- [x] Copy to remaining months dialog works (v2.1)
-- [x] Import from previous FY dialog works (v2.1)
-
-### PPF (`/dashboard/investments/ppf`) - Two-Tab Pattern
-- [x] Overview tab displays balance and maturity
-- [x] Item Details tab shows contribution grid
-- [x] Add contribution works
-- [x] Delete contribution works
-- [x] Annual limit warning (₹1.5L max)
-- [x] Minimum deposit validation (₹500)
-- [x] Maturity date displays
-- [x] Interest rate shows (7.1%)
-- [x] DataCompletionGrid shows on Overview tab (v2.1)
-- [x] Copy menu button visible on Details tab (v2.1)
-- [x] Copy to remaining months dialog works (v2.1)
-- [x] Import from previous FY dialog works (v2.1)
-
-### NPS (`/dashboard/investments/nps`) - Two-Tab Pattern
-- [x] NPS details display
-- [x] Tier 1 and Tier 2 show separately
-- [x] Asset allocation (E/C/G) displays
-- [x] Edit allocation works
-- [x] Add contribution works
-- [x] 80CCD benefit tracking
-- [x] DataCompletionGrid shows on Overview tab (v2.1)
-- [x] Copy menu button visible on Details tab (v2.1)
-- [x] Copy to remaining months dialog works (v2.1)
-- [x] Import from previous FY dialog works (v2.1)
-
-### ESOP/RSU (`/dashboard/investments/esop`)
-- [x] Overview tab with summary cards
-- [x] Item Details tab with grants list
-- [x] Add new grant (ESOP/RSU/RSA types)
-- [x] Vesting schedule displays
-- [x] FMV update works
-- [x] Exercise options works
-- [x] Delete grant works
-- [x] Vested vs unvested breakdown
-- [x] Tax calculation (perquisite value)
-- [x] Grant type distribution chart
-
-### Property (`/dashboard/investments/property`)
-- [x] Properties list displays
-- [x] Add new property works
-- [x] Edit property works
-- [x] Delete property works
-- [x] Current value displays
-- [x] Rental yield calculation
-
-### Crypto (`/dashboard/investments/crypto`)
-- [x] Crypto holdings display
-- [x] Add crypto works
-- [x] Current value displays
-
-### Reports (`/dashboard/investments/reports`)
-- [x] Reports page loads
-- [x] Portfolio summary generates
-- [x] Asset allocation report works
-- [x] Performance metrics (XIRR, CAGR)
-- [x] PDF export works
-- [x] Excel/CSV export works
-- [x] Tax reports (capital gains, 80C, 80CCD)
-- [x] Period selector (1M, 3M, 1Y, etc.)
-
-### Family View (Cross-Cutting)
-- [x] Family toggle button visible in app bar
-- [x] Default to personal view
-- [x] Switch to family view works
-- [x] Member selector appears
-- [x] All Members aggregation works
-- [x] Individual member filtering works
-- [x] Icon changes on toggle
-
-### Financial Year Handling (Cross-Cutting)
-- [x] FY selector visible on relevant pages
-- [x] Default to current FY
-- [x] FY change updates data
-- [x] FY persists across tab switches
-- [x] Monthly grid shows correct months (Apr-Mar)
-
-### Edge Cases & Validation
-- [x] Negative values rejected
-- [x] Empty required fields show errors
-- [x] Zero values handled (no NaN)
-- [x] Large numbers formatted correctly
-- [x] Decimal values allowed for MF units
-- [x] Future dates validated
-- [x] Page refresh maintains state
-- [x] Loading states display
+#### Recurring Details Tab
+- [ ] Add Recurring button opens form
+- [ ] Status filter works (All/Active/Paused)
+- [ ] Search field filters results
+- [ ] Frequency filter works
+- [ ] Recurring list displays all items
+- [ ] Create recurring expense works with all fields:
+  - Description, Amount, Category
+  - Frequency (Weekly/Monthly/Quarterly/Yearly)
+  - Start Date, End Condition
+- [ ] Edit recurring expense works
+- [ ] Delete recurring expense works (with delete generated option)
+- [ ] Pause/Resume toggle works
+- [ ] Skip Next occurrence works
+- [ ] Generate Now manually creates expense
 
 ---
 
 ## Screenshot Analysis Checklist
 
 ### Visual Checks
-- [ ] Page title correct ("Investments")
-- [ ] Navigation highlights current tab
+- [ ] Page title correct for each section
+- [ ] Navigation highlights "Expenses" in sidebar
+- [ ] Tab navigation shows active tab
 - [ ] Cards/tables have data (not empty)
-- [ ] Charts render properly (canvas visible)
+- [ ] Charts render properly (pie, trend)
 - [ ] Forms show all fields
-- [ ] Two-tab pattern shows correct active tab
-- [ ] Family view icon matches state
+- [ ] Dialogs open centered and styled
 
 ### Data Checks
 - [ ] Currency format: ₹X,XX,XXX
-- [ ] Large amounts use compact notation (L/Cr)
-- [ ] Percentages show %
-- [ ] Returns show +/- correctly
+- [ ] Dates in correct format (DD MMM YYYY)
+- [ ] Percentages show % symbol
 - [ ] Totals calculate correctly
-- [ ] Dates in DD/MM/YYYY format
+- [ ] Budget remaining calculates (50/30/20)
+- [ ] Recurring frequencies display correctly
+
+### UI Pattern Checks
+- [ ] Two-tab structure on Track/Budgets/Recurring pages
+- [ ] Categories dialog opens from gear icon
+- [ ] 50/30/20 cards show correct colors
+- [ ] Progress bars animate on load
+- [ ] Empty states show helpful messages
 
 ### Error Checks
 - [ ] No error alerts visible
 - [ ] No "undefined" or "NaN" text
-- [ ] No console errors (red text)
-- [ ] No broken layouts/overflow
-- [ ] No missing icons (no mdi-*-outline placeholders)
-
-### Two-Tab Specific
-- [ ] Tab indicator shows on active tab
-- [ ] Tab content changes on click
-- [ ] Edit mode shows save/cancel buttons
-- [ ] Grid cells are editable in edit mode
-- [ ] DataCompletionGrid visible on Overview tab (v2.1)
-- [ ] Completion chip shows "X/12 months" format (v2.1)
-- [ ] Progress bar reflects completion percentage (v2.1)
-- [ ] Copy menu button visible on Details tab (v2.1)
-
-### Copy Dialog Specific (v2.1)
-- [ ] Dialog opens from Copy menu button
-- [ ] Shows 4 modes: copy remaining, copy previous, import FY, clear
-- [ ] Month selection chips are visible and selectable
-- [ ] Preview section shows operation details
-- [ ] Cancel button closes dialog
-- [ ] Apply button executes operation
-
-### Family View Specific
-- [ ] Toggle button icon correct
-- [ ] Member selector shows options
-- [ ] Data changes on member selection
+- [ ] No console errors (check with browser_console_messages)
+- [ ] No broken layouts or overflow
+- [ ] Form validation messages display
 
 ---
 
@@ -329,71 +167,83 @@ FY Selector dropdown (available on EPF, PPF, NPS, Reports)
 |---------|-----|
 | Page loading forever | Check API route returns data |
 | "undefined" showing | Add `?.` optional chaining |
-| NaN in returns | Handle zero investment case |
-| Chart not rendering | Check data structure, ensure canvas exists |
-| XIRR showing wrong | Verify transaction dates format |
-| Tab not switching | Check `aria-selected` attribute |
-| Edit mode not working | Verify edit button click handler |
-| FY selector empty | Check FY options array in component |
-| Family toggle stuck | Check UI store state management |
-| Export not downloading | Verify download event listener |
-| Validation not showing | Check VeeValidate schema rules |
-| Grid cells not editable | Verify edit mode boolean state |
-| DataCompletionGrid not showing | Check `.data-completion-grid` class exists |
-| Completion chip wrong count | Verify `fyMonthlyData` has correct entries |
-| Copy menu not opening | Check `v-menu` activator binding |
-| Copy dialog not closing | Verify `showCopyDialog` state toggle |
+| NaN in numbers | Add default value `?? 0` |
+| Form not submitting | Check validation rules |
+| Data not refreshing | Add `queryClient.invalidateQueries` |
+| Budget progress wrong | Check percentage calculation against 50/30/20 |
+| Tab not switching | Check v-model binding on v-tabs |
+| Dialog not opening | Check v-model on dialog component |
+| Recurring not saving | Check frequency enum matches backend |
 
 ---
 
 ## Test Session Example
 
 ```
-1. Navigate to /dashboard/investments
-   Screenshot: ✓ Portfolio overview visible
+1. Navigate to /expenses
+   Screenshot: ✓ Landing page with 4 summary cards
+   Screenshot: ✓ Smart alerts visible
+   Screenshot: ✓ Quick nav cards present
 
-2. Click "EPF" tab
-   Screenshot: ✓ EPF page loads with two tabs
+2. Click Track nav card → /expenses/track
+   Screenshot: ✓ Overview tab active
+   Screenshot: ✓ Category pie chart renders
+   Screenshot: ✓ Export buttons visible
 
-3. Verify Overview tab active
-   Screenshot: ✓ Summary cards visible
+3. Switch to Expense Details tab
+   Screenshot: ✓ Expenses table shows
+   Screenshot: ✓ Filters visible
 
-4. Click "Item Details" tab
-   Screenshot: ✓ Monthly contribution grid displays
+4. Click "Add Expense"
+   Screenshot: ✓ Form dialog opens
+   Fill form and submit
+   Screenshot: ✓ PASS - expense added to list
 
-5. Click "Edit" button
-   Screenshot: ✓ Edit mode enabled
+5. Click gear icon for Categories
+   Screenshot: ✓ Categories dialog opens
+   Screenshot: ✓ Rules tab visible
 
-6. Modify April contribution
-   Screenshot: ✓ Field accepts input
+6. Navigate to /expenses/budgets
+   Screenshot: ✓ 50/30/20 cards display
+   Screenshot: ✓ Progress bars show usage
 
-7. Click "Save"
-   Screenshot: ✓ Changes persisted
+7. Navigate to /expenses/recurring
+   Screenshot: ✓ Recurring summary cards
+   Screenshot: ✓ Add Recurring button visible
 
-Result: EPF Item Details Edit - PASS
+8. Click "Add Recurring"
+   Screenshot: ✓ Form with frequency options
+   Fill form and submit
+   Screenshot: ✓ PASS - recurring added
+
+Result: Expenses Section - PASS
 ```
 
 ---
 
-## Routes Reference
+## Related Files
 
-| Route | Page | Pattern |
-|-------|------|---------|
-| `/dashboard/investments` | Overview | Summary |
-| `/dashboard/investments/stocks` | Stocks | Table + Dialog |
-| `/dashboard/investments/mutual-funds` | Mutual Funds | Table + Dialog |
-| `/dashboard/investments/epf` | EPF | Two-Tab |
-| `/dashboard/investments/ppf` | PPF | Two-Tab |
-| `/dashboard/investments/nps` | NPS | Two-Tab |
-| `/dashboard/investments/esop` | ESOP/RSU | Two-Tab |
-| `/dashboard/investments/property` | Property | Table + Dialog |
-| `/dashboard/investments/crypto` | Crypto | Table + Dialog |
-| `/dashboard/investments/reports` | Reports | Tabs + Export |
+### Page Objects
+```
+e2e/pages/expenses/
+├── index.ts              # Barrel exports
+├── overview.page.ts      # Landing page (/expenses)
+├── tracking.page.ts      # Track section (/expenses/track)
+├── budgets.page.ts       # Budgets section (/expenses/budgets)
+├── categories.page.ts    # Categories dialog helper
+└── recurring.page.ts     # Recurring section (/expenses/recurring)
+```
 
----
-
-## Test Data Location
-
-- **Fixtures**: `e2e/fixtures/investments-data.ts`
-- **Page Objects**: `e2e/pages/investments/`
-- **Test Specs**: `e2e/tests/investments/`
+### Test Specs
+```
+e2e/tests/expenses/
+├── 01-navigation.spec.ts         # Navigation, landing page
+├── 02-expense-tracking.spec.ts   # Track section CRUD
+├── 03-budgets.spec.ts            # Budgets section, 50/30/20
+├── 04-calculations.spec.ts       # Budget calculations
+├── 05-validation.spec.ts         # Form validation
+├── 06-reports.spec.ts            # Export functionality
+├── 07-categories-rules.spec.ts   # Categories dialog, rules
+├── 08-receipt-scanning.spec.ts   # Receipt OCR, CSV import
+└── 09-recurring.spec.ts          # Recurring expenses CRUD
+```

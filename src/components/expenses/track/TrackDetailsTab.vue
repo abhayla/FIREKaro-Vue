@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import SectionHeader from '@/components/shared/SectionHeader.vue'
 import ExpenseFilters from '@/components/expenses/ExpenseFilters.vue'
 import ExpenseList from '@/components/expenses/ExpenseList.vue'
 import ExpenseForm from '@/components/expenses/ExpenseForm.vue'
@@ -10,21 +9,25 @@ import {
   useExpenses,
   useCategories,
   formatINR,
-  getCurrentMonth,
   type Expense,
   type CreateExpenseInput,
 } from '@/composables/useExpenses'
 
-const tabs = [
-  { title: 'Overview', route: '/dashboard/expenses' },
-  { title: 'Track', route: '/dashboard/expenses/track' },
-  { title: 'Budgets', route: '/dashboard/expenses/budgets' },
-  { title: 'Reports', route: '/dashboard/expenses/reports' },
-  { title: 'Categories', route: '/dashboard/expenses/categories' },
-]
+const props = defineProps<{
+  selectedMonth: string
+}>()
 
-// Current month filter
-const selectedMonth = ref(getCurrentMonth())
+const emit = defineEmits<{
+  (e: 'update:selectedMonth', value: string): void
+  (e: 'open-categories'): void
+}>()
+
+// Local month state that syncs with parent
+const localMonth = computed({
+  get: () => props.selectedMonth,
+  set: (value) => emit('update:selectedMonth', value),
+})
+
 const selectedCategory = ref<string | null>(null)
 
 // Fetch data
@@ -35,7 +38,7 @@ const {
   createExpense,
   updateExpense,
   deleteExpense,
-} = useExpenses(selectedMonth)
+} = useExpenses(computed(() => props.selectedMonth))
 const { data: categories } = useCategories()
 
 // Category list for filter
@@ -161,20 +164,13 @@ const handleCSVImport = async (importedExpenses: CreateExpenseInput[]) => {
 
 // Month name
 const monthName = computed(() => {
-  const [year, month] = selectedMonth.value.split('-').map(Number)
+  const [year, month] = props.selectedMonth.split('-').map(Number)
   return new Date(year, month - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })
 })
 </script>
 
 <template>
   <div>
-    <SectionHeader
-      title="Expenses"
-      subtitle="Add and track expenses"
-      icon="mdi-cart-outline"
-      :tabs="tabs"
-    />
-
     <!-- Actions Bar -->
     <v-card class="mb-6" variant="outlined">
       <v-card-text class="d-flex align-center gap-3 flex-wrap">
@@ -207,7 +203,7 @@ const monthName = computed(() => {
 
     <!-- Filters -->
     <ExpenseFilters
-      v-model:month="selectedMonth"
+      v-model:month="localMonth"
       v-model:selectedCategory="selectedCategory"
       :categories="categoryList"
       class="mb-6"

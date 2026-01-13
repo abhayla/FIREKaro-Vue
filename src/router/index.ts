@@ -76,7 +76,7 @@ const router = createRouter({
           name: "dashboard",
           component: () => import("@/pages/dashboard/index.vue"),
         },
-// Income is at top-level /income, Tax Planning is at top-level /tax-planning
+// Income is at top-level /income, Tax Planning is at top-level /tax-planning, Investments is at top-level /investments
         // Section 4: Expenses
         {
           path: "expenses",
@@ -103,7 +103,6 @@ const router = createRouter({
           name: "expenses-categories",
           component: () => import("@/pages/dashboard/expenses/categories.vue"),
         },
-        // Section 5: Investments - MOVED to top-level /investments route
         // Section 6: Liabilities
         {
           path: "liabilities",
