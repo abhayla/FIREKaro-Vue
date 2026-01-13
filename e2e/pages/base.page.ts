@@ -6,7 +6,7 @@ import { Page, Locator, expect } from "@playwright/test";
 export const DASHBOARD_SECTIONS = {
   salary: "/dashboard/salary",
   "non-salary-income": "/dashboard/non-salary-income",
-  "tax-planning": "/dashboard/tax-planning",
+  "tax-planning": "/tax-planning",
   expenses: "/dashboard/expenses",
   investments: "/investments",
   liabilities: "/dashboard/liabilities",

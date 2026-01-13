@@ -157,12 +157,14 @@ API Endpoints (already exist):
 - GET/POST /api/other-income
 
 File Structure to Create:
-src/pages/dashboard/non-salary-income/
+src/pages/dashboard/income/
 ├── index.vue (Overview - replace stub)
 ├── business.vue (Business/Profession)
 ├── rental.vue (Rental/House Property)
 ├── capital-gains.vue (STCG/LTCG)
-├── other.vue (Interest, Dividends, Gifts)
+├── interest.vue (Interest Income)
+├── dividends.vue (Dividend Income)
+├── other.vue (Commission, Gifts, Other)
 └── reports.vue (Income reports)
 
 src/components/income/

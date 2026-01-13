@@ -3,25 +3,41 @@ import { BasePage } from "../base.page";
 
 /**
  * Scenarios Page Object
- * Handles what-if tax scenario management
+ * Now inside Tax Details tab accordion - Scenarios section
  */
 export class ScenariosPage extends BasePage {
-  readonly url = "/dashboard/tax-planning/scenarios";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Tab and Accordion Locators
+  // ============================================
+
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
+  }
+
+  get scenariosSection(): Locator {
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Scenarios/i });
+  }
+
+  get scenariosHeader(): Locator {
+    return this.scenariosSection.locator(".v-expansion-panel-title");
+  }
+
+  get scenariosContent(): Locator {
+    return this.scenariosSection.locator(".v-expansion-panel-text");
+  }
+
+  // ============================================
+  // Page Locators
   // ============================================
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Tax Planning/i });
-  }
-
-  get scenariosTab(): Locator {
-    return this.page.getByRole("tab", { name: /Scenarios/i });
   }
 
   // Baseline card
@@ -113,6 +129,21 @@ export class ScenariosPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Switch to Tax Details tab
+    await this.taxDetailsTab.click();
+    await this.page.waitForTimeout(500);
+    // Expand Scenarios accordion section
+    await this.expandScenarios();
+  }
+
+  async expandScenarios() {
+    // Click on the What-If Scenarios accordion header
+    const scenariosHeader = this.page.getByRole("button", { name: /What-If Scenarios.*Create and compare/i });
+    const isExpanded = await scenariosHeader.getAttribute("aria-expanded");
+    if (isExpanded !== "true") {
+      await scenariosHeader.click();
+      await this.page.waitForTimeout(500);
+    }
   }
 
   // ============================================
@@ -237,9 +268,9 @@ export class ScenariosPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    // Wait for tabs to update their state after route change
-    await this.page.waitForTimeout(300);
-    await expect(this.scenariosTab).toHaveAttribute("aria-selected", "true", { timeout: 5000 });
+    // Tax Details tab should be active and Scenarios section expanded
+    await expect(this.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(this.scenariosContent).toBeVisible();
   }
 
   async expectBaselineVisible() {
