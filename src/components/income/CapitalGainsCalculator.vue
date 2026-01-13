@@ -294,10 +294,11 @@ function handleSubmit() {
             <v-col cols="12" md="6">
               <v-select
                 v-model="form.assetType"
-                label="Asset Type"
+                label="Asset Type *"
                 :items="assetTypes"
                 item-value="value"
                 item-title="title"
+                required
               >
                 <template #item="{ props: itemProps, item }">
                   <v-list-item v-bind="itemProps">
@@ -312,8 +313,9 @@ function handleSubmit() {
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="form.assetName"
-                label="Asset Name/Description"
+                label="Asset Name/Description *"
                 placeholder="e.g., Reliance Industries Ltd"
+                required
                 :rules="[(v) => !!v || 'Asset name is required']"
               />
             </v-col>
@@ -336,8 +338,9 @@ function handleSubmit() {
             <v-col cols="12" md="4">
               <v-text-field
                 v-model="form.purchaseDate"
-                label="Purchase Date"
+                label="Purchase Date *"
                 type="date"
+                required
                 :rules="[(v) => !!v || 'Required']"
               />
             </v-col>
@@ -345,9 +348,10 @@ function handleSubmit() {
             <v-col cols="12" md="4">
               <v-text-field
                 v-model.number="form.purchasePrice"
-                label="Purchase Price"
+                label="Purchase Price *"
                 type="number"
                 prefix="Rs."
+                required
                 :rules="[(v) => v > 0 || 'Required']"
               />
             </v-col>
@@ -372,8 +376,9 @@ function handleSubmit() {
             <v-col cols="12" md="4">
               <v-text-field
                 v-model="form.saleDate"
-                label="Sale Date"
+                label="Sale Date *"
                 type="date"
+                required
                 :rules="[(v) => !!v || 'Required']"
               />
             </v-col>
@@ -381,9 +386,10 @@ function handleSubmit() {
             <v-col cols="12" md="4">
               <v-text-field
                 v-model.number="form.salePrice"
-                label="Sale Price"
+                label="Sale Price *"
                 type="number"
                 prefix="Rs."
+                required
                 :rules="[(v) => v > 0 || 'Required']"
               />
             </v-col>

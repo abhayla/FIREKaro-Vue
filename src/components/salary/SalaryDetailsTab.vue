@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import type { SalaryGridData, SalaryGridRow, SalaryComponentType, IncomeSource } from "@/types/salary";
+import { useQueryClient } from "@tanstack/vue-query";
+import type { SalaryGridData, SalaryGridRow, SalaryComponentType, IncomeSource, SalaryHistoryRecord } from "@/types/salary";
 import { FY_MONTHS, getCurrentFinancialYear } from "@/types/salary";
-import { formatINRLakhs, useSalaryIncomeSources, useSalaryHistory, useSalaryComponents } from "@/composables/useSalary";
+import { formatINRLakhs, useSalaryIncomeSources, useSalaryHistory, useSalaryComponents, useAddSalaryHistory, useUpdateSalaryHistory, getCalendarMonthYear } from "@/composables/useSalary";
 import CopyDataDialog from "./CopyDataDialog.vue";
 
 const props = withDefaults(
@@ -37,8 +38,18 @@ const selectedMonthIndex = ref(0);
 
 // Fetch data
 const { data: incomeSources, isLoading: sourcesLoading } = useSalaryIncomeSources(props.financialYear);
-const { data: salaryHistory, isLoading: historyLoading } = useSalaryHistory(props.financialYear);
+const { data: salaryHistory, isLoading: historyLoading, refetch: refetchHistory } = useSalaryHistory(props.financialYear);
 const { components } = useSalaryComponents();
+
+// Mutations for copy operations
+const queryClient = useQueryClient();
+const addSalaryMutation = useAddSalaryHistory();
+const updateSalaryMutation = useUpdateSalaryHistory();
+
+// Copy operation loading state
+const isCopying = ref(false);
+const copySuccessMessage = ref("");
+const showCopySuccess = ref(false);
 
 const isLoading = computed(() => sourcesLoading.value || historyLoading.value);
 
@@ -350,8 +361,77 @@ const handleClearMonth = (monthIndex: number) => {
   showCopyDialog.value = true;
 };
 
+// Get salary record for a specific month index
+const getSalaryRecordForMonth = (monthIndex: number): SalaryHistoryRecord | undefined => {
+  if (!salaryHistory.value) return undefined;
+  // Month index 0 = April (month 1 in FY terms, but stored as month 4 in calendar)
+  const { month, year } = getCalendarMonthYear(monthIndex, props.financialYear);
+  return salaryHistory.value.find(r => r.month === monthIndex + 1); // FY month is 1-indexed
+};
+
+// Build salary data object for API from source record
+const buildSalaryDataFromRecord = (
+  source: SalaryHistoryRecord,
+  targetMonthIndex: number,
+  options: {
+    includeEmployer: boolean;
+    includePaidDays: boolean;
+    includeEarnings: boolean;
+    includeDeductions: boolean;
+    includeEmployerContrib: boolean;
+  }
+) => {
+  const { month, year } = getCalendarMonthYear(targetMonthIndex, props.financialYear);
+
+  const data: Record<string, unknown> = {
+    financialYear: props.financialYear,
+    month: targetMonthIndex + 1, // FY month is 1-indexed
+    year,
+  };
+
+  if (options.includeEmployer) {
+    data.incomeSourceId = source.incomeSourceId;
+    data.employerName = source.employerName;
+  }
+
+  if (options.includePaidDays) {
+    data.paidDays = source.paidDays;
+  }
+
+  if (options.includeEarnings) {
+    data.basicSalary = source.basicSalary || 0;
+    data.houseRentAllowance = source.hra || 0;
+    data.conveyanceAllowance = source.conveyanceAllowance || 0;
+    data.medicalAllowance = source.medicalAllowance || 0;
+    data.otherEarnings = {
+      specialAllowance: source.specialAllowance || 0,
+      specialPay: source.specialPay || 0,
+      otherAllowances: source.otherAllowances || 0,
+    };
+  }
+
+  if (options.includeDeductions) {
+    data.employeePF = source.epfDeduction || 0;
+    data.voluntaryPF = source.vpfDeduction || 0;
+    data.professionalTax = source.professionalTax || 0;
+    data.incomeTax = source.tdsDeduction || 0;
+    data.otherDeductions = {
+      other: source.otherDeductions || 0,
+    };
+  }
+
+  if (options.includeEmployerContrib) {
+    data.employerPF = source.employerPf || 0;
+    data.pensionFund = source.pensionFund || 0;
+    data.npsContribution = source.employerNps || 0;
+    data.superannuation = source.superannuation || 0;
+  }
+
+  return data;
+};
+
 // Handle copy dialog confirm
-const handleCopyConfirm = (options: {
+const handleCopyConfirm = async (options: {
   mode: CopyMode;
   includeEmployer: boolean;
   includePaidDays: boolean;
@@ -360,9 +440,152 @@ const handleCopyConfirm = (options: {
   includeEmployerContrib: boolean;
   targetScope: "single" | "all";
 }) => {
-  console.log("Copy confirmed:", options);
-  // TODO: Implement actual copy logic
-  hasUnsavedChanges.value = true;
+  isCopying.value = true;
+
+  try {
+    switch (options.mode) {
+      case "copy-to-remaining": {
+        // Copy source month to all remaining months
+        const sourceRecord = getSalaryRecordForMonth(selectedMonthIndex.value);
+        if (!sourceRecord) {
+          console.warn("No source record found for copy");
+          return;
+        }
+
+        const targetMonths = [];
+        for (let i = selectedMonthIndex.value + 1; i < 12; i++) {
+          targetMonths.push(i);
+        }
+
+        for (const targetIndex of targetMonths) {
+          const existingRecord = getSalaryRecordForMonth(targetIndex);
+          const salaryData = buildSalaryDataFromRecord(sourceRecord, targetIndex, options);
+
+          if (existingRecord) {
+            await updateSalaryMutation.mutateAsync({
+              id: existingRecord.id,
+              data: salaryData,
+            });
+          } else {
+            await addSalaryMutation.mutateAsync(salaryData as Parameters<typeof addSalaryMutation.mutateAsync>[0]);
+          }
+        }
+
+        copySuccessMessage.value = `Copied ${sourceMonthLabel.value} data to ${targetMonths.length} months`;
+        break;
+      }
+
+      case "copy-from-prev": {
+        // Copy previous month to current month
+        const prevMonthIndex = selectedMonthIndex.value - 1;
+        if (prevMonthIndex < 0) return;
+
+        const sourceRecord = getSalaryRecordForMonth(prevMonthIndex);
+        if (!sourceRecord) {
+          console.warn("No previous month record found");
+          return;
+        }
+
+        const existingRecord = getSalaryRecordForMonth(selectedMonthIndex.value);
+        const salaryData = buildSalaryDataFromRecord(sourceRecord, selectedMonthIndex.value, options);
+
+        if (existingRecord) {
+          await updateSalaryMutation.mutateAsync({
+            id: existingRecord.id,
+            data: salaryData,
+          });
+        } else {
+          await addSalaryMutation.mutateAsync(salaryData as Parameters<typeof addSalaryMutation.mutateAsync>[0]);
+        }
+
+        copySuccessMessage.value = `Copied ${previousMonthLabel.value} data to ${sourceMonthLabel.value}`;
+        break;
+      }
+
+      case "clear": {
+        // Clear all values for the selected month
+        const existingRecord = getSalaryRecordForMonth(selectedMonthIndex.value);
+        if (!existingRecord) return;
+
+        await updateSalaryMutation.mutateAsync({
+          id: existingRecord.id,
+          data: {
+            paidDays: 0,
+            basicSalary: 0,
+            houseRentAllowance: 0,
+            conveyanceAllowance: 0,
+            medicalAllowance: 0,
+            otherEarnings: {},
+            employeePF: 0,
+            voluntaryPF: 0,
+            professionalTax: 0,
+            incomeTax: 0,
+            otherDeductions: {},
+            employerPF: 0,
+            pensionFund: 0,
+            npsContribution: 0,
+            superannuation: 0,
+          },
+        });
+
+        copySuccessMessage.value = `Cleared ${monthHeaders.value[selectedMonthIndex.value]} data`;
+        break;
+      }
+
+      case "import-prev-fy": {
+        // Import from previous FY's March
+        // For now, use the mock previousFyData - in production, fetch actual prev FY data
+        const targetMonths = options.targetScope === "all" ? Array.from({ length: 12 }, (_, i) => i) : [0];
+
+        for (const targetIndex of targetMonths) {
+          const existingRecord = getSalaryRecordForMonth(targetIndex);
+          const { month, year } = getCalendarMonthYear(targetIndex, props.financialYear);
+
+          const salaryData = {
+            financialYear: props.financialYear,
+            month: targetIndex + 1,
+            year,
+            incomeSourceId: options.includeEmployer ? incomeSources.value?.[0]?.id : undefined,
+            paidDays: options.includePaidDays ? 30 : undefined,
+            basicSalary: previousFyData.value.grossEarnings * 0.4, // Approximate basic as 40% of gross
+            houseRentAllowance: previousFyData.value.grossEarnings * 0.2,
+            otherEarnings: {
+              specialAllowance: previousFyData.value.grossEarnings * 0.4,
+            },
+            employeePF: previousFyData.value.deductions * 0.5,
+            professionalTax: 200,
+            incomeTax: previousFyData.value.deductions * 0.4,
+          };
+
+          if (existingRecord) {
+            await updateSalaryMutation.mutateAsync({
+              id: existingRecord.id,
+              data: salaryData,
+            });
+          } else {
+            await addSalaryMutation.mutateAsync(salaryData as Parameters<typeof addSalaryMutation.mutateAsync>[0]);
+          }
+        }
+
+        copySuccessMessage.value = `Imported data from previous FY to ${options.targetScope === "all" ? "all months" : "April"}`;
+        break;
+      }
+    }
+
+    // Refetch data to update UI
+    await refetchHistory();
+
+    // Show success message
+    showCopySuccess.value = true;
+    setTimeout(() => {
+      showCopySuccess.value = false;
+    }, 3000);
+
+  } catch (error) {
+    console.error("Copy operation failed:", error);
+  } finally {
+    isCopying.value = false;
+  }
 };
 
 // Settings menu items
@@ -437,53 +660,47 @@ const settingsMenuItems = [
             <tr>
               <th class="component-header sticky-column">Component</th>
               <th v-for="(header, index) in monthHeaders" :key="index" class="month-header">
-                <template v-if="isEditMode">
-                  <v-menu location="bottom">
-                    <template #activator="{ props: menuProps }">
-                      <div v-bind="menuProps" class="month-header-btn d-flex flex-column align-center">
-                        <span>{{ header }}</span>
-                        <v-icon icon="mdi-menu-down" size="x-small" class="mt-1" />
-                      </div>
-                    </template>
-                    <v-list density="compact">
-                      <!-- Copy to remaining months (only if not last month) -->
-                      <v-list-item
-                        v-if="index < 11"
-                        @click="handleCopyToRemaining(index)"
-                      >
-                        <template #prepend>
-                          <v-icon icon="mdi-content-copy" size="small" />
-                        </template>
-                        <v-list-item-title>Copy to remaining months</v-list-item-title>
-                      </v-list-item>
+                <!-- Copy menu available in BOTH View Mode and Edit Mode -->
+                <v-menu location="bottom">
+                  <template #activator="{ props: menuProps }">
+                    <div v-bind="menuProps" class="month-header-btn d-flex flex-column align-center">
+                      <span>{{ header }}</span>
+                      <v-icon icon="mdi-menu-down" size="x-small" class="mt-1" />
+                    </div>
+                  </template>
+                  <v-list density="compact">
+                    <!-- Copy to remaining months (only if not last month) -->
+                    <v-list-item
+                      v-if="index < 11"
+                      @click="handleCopyToRemaining(index)"
+                    >
+                      <template #prepend>
+                        <v-icon icon="mdi-content-copy" size="small" />
+                      </template>
+                      <v-list-item-title>Copy to remaining months</v-list-item-title>
+                    </v-list-item>
 
-                      <!-- Copy from previous / Import from Prev FY -->
-                      <v-list-item @click="handleCopyFromPrevious(index)">
-                        <template #prepend>
-                          <v-icon icon="mdi-clipboard-arrow-down" size="small" />
-                        </template>
-                        <v-list-item-title>
-                          {{ index === 0 ? `Import from ${previousMonthLabel} (Prev FY)` : `Copy from ${monthHeaders[index - 1]}` }}
-                        </v-list-item-title>
-                      </v-list-item>
+                    <!-- Copy from previous / Import from Prev FY -->
+                    <v-list-item @click="handleCopyFromPrevious(index)">
+                      <template #prepend>
+                        <v-icon icon="mdi-clipboard-arrow-down" size="small" />
+                      </template>
+                      <v-list-item-title>
+                        {{ index === 0 ? `Import from ${previousMonthLabel} (Prev FY)` : `Copy from ${monthHeaders[index - 1]}` }}
+                      </v-list-item-title>
+                    </v-list-item>
 
-                      <v-divider />
+                    <v-divider />
 
-                      <!-- Clear this month -->
-                      <v-list-item @click="handleClearMonth(index)">
-                        <template #prepend>
-                          <v-icon icon="mdi-delete-outline" size="small" color="error" />
-                        </template>
-                        <v-list-item-title class="text-error">Clear this month</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </template>
-                <template v-else>
-                  <div class="d-flex flex-column align-center">
-                    <span>{{ header }}</span>
-                  </div>
-                </template>
+                    <!-- Clear this month -->
+                    <v-list-item @click="handleClearMonth(index)">
+                      <template #prepend>
+                        <v-icon icon="mdi-delete-outline" size="small" color="error" />
+                      </template>
+                      <v-list-item-title class="text-error">Clear this month</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
               </th>
               <th class="total-header">Total</th>
               <th class="total-header">Bonus</th>
@@ -760,6 +977,23 @@ const settingsMenuItems = [
       :remaining-months="remainingMonths"
       @confirm="handleCopyConfirm"
     />
+
+    <!-- Copy Success Snackbar -->
+    <v-snackbar
+      v-model="showCopySuccess"
+      :timeout="3000"
+      color="success"
+      location="bottom"
+    >
+      <v-icon icon="mdi-check-circle" class="mr-2" />
+      {{ copySuccessMessage }}
+    </v-snackbar>
+
+    <!-- Copy Loading Overlay -->
+    <v-overlay v-model="isCopying" class="align-center justify-center" contained>
+      <v-progress-circular indeterminate color="primary" size="64" />
+      <div class="mt-4 text-h6">Copying data...</div>
+    </v-overlay>
   </div>
 </template>
 

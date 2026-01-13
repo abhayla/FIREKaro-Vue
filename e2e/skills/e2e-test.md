@@ -12,7 +12,7 @@ Generate Playwright e2e tests for FIREKaro dashboard sections.
 
 ### section (required)
 - `salary` - Salary income section
-- `non-salary-income` - Non-salary income (business, rental, capital gains)
+- `income` - Income (business, rental, capital gains, interest, dividends, other)
 - `tax-planning` - Tax planning and regime comparison
 - `investments` - Investment portfolio
 - `liabilities` - Loans and credit cards
@@ -214,7 +214,7 @@ npx playwright test e2e/tests/investments/01-navigation.spec.ts
 | Section | Spec Files | Tests | Page Objects |
 |---------|-----------|-------|--------------|
 | Salary | 9 | 97 | 7 |
-| Non-Salary Income | 7 | 45 | 6 |
+| Income | 7 | 45 | 6 |
 | Tax Planning | 6 | 35 | 4 |
 | Investments | 8 | 50 | 8 |
 | Liabilities | 7 | 40 | 5 |

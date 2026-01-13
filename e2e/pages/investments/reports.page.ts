@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles investment reports, charts, and export
  */
 export class InvestmentReportsPage extends BasePage {
-  readonly url = "/dashboard/investments/reports";
+  readonly url = "/investments/reports";
 
   constructor(page: Page) {
     super(page);
@@ -331,7 +331,8 @@ export class InvestmentReportsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Investments/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Reports/i })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the Reports page via URL
+    await expect(this.page).toHaveURL(/\/investments\/reports$/);
   }
 
   async expectSummaryVisible() {

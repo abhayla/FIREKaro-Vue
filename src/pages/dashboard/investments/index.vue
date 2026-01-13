@@ -17,16 +17,6 @@ import {
 
 const router = useRouter()
 
-const tabs = [
-  { title: 'Portfolio', route: '/dashboard/investments' },
-  { title: 'Stocks', route: '/dashboard/investments/stocks' },
-  { title: 'Mutual Funds', route: '/dashboard/investments/mutual-funds' },
-  { title: 'EPF & PPF', route: '/dashboard/investments/epf-ppf' },
-  { title: 'NPS', route: '/dashboard/investments/nps' },
-  { title: 'Property', route: '/dashboard/investments/property' },
-  { title: 'Reports', route: '/dashboard/investments/reports' },
-]
-
 // Data fetching
 const { data: portfolio, isLoading: portfolioLoading, error: portfolioError } = usePortfolio()
 const { data: investments, isLoading: investmentsLoading } = useInvestments()
@@ -74,7 +64,7 @@ const categoryCards = computed(() => [
     count: portfolioData.value.categoryBreakdown.stocks.count,
     icon: 'mdi-chart-line',
     color: 'success',
-    route: '/dashboard/investments/stocks'
+    route: '/investments/stocks'
   },
   {
     title: 'Mutual Funds',
@@ -83,7 +73,7 @@ const categoryCards = computed(() => [
     count: portfolioData.value.categoryBreakdown.mutualFunds.count,
     icon: 'mdi-chart-areaspline',
     color: 'primary',
-    route: '/dashboard/investments/mutual-funds'
+    route: '/investments/mutual-funds'
   },
   {
     title: 'Fixed Deposits',
@@ -92,7 +82,7 @@ const categoryCards = computed(() => [
     count: portfolioData.value.categoryBreakdown.fixedDeposits.count,
     icon: 'mdi-bank',
     color: 'info',
-    route: '/dashboard/investments'
+    route: '/investments'
   },
   {
     title: 'Gold',
@@ -101,7 +91,7 @@ const categoryCards = computed(() => [
     count: portfolioData.value.categoryBreakdown.gold.count,
     icon: 'mdi-gold',
     color: 'warning',
-    route: '/dashboard/investments'
+    route: '/investments'
   },
   {
     title: 'Real Estate',
@@ -110,7 +100,7 @@ const categoryCards = computed(() => [
     count: portfolioData.value.categoryBreakdown.realEstate.count,
     icon: 'mdi-home-city',
     color: 'purple',
-    route: '/dashboard/investments/property'
+    route: '/investments/property'
   },
 ])
 
@@ -131,7 +121,6 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
       title="Investments"
       subtitle="Track your investment portfolio"
       icon="mdi-chart-line"
-      :tabs="tabs"
     />
 
     <!-- Loading State -->
@@ -270,7 +259,7 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
           <v-btn variant="outlined" prepend-icon="mdi-sync" @click="showBrokerDialog = true">
             Sync Broker
           </v-btn>
-          <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :to="'/dashboard/investments/reports'">
+          <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :to="'/investments/reports'">
             Rebalance Check
           </v-btn>
         </v-card-text>
@@ -389,7 +378,7 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
           <v-card>
             <v-card-title class="d-flex align-center justify-space-between">
               <span class="text-subtitle-1">Retirement Funds</span>
-              <v-btn variant="text" size="small" color="primary" :to="'/dashboard/investments/epf-ppf'">
+              <v-btn variant="text" size="small" color="primary" :to="'/investments/epf'">
                 View Details
               </v-btn>
             </v-card-title>
@@ -412,7 +401,7 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
                   </v-card>
                 </v-col>
                 <v-col cols="12" md="4">
-                  <v-card color="orange" variant="tonal" class="pa-4 text-center" @click="router.push('/dashboard/investments/nps')">
+                  <v-card color="orange" variant="tonal" class="pa-4 text-center" @click="router.push('/investments/nps')">
                     <v-icon icon="mdi-account-cash" size="32" class="mb-2" />
                     <div class="text-body-2 font-weight-medium">NPS</div>
                     <div class="text-h6 font-weight-bold">₹0</div>
