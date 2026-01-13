@@ -191,9 +191,31 @@ export function usePortfolio() {
   return useQuery({
     queryKey: computed(() => ['portfolio', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
     queryFn: async (): Promise<PortfolioSummary> => {
-      const res = await fetch(`/api/portfolio${buildQueryParams()}`)
+      const res = await fetch(`/api/investments/overview${buildQueryParams()}`)
       if (!res.ok) throw new Error('Failed to fetch portfolio')
-      return res.json()
+      const json = await res.json()
+      const data = json.data ?? json
+
+      // Transform API response to match frontend expectations
+      const categoryBreakdownArray = data.categoryBreakdown ?? []
+      const categoryBreakdown = {
+        stocks: categoryBreakdownArray.find((c: { category: string }) => c.category === 'EQUITY') ?? { value: 0, invested: 0, count: 0 },
+        mutualFunds: categoryBreakdownArray.find((c: { category: string }) => c.category === 'MUTUAL_FUND') ?? { value: 0, invested: 0, count: 0 },
+        fixedDeposits: categoryBreakdownArray.find((c: { category: string }) => c.category === 'FD') ?? { value: 0, invested: 0, count: 0 },
+        bonds: categoryBreakdownArray.find((c: { category: string }) => c.category === 'BOND') ?? { value: 0, invested: 0, count: 0 },
+        gold: categoryBreakdownArray.find((c: { category: string }) => c.category === 'GOLD') ?? { value: 0, invested: 0, count: 0 },
+        realEstate: categoryBreakdownArray.find((c: { category: string }) => c.category === 'REAL_ESTATE') ?? { value: 0, invested: 0, count: 0 },
+      }
+
+      return {
+        totalValue: data.totalValue ?? 0,
+        totalInvested: data.totalInvested ?? 0,
+        totalReturns: data.absoluteReturn ?? 0,
+        returnsPercentage: data.absoluteReturnPercent ?? 0,
+        xirr: data.xirr ?? 0,
+        allocation: data.allocation ?? { equity: 0, debt: 0, gold: 0, realEstate: 0, cash: 0 },
+        categoryBreakdown,
+      }
     }
   })
 }
@@ -207,7 +229,8 @@ export function useInvestments() {
     queryFn: async (): Promise<Investment[]> => {
       const res = await fetch(`/api/investments${buildQueryParams()}`)
       if (!res.ok) throw new Error('Failed to fetch investments')
-      return res.json()
+      const json = await res.json()
+      return json.data ?? json
     }
   })
 }
@@ -279,10 +302,13 @@ export function useEPF() {
 
   return useQuery({
     queryKey: computed(() => ['epf', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
-    queryFn: async (): Promise<EPFData> => {
+    queryFn: async (): Promise<EPFData | undefined> => {
       const res = await fetch(`/api/epf${buildQueryParams()}`)
-      if (!res.ok) throw new Error('Failed to fetch EPF')
-      return res.json()
+      if (!res.ok) return undefined
+      const json = await res.json()
+      // Return undefined if data is null (no EPF account exists)
+      if (json.data === null) return undefined
+      return json.data ?? json
     }
   })
 }
@@ -313,10 +339,13 @@ export function usePPF() {
 
   return useQuery({
     queryKey: computed(() => ['ppf', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
-    queryFn: async (): Promise<PPFData> => {
+    queryFn: async (): Promise<PPFData | undefined> => {
       const res = await fetch(`/api/ppf${buildQueryParams()}`)
-      if (!res.ok) throw new Error('Failed to fetch PPF')
-      return res.json()
+      if (!res.ok) return undefined
+      const json = await res.json()
+      // Return undefined if data is null (no PPF account exists)
+      if (json.data === null) return undefined
+      return json.data ?? json
     }
   })
 }
@@ -347,10 +376,13 @@ export function useNPS() {
 
   return useQuery({
     queryKey: computed(() => ['nps', uiStore.isFamilyView, uiStore.selectedFamilyMemberId]),
-    queryFn: async (): Promise<NPSData> => {
+    queryFn: async (): Promise<NPSData | undefined> => {
       const res = await fetch(`/api/nps${buildQueryParams()}`)
-      if (!res.ok) throw new Error('Failed to fetch NPS')
-      return res.json()
+      if (!res.ok) return undefined
+      const json = await res.json()
+      // Return undefined if data is null (no NPS account exists)
+      if (json.data === null) return undefined
+      return json.data ?? json
     }
   })
 }
@@ -528,7 +560,7 @@ export function useYieldCalculations() {
     queryFn: async (): Promise<YieldSummary> => {
       // Fetch portfolio and income data
       const [portfolioRes, propertiesRes, otherIncomeRes] = await Promise.all([
-        fetch('/api/portfolio'),
+        fetch('/api/investments/overview'),
         fetch('/api/investments?type=real_estate'),
         fetch('/api/other-income')
       ])
@@ -638,7 +670,7 @@ export function useCompoundingAnalysis() {
     queryKey: ['investments', 'compounding'],
     queryFn: async (): Promise<CompoundingAnalysis> => {
       // Fetch portfolio data
-      const portfolioRes = await fetch('/api/portfolio')
+      const portfolioRes = await fetch('/api/investments/overview')
       const portfolio = portfolioRes.ok ? await portfolioRes.json() : { totalValue: 0, totalInvested: 0 }
 
       const currentValue = portfolio.totalValue || 0
@@ -788,7 +820,7 @@ export function usePortfolioJourney() {
       // Fetch snapshots and current portfolio
       const [snapshotsRes, portfolioRes] = await Promise.all([
         fetch('/api/portfolio-snapshots'),
-        fetch('/api/portfolio')
+        fetch('/api/investments/overview')
       ])
 
       let snapshots: PortfolioSnapshot[] = []

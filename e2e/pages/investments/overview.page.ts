@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Main overview showing portfolio summary and allocation
  */
 export class InvestmentsOverviewPage extends BasePage {
-  readonly url = "/dashboard/investments";
+  readonly url = "/investments";
 
   constructor(page: Page) {
     super(page);
@@ -20,37 +20,13 @@ export class InvestmentsOverviewPage extends BasePage {
     return this.page.getByRole("heading", { name: /Investments/i });
   }
 
-  // Tabs
-  get overviewTab(): Locator {
-    return this.page.getByRole("tab", { name: "Overview" });
+  // Sidebar navigation - first-level navigation is now in sidebar
+  get sidebar(): Locator {
+    return this.page.locator(".v-navigation-drawer");
   }
 
-  get portfolioTab(): Locator {
-    return this.page.getByRole("tab", { name: /Portfolio/i });
-  }
-
-  get stocksTab(): Locator {
-    return this.page.getByRole("tab", { name: /Stocks|Equity/i });
-  }
-
-  get mutualFundsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Mutual Funds|MF/i });
-  }
-
-  get epfPpfTab(): Locator {
-    return this.page.getByRole("tab", { name: /EPF.*PPF|Provident/i });
-  }
-
-  get npsTab(): Locator {
-    return this.page.getByRole("tab", { name: /NPS/i });
-  }
-
-  get propertyTab(): Locator {
-    return this.page.getByRole("tab", { name: /Property|Real Estate/i });
-  }
-
-  get reportsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Reports/i });
+  getSidebarLink(name: string): Locator {
+    return this.sidebar.getByRole("link", { name });
   }
 
   // Summary cards
@@ -109,34 +85,40 @@ export class InvestmentsOverviewPage extends BasePage {
     await this.waitForPageLoad();
   }
 
-  async clickStocksTab() {
-    await this.stocksTab.click();
-    await this.page.waitForTimeout(300);
+  // Navigation via sidebar links
+  async navigateToStocks() {
+    await this.goto("/investments/stocks");
+    await this.waitForPageLoad();
   }
 
-  async clickMutualFundsTab() {
-    await this.mutualFundsTab.click();
-    await this.page.waitForTimeout(300);
+  async navigateToMutualFunds() {
+    await this.goto("/investments/mutual-funds");
+    await this.waitForPageLoad();
   }
 
-  async clickEpfPpfTab() {
-    await this.epfPpfTab.click();
-    await this.page.waitForTimeout(300);
+  async navigateToEpf() {
+    await this.goto("/investments/epf");
+    await this.waitForPageLoad();
   }
 
-  async clickNpsTab() {
-    await this.npsTab.click();
-    await this.page.waitForTimeout(300);
+  async navigateToPpf() {
+    await this.goto("/investments/ppf");
+    await this.waitForPageLoad();
   }
 
-  async clickPropertyTab() {
-    await this.propertyTab.click();
-    await this.page.waitForTimeout(300);
+  async navigateToNps() {
+    await this.goto("/investments/nps");
+    await this.waitForPageLoad();
   }
 
-  async clickReportsTab() {
-    await this.reportsTab.click();
-    await this.page.waitForTimeout(300);
+  async navigateToProperty() {
+    await this.goto("/investments/property");
+    await this.waitForPageLoad();
+  }
+
+  async navigateToReports() {
+    await this.goto("/investments/reports");
+    await this.waitForPageLoad();
   }
 
   // ============================================
@@ -185,7 +167,8 @@ export class InvestmentsOverviewPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the Portfolio page via URL
+    await expect(this.page).toHaveURL(/\/investments$/);
   }
 
   async expectSummaryCardsVisible() {

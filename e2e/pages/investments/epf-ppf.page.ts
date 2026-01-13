@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles Employee Provident Fund and Public Provident Fund
  */
 export class EpfPpfPage extends BasePage {
-  readonly url = "/dashboard/investments/epf-ppf";
+  readonly url = "/investments/epf-ppf";
 
   constructor(page: Page) {
     super(page);

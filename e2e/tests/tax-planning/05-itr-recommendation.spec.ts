@@ -11,18 +11,18 @@ test.describe("ITR Recommendation", () => {
   });
 
   test("should display ITR recommendation card", async ({ page }) => {
-    await expect(overviewPage.itrTypeCard).toBeVisible();
+    await expect(overviewPage.itrFormCard).toBeVisible();
   });
 
   test("should show appropriate ITR form recommendation", async ({ page }) => {
     // Based on income types, should recommend appropriate ITR
     // For presumptive business income, ITR-4 is typically recommended
-    const itrCardText = await overviewPage.itrTypeCard.textContent();
+    const itrCardText = await overviewPage.itrFormCard.textContent();
     expect(itrCardText).toMatch(/ITR-\d|ITR \d/i);
   });
 
   test("should explain ITR recommendation reason", async ({ page }) => {
-    const itrCard = overviewPage.itrTypeCard;
+    const itrCard = overviewPage.itrFormCard;
     await expect(itrCard).toBeVisible();
 
     // Card should contain explanation

@@ -3,25 +3,41 @@ import { BasePage } from "../base.page";
 
 /**
  * Reports Page Object
- * Handles tax reports, export, and ITR form reference
+ * Now inside Tax Details tab accordion - Reports section
  */
 export class ReportsPage extends BasePage {
-  readonly url = "/dashboard/tax-planning/reports";
+  readonly url = "/tax-planning";
 
   constructor(page: Page) {
     super(page);
   }
 
   // ============================================
-  // Locators
+  // Tab and Accordion Locators
+  // ============================================
+
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
+  }
+
+  get reportsSection(): Locator {
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Reports/i });
+  }
+
+  get reportsHeader(): Locator {
+    return this.reportsSection.locator(".v-expansion-panel-title");
+  }
+
+  get reportsContent(): Locator {
+    return this.reportsSection.locator(".v-expansion-panel-text");
+  }
+
+  // ============================================
+  // Page Locators
   // ============================================
 
   get pageTitle(): Locator {
     return this.page.getByRole("heading", { name: /Tax Planning/i });
-  }
-
-  get reportsTab(): Locator {
-    return this.page.getByRole("tab", { name: /Reports/i });
   }
 
   // Financial Year Selector
@@ -31,14 +47,14 @@ export class ReportsPage extends BasePage {
 
   // Export Buttons
   get exportPDFButton(): Locator {
-    return this.page.getByRole("button", { name: /PDF/i });
+    return this.page.getByRole("button", { name: /Export PDF/i });
   }
 
   get exportExcelButton(): Locator {
-    return this.page.getByRole("button", { name: /Excel/i });
+    return this.page.getByRole("button", { name: /Export Excel/i });
   }
 
-  // Report Tabs
+  // Report Tabs (only 3 tabs - Advance Tax is a separate accordion section)
   get summaryReportTab(): Locator {
     return this.page.getByRole("tab", { name: /Tax Summary/i });
   }
@@ -49,10 +65,6 @@ export class ReportsPage extends BasePage {
 
   get deductionsReportTab(): Locator {
     return this.page.getByRole("tab", { name: /Deduction Utilization/i });
-  }
-
-  get advanceTaxReportTab(): Locator {
-    return this.page.getByRole("tab", { name: /Advance Tax/i });
   }
 
   // Summary Tab Content
@@ -119,6 +131,23 @@ export class ReportsPage extends BasePage {
   async navigateTo() {
     await this.goto(this.url);
     await this.waitForPageLoad();
+    // Switch to Tax Details tab
+    await this.taxDetailsTab.click();
+    await this.page.waitForTimeout(300);
+    // Expand Reports accordion section
+    await this.expandReports();
+  }
+
+  async expandReports() {
+    // Click on the Reports & Export accordion header
+    const reportsHeader = this.page.getByRole("button", { name: /Reports.*Export/i });
+    const isExpanded = await reportsHeader.getAttribute("aria-expanded");
+    if (isExpanded !== "true") {
+      await reportsHeader.click();
+      await this.page.waitForTimeout(500);
+    }
+    // Wait for content to be visible
+    await this.page.locator("text=Export PDF").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   }
 
   // ============================================
@@ -207,7 +236,9 @@ export class ReportsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    await expect(this.reportsTab).toHaveAttribute("aria-selected", "true");
+    // Tax Details tab should be active and Reports section expanded
+    await expect(this.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(this.reportsContent).toBeVisible();
   }
 
   async expectExportButtonsVisible() {
@@ -219,7 +250,7 @@ export class ReportsPage extends BasePage {
     await expect(this.summaryReportTab).toBeVisible();
     await expect(this.comparisonReportTab).toBeVisible();
     await expect(this.deductionsReportTab).toBeVisible();
-    await expect(this.advanceTaxReportTab).toBeVisible();
+    // Note: Advance Tax is a separate accordion section, not a tab in Reports
   }
 
   async expectSummaryTabContent() {

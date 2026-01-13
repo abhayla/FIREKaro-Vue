@@ -384,7 +384,7 @@ function selectRegular(value: boolean) {
         >
           <template v-if="classification.category === 'business'">
             <strong>Recommended:</strong> Add this commission under
-            <router-link to="/dashboard/non-salary-income/business">Business Income</router-link>
+            <router-link to="/dashboard/income/business">Business Income</router-link>
             section and select "Commission Agent" as business type.
           </template>
           <template v-else>

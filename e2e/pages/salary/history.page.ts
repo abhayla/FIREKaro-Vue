@@ -2,7 +2,8 @@ import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
 /**
- * Page Object for Salary History page (/dashboard/salary/history)
+ * Page Object for Salary History page (/income/salary)
+ * Note: History is now integrated into the main salary page
  */
 export class SalaryHistoryPage extends BasePage {
   constructor(page: Page) {
@@ -11,7 +12,7 @@ export class SalaryHistoryPage extends BasePage {
 
   // Navigation
   async navigateTo() {
-    await this.goto("/dashboard/salary/history");
+    await this.goto("/income/salary");
     await this.waitForTableLoad();
   }
 
