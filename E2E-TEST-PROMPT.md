@@ -1,12 +1,12 @@
-# E2E Testing - Expenses Section
+# E2E Testing - Liabilities Section
 
 ## Trigger Prompt
 
 ```
-Perform E2E testing for the Expenses section:
+Perform E2E testing for the Liabilities section:
 
 1. Start dev server: npm run dev
-2. Use test data from e2e/fixtures/expenses-data.ts
+2. Use test data from e2e/fixtures/liabilities-data.ts
 3. For each feature below:
    - Navigate to the page
    - Perform test actions (add, edit, delete, view)
@@ -21,143 +21,149 @@ Perform E2E testing for the Expenses section:
 
 ## Section Details
 
-- **Routes**: `/expenses/*` (top-level, not under /dashboard)
-- **Test Data**: `e2e/fixtures/expenses-data.ts`
-- **Page Objects**: `e2e/pages/expenses/`
-- **Components**: `src/components/expenses/`
+- **Routes**: `/liabilities/*`
+- **Test Data**: `e2e/fixtures/liabilities-data.ts`
+- **Components**: `src/components/liabilities/`
+- **Pages**: `src/pages/liabilities/`
 
 ---
 
-## URL Structure
+## Page Structure
 
-| Route | Description |
-|-------|-------------|
-| `/expenses` | Landing page with summary cards, alerts, quick nav |
-| `/expenses/track` | Track section (Overview + Expense Details tabs) |
-| `/expenses/budgets` | Budgets section (Overview + Budget Details tabs) |
-| `/expenses/recurring` | Recurring section (Overview + Recurring Details tabs) |
+### Navigation Pattern
+All pages share a `SectionHeader` with 5 tabs:
+- Overview | Loans | Credit Cards | Debt Payoff | Reports
+
+### Internal Tabs Pattern (Loans & Credit Cards)
+These pages use a two-tab internal navigation:
+| Tab | Purpose |
+|-----|---------|
+| **Overview** | Read-only summary with metrics, charts, condensed list |
+| **Details** | Full CRUD operations with item cards, add button |
+
+**Important**: Navigate to "Details" tab before performing CRUD operations.
+
+---
+
+## Test Files (9 specs, 57 tests)
+
+| File | Purpose | Tests |
+|------|---------|-------|
+| `01-navigation.spec.ts` | Navigation & tab management | 10 |
+| `02-loans-crud.spec.ts` | Loan CRUD operations | 7 |
+| `03-credit-cards.spec.ts` | Credit card CRUD | 7 |
+| `04-debt-payoff.spec.ts` | Payoff strategies | 7 |
+| `05-overview.spec.ts` | Overview page | 8 |
+| `05-calculations.spec.ts` | Financial calculations | 5 |
+| `06-amortization.spec.ts` | Amortization schedules | 6 |
+| `06-validation.spec.ts` | Form validation | 4 |
+| `07-reports.spec.ts` | Reports & exports | 3 |
+
+---
+
+## Page Objects
+
+| File | Class | URL |
+|------|-------|-----|
+| `overview.page.ts` | LiabilitiesOverviewPage | `/liabilities` |
+| `loans.page.ts` | LoansPage | `/liabilities/loans` |
+| `credit-cards.page.ts` | CreditCardsPage | `/liabilities/credit-cards` |
+| `debt-payoff.page.ts` | DebtPayoffPage | `/liabilities/debt-payoff` |
+| `reports.page.ts` | LiabilitiesReportsPage | `/liabilities/reports` |
 
 ---
 
 ## Features to Test
 
-### Landing Page (`/expenses`)
-- [ ] Page loads with 4 summary cards
-- [ ] Total Expenses card displays correctly (₹ format)
-- [ ] Budget Usage card shows percentage
-- [ ] Recurring Count card shows active count
-- [ ] Top Category card displays highest spending
-- [ ] Smart alerts display (budget warnings, upcoming recurring)
-- [ ] Quick navigation cards visible (Track, Budgets, Recurring)
-- [ ] Quick action buttons work (Add Expense, Set Budget, Add Recurring)
+### Overview Page (`/liabilities`)
+- [ ] Page loads with debt summary
+- [ ] Total Debt card displays correctly
+- [ ] Monthly EMI card shows total
+- [ ] DTI Ratio (Debt-to-Income) displays
+- [ ] Upcoming payments section shows due dates
+- [ ] Debt breakdown by type (Loans vs Credit Cards)
+- [ ] Navigation to sub-pages works (View All buttons)
 
-### Track Section (`/expenses/track`)
+### Loans (`/liabilities/loans`)
+**Overview Tab:**
+- [ ] Summary cards display (Total Outstanding, Monthly EMI, Active Loans)
+- [ ] Debt distribution chart renders
+- [ ] Upcoming EMI payments list shows
+- [ ] Condensed loans list displays
 
-#### Overview Tab
-- [ ] Tab navigation works (Overview/Expense Details)
-- [ ] Summary metrics display (Total Spent, Transactions, Avg, Budget Used)
-- [ ] Category pie chart renders
-- [ ] 6-month trend chart renders
-- [ ] Recent expenses list shows last 5-10 items
-- [ ] Export buttons visible (PDF, Excel, CSV, JSON)
-- [ ] Budget vs Actual cards show Needs/Wants/Savings
+**Details Tab (Loan Details):**
+- [ ] Loans list displays with cards
+- [ ] Add new loan works (all types: Home/Car/Personal/Education/Gold)
+- [ ] Edit loan works
+- [ ] Delete loan works with confirmation
+- [ ] EMI calculation correct
+- [ ] Outstanding balance displays
+- [ ] View amortization schedule works
+- [ ] Prepayment simulation dialog opens
+- [ ] Tax benefits info shows (Section 80C, 24b)
 
-#### Expense Details Tab
-- [ ] Expenses list displays with all entries
-- [ ] Month selector filter works
-- [ ] Category filter works
-- [ ] Search field filters results
-- [ ] Add Expense button opens form dialog
-- [ ] Edit expense works
-- [ ] Delete expense works with confirmation
-- [ ] CSV Import button opens modal
-- [ ] Scan Receipt button opens OCR dialog
+### Credit Cards (`/liabilities/credit-cards`)
+**Overview Tab:**
+- [ ] Summary cards display (Total Outstanding, Credit Limit, Utilization)
+- [ ] Credit utilization gauge renders
+- [ ] Upcoming payments section shows
+- [ ] Condensed cards list displays
 
-### Categories Dialog (from Track page)
-- [ ] Gear icon opens Categories dialog
-- [ ] Rules tab displays with Add Rule button
-- [ ] Create new rule works
-- [ ] Edit rule works
-- [ ] Delete rule works
-- [ ] Toggle rule enabled/disabled works
-- [ ] Categories tab shows all categories (read-only)
-- [ ] Budget type labels display (Needs/Wants/Savings)
-- [ ] Dialog closes properly
+**Details Tab (Card Details):**
+- [ ] Credit cards list displays
+- [ ] Add new card works
+- [ ] Edit card works
+- [ ] Delete card works with confirmation
+- [ ] Credit limit displays
+- [ ] Outstanding balance shows
+- [ ] Utilization percentage calculates correctly
+- [ ] Minimum due displays
+- [ ] Due date displays
 
-### Budgets Section (`/expenses/budgets`)
+### Debt Payoff (`/liabilities/debt-payoff`)
+- [ ] Page loads with strategy selection
+- [ ] Snowball strategy selectable (smallest balance first)
+- [ ] Avalanche strategy selectable (highest interest first)
+- [ ] Summary cards show (Total Debt, Months to Payoff, Total Interest)
+- [ ] Payoff order table displays debts
+- [ ] Extra payment input works
+- [ ] Interest savings calculation updates
+- [ ] Payoff timeline chart renders
 
-#### Overview Tab
-- [ ] 50/30/20 summary cards display (Needs 50%, Wants 30%, Savings 20%)
-- [ ] Progress bars show budget usage
-- [ ] Budget vs Actual comparison visible
-- [ ] Over-budget warning displays when exceeded
-- [ ] Monthly trend chart renders
-
-#### Budget Details Tab
-- [ ] Monthly income field displays/editable
-- [ ] Set Budget button opens form
-- [ ] Budget form saves correctly
-- [ ] Copy from Previous Month works
-- [ ] Budget history table displays
-- [ ] Per-category budget limits editable
-
-### Recurring Section (`/expenses/recurring`) - NEW
-
-#### Overview Tab
-- [ ] Summary cards display (Active, Paused, Monthly Total, Upcoming)
-- [ ] Due This Week section shows upcoming items
-- [ ] By Frequency breakdown displays
-
-#### Recurring Details Tab
-- [ ] Add Recurring button opens form
-- [ ] Status filter works (All/Active/Paused)
-- [ ] Search field filters results
-- [ ] Frequency filter works
-- [ ] Recurring list displays all items
-- [ ] Create recurring expense works with all fields:
-  - Description, Amount, Category
-  - Frequency (Weekly/Monthly/Quarterly/Yearly)
-  - Start Date, End Condition
-- [ ] Edit recurring expense works
-- [ ] Delete recurring expense works (with delete generated option)
-- [ ] Pause/Resume toggle works
-- [ ] Skip Next occurrence works
-- [ ] Generate Now manually creates expense
+### Reports (`/liabilities/reports`)
+- [ ] Reports page loads
+- [ ] Report type tabs work (Summary, Payments, Interest, Tax)
+- [ ] Amortization report with loan selector
+- [ ] Debt breakdown chart renders
+- [ ] Payment history displays
+- [ ] Export buttons visible (PDF, Excel)
 
 ---
 
 ## Screenshot Analysis Checklist
 
 ### Visual Checks
-- [ ] Page title correct for each section
-- [ ] Navigation highlights "Expenses" in sidebar
-- [ ] Tab navigation shows active tab
+- [ ] Page title shows "Liabilities"
+- [ ] Sidebar highlights "Liabilities" section
+- [ ] Section tabs visible (Overview, Loans, Credit Cards, Debt Payoff, Reports)
+- [ ] Internal tabs visible on Loans/Credit Cards pages
 - [ ] Cards/tables have data (not empty)
-- [ ] Charts render properly (pie, trend)
+- [ ] Charts render properly (not blank canvas)
 - [ ] Forms show all fields
-- [ ] Dialogs open centered and styled
 
 ### Data Checks
-- [ ] Currency format: ₹X,XX,XXX
-- [ ] Dates in correct format (DD MMM YYYY)
-- [ ] Percentages show % symbol
-- [ ] Totals calculate correctly
-- [ ] Budget remaining calculates (50/30/20)
-- [ ] Recurring frequencies display correctly
-
-### UI Pattern Checks
-- [ ] Two-tab structure on Track/Budgets/Recurring pages
-- [ ] Categories dialog opens from gear icon
-- [ ] 50/30/20 cards show correct colors
-- [ ] Progress bars animate on load
-- [ ] Empty states show helpful messages
+- [ ] Currency format: ₹X,XX,XXX (Indian format)
+- [ ] Interest rates show % symbol
+- [ ] EMI calculates correctly
+- [ ] Outstanding balance correct
+- [ ] Dates in DD/MM/YYYY format
+- [ ] Utilization percentage 0-100%
 
 ### Error Checks
-- [ ] No error alerts visible
+- [ ] No error alerts/snackbars
 - [ ] No "undefined" or "NaN" text
 - [ ] No console errors (check with browser_console_messages)
-- [ ] No broken layouts or overflow
-- [ ] Form validation messages display
+- [ ] No broken layouts or missing components
 
 ---
 
@@ -167,83 +173,60 @@ Perform E2E testing for the Expenses section:
 |---------|-----|
 | Page loading forever | Check API route returns data |
 | "undefined" showing | Add `?.` optional chaining |
-| NaN in numbers | Add default value `?? 0` |
-| Form not submitting | Check validation rules |
-| Data not refreshing | Add `queryClient.invalidateQueries` |
-| Budget progress wrong | Check percentage calculation against 50/30/20 |
-| Tab not switching | Check v-model binding on v-tabs |
-| Dialog not opening | Check v-model on dialog component |
-| Recurring not saving | Check frequency enum matches backend |
+| EMI calculation wrong | Check formula: P*r*(1+r)^n / ((1+r)^n-1) |
+| Amortization table empty | Generate schedule on loan create |
+| Utilization shows NaN | Handle zero credit limit case |
+| Tab click doesn't navigate | Use direct URL navigation instead |
+| Internal tab not switching | Check `activeTab` ref binding |
+| Form doesn't submit | Verify form validation passes |
+| CRUD buttons not visible | Navigate to Details tab first |
 
 ---
 
 ## Test Session Example
 
 ```
-1. Navigate to /expenses
-   Screenshot: ✓ Landing page with 4 summary cards
-   Screenshot: ✓ Smart alerts visible
-   Screenshot: ✓ Quick nav cards present
+1. Navigate to /liabilities
+   Screenshot: Overview page with debt summary visible
 
-2. Click Track nav card → /expenses/track
-   Screenshot: ✓ Overview tab active
-   Screenshot: ✓ Category pie chart renders
-   Screenshot: ✓ Export buttons visible
+2. Click "Loans" tab
+   Screenshot: Loans page with Overview tab active
 
-3. Switch to Expense Details tab
-   Screenshot: ✓ Expenses table shows
-   Screenshot: ✓ Filters visible
+3. Click "Loan Details" internal tab
+   Screenshot: Loans list with Add button visible
 
-4. Click "Add Expense"
-   Screenshot: ✓ Form dialog opens
-   Fill form and submit
-   Screenshot: ✓ PASS - expense added to list
+4. Click "Add Loan"
+   Screenshot: Loan form dialog opens
 
-5. Click gear icon for Categories
-   Screenshot: ✓ Categories dialog opens
-   Screenshot: ✓ Rules tab visible
+5. Fill home loan details:
+   - Type: Home Loan
+   - Lender: HDFC Bank
+   - Principal: 5000000
+   - Outstanding: 3200000
+   - Interest: 8.5%
+   - Tenure: 240 months
+   - EMI: 43391
+   Submit form
 
-6. Navigate to /expenses/budgets
-   Screenshot: ✓ 50/30/20 cards display
-   Screenshot: ✓ Progress bars show usage
+   Screenshot: PASS - Loan added, appears in list
 
-7. Navigate to /expenses/recurring
-   Screenshot: ✓ Recurring summary cards
-   Screenshot: ✓ Add Recurring button visible
+6. Click amortization icon on loan card
+   Screenshot: Amortization schedule displays with monthly breakdown
 
-8. Click "Add Recurring"
-   Screenshot: ✓ Form with frequency options
-   Fill form and submit
-   Screenshot: ✓ PASS - recurring added
-
-Result: Expenses Section - PASS
+Result: Loans CRUD - PASS
 ```
 
 ---
 
-## Related Files
+## Run Tests
 
-### Page Objects
-```
-e2e/pages/expenses/
-├── index.ts              # Barrel exports
-├── overview.page.ts      # Landing page (/expenses)
-├── tracking.page.ts      # Track section (/expenses/track)
-├── budgets.page.ts       # Budgets section (/expenses/budgets)
-├── categories.page.ts    # Categories dialog helper
-└── recurring.page.ts     # Recurring section (/expenses/recurring)
-```
+```bash
+# Run all liabilities tests
+npm run test:e2e -- e2e/tests/liabilities/
 
-### Test Specs
-```
-e2e/tests/expenses/
-├── 01-navigation.spec.ts         # Navigation, landing page
-├── 02-expense-tracking.spec.ts   # Track section CRUD
-├── 03-budgets.spec.ts            # Budgets section, 50/30/20
-├── 04-calculations.spec.ts       # Budget calculations
-├── 05-validation.spec.ts         # Form validation
-├── 06-reports.spec.ts            # Export functionality
-├── 07-categories-rules.spec.ts   # Categories dialog, rules
-├── 08-receipt-scanning.spec.ts   # Receipt OCR, CSV import
-└── 09-recurring.spec.ts          # Recurring expenses CRUD
+# Run specific test file
+npm run test:e2e -- e2e/tests/liabilities/01-navigation.spec.ts
+
+# Run with UI mode for debugging
+npm run test:e2e:ui -- e2e/tests/liabilities/
 ```

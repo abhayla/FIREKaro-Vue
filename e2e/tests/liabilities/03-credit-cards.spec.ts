@@ -12,13 +12,20 @@ test.describe("Credit Cards", () => {
 
   test("should display credit cards page correctly", async ({ page }) => {
     await creditCardsPage.expectPageLoaded();
-    await expect(creditCardsPage.addCardButton).toBeVisible();
+    // Page loads with Overview tab active by default
+    await creditCardsPage.expectOverviewTabActive();
   });
 
-  test("should show summary cards", async ({ page }) => {
+  test("should show summary cards on Overview tab", async ({ page }) => {
+    // Summary cards are on the Overview tab (default)
     await expect(creditCardsPage.totalOutstandingCard).toBeVisible();
     await expect(creditCardsPage.totalLimitCard).toBeVisible();
-    await expect(creditCardsPage.avgUtilizationCard).toBeVisible();
+  });
+
+  test("should show add button on Details tab", async ({ page }) => {
+    await creditCardsPage.goToDetailsTab();
+    await creditCardsPage.expectDetailsTabActive();
+    await expect(creditCardsPage.addCardButton).toBeVisible();
   });
 
   test("should open add card form dialog", async ({ page }) => {

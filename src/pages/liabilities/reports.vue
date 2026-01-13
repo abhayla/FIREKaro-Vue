@@ -31,14 +31,6 @@ ChartJS.register(
   Legend
 )
 
-const tabs = [
-  { title: 'Overview', route: '/dashboard/liabilities' },
-  { title: 'Loans', route: '/dashboard/liabilities/loans' },
-  { title: 'Credit Cards', route: '/dashboard/liabilities/credit-cards' },
-  { title: 'Debt Payoff', route: '/dashboard/liabilities/debt-payoff' },
-  { title: 'Reports', route: '/dashboard/liabilities/reports' },
-]
-
 // Data fetching
 const { data: loans, isLoading: loansLoading } = useLoans()
 const { data: creditCards, isLoading: cardsLoading } = useCreditCards()
@@ -260,10 +252,9 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
 <template>
   <div>
     <SectionHeader
-      title="Liabilities"
-      subtitle="Debt Reports"
-      icon="mdi-credit-card-outline"
-      :tabs="tabs"
+      title="Reports"
+      subtitle="Debt analysis and reports"
+      icon="mdi-file-chart"
     />
 
     <!-- Report Type Tabs -->

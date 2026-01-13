@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import SectionHeader from '@/components/shared/SectionHeader.vue'
+import { computed } from 'vue'
 import DebtPayoffStrategy from '@/components/liabilities/DebtPayoffStrategy.vue'
 import PayoffProgressChart from '@/components/liabilities/PayoffProgressChart.vue'
 import {
   useLoans,
   useCreditCards,
-  useDebtPayoffStrategies,
   comparePayoffStrategies,
   formatINR,
   formatINRCompact,
@@ -14,25 +12,24 @@ import {
   type DebtPayoffStrategy as StrategyType
 } from '@/composables/useLiabilities'
 
-const tabs = [
-  { title: 'Overview', route: '/dashboard/liabilities' },
-  { title: 'Loans', route: '/dashboard/liabilities/loans' },
-  { title: 'Credit Cards', route: '/dashboard/liabilities/credit-cards' },
-  { title: 'Debt Payoff', route: '/dashboard/liabilities/debt-payoff' },
-  { title: 'Reports', route: '/dashboard/liabilities/reports' },
-]
+const props = defineProps<{
+  extraPayment: number
+  selectedStrategy: 'snowball' | 'avalanche' | 'custom'
+}>()
+
+const emit = defineEmits<{
+  'update:extraPayment': [value: number]
+  'update:selectedStrategy': [value: 'snowball' | 'avalanche' | 'custom']
+  'go-to-details': []
+}>()
 
 // Data fetching
 const { data: loans, isLoading: loansLoading } = useLoans()
 const { data: creditCards, isLoading: cardsLoading } = useCreditCards()
-const { data: strategies, isLoading: strategiesLoading } = useDebtPayoffStrategies()
 
-// Use API data directly (no mock data)
+// Use API data directly
 const loansList = computed(() => loans.value || [])
 const cardsList = computed(() => creditCards.value || [])
-
-// Extra payment amount
-const extraPayment = ref(10000)
 
 // Combine all debts for strategy calculation
 const allDebts = computed(() => {
@@ -62,7 +59,7 @@ const allDebts = computed(() => {
 // Calculate strategies
 const calculatedStrategies = computed(() => {
   if (allDebts.value.length === 0) return { snowball: null, avalanche: null }
-  return comparePayoffStrategies(allDebts.value, extraPayment.value)
+  return comparePayoffStrategies(allDebts.value, props.extraPayment)
 })
 
 // Convert to strategy format for component
@@ -93,26 +90,16 @@ const summary = computed(() => {
   }
 })
 
-// Selected strategy
-const selectedStrategy = ref<'snowball' | 'avalanche' | 'custom'>('avalanche')
-
 const handleSelectStrategy = (strategy: 'snowball' | 'avalanche' | 'custom') => {
-  selectedStrategy.value = strategy
+  emit('update:selectedStrategy', strategy)
 }
 
 // Loading state
-const isLoading = computed(() => loansLoading.value || cardsLoading.value || strategiesLoading.value)
+const isLoading = computed(() => loansLoading.value || cardsLoading.value)
 </script>
 
 <template>
   <div>
-    <SectionHeader
-      title="Liabilities"
-      subtitle="Debt Payoff Strategies"
-      icon="mdi-credit-card-outline"
-      :tabs="tabs"
-    />
-
     <!-- Loading State -->
     <template v-if="isLoading">
       <v-row>
@@ -174,7 +161,8 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || str
           <span class="text-subtitle-1 font-weight-medium">Extra Monthly Payment</span>
         </div>
         <v-slider
-          v-model="extraPayment"
+          :model-value="extraPayment"
+          @update:model-value="emit('update:extraPayment', $event)"
           :min="0"
           :max="50000"
           :step="1000"
@@ -191,70 +179,6 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || str
           <span>Total: {{ formatINR(summary.totalMinPayment + extraPayment) }}/month</span>
           <span>₹50,000</span>
         </div>
-      </v-card>
-
-      <!-- Debt List -->
-      <v-card variant="outlined" class="mb-6">
-        <v-card-title>
-          <v-icon icon="mdi-format-list-bulleted" class="mr-2" />
-          Your Debts
-        </v-card-title>
-        <v-card-text>
-          <v-table density="compact">
-            <thead>
-              <tr>
-                <th>Debt</th>
-                <th class="text-right">Balance</th>
-                <th class="text-right">Interest Rate</th>
-                <th class="text-right">Min Payment</th>
-                <th class="text-center">Priority</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(debt, index) in allDebts.sort((a, b) =>
-                  selectedStrategy === 'snowball'
-                    ? a.balance - b.balance
-                    : b.interestRate - a.interestRate
-                )"
-                :key="debt.name"
-              >
-                <td>
-                  <div class="d-flex align-center">
-                    <v-avatar
-                      :color="selectedStrategy === 'avalanche' ? 'success' : 'blue'"
-                      size="24"
-                      class="mr-2"
-                    >
-                      <span class="text-caption">{{ index + 1 }}</span>
-                    </v-avatar>
-                    {{ debt.name }}
-                  </div>
-                </td>
-                <td class="text-right font-weight-medium">{{ formatINRCompact(debt.balance) }}</td>
-                <td class="text-right">
-                  <v-chip
-                    :color="debt.interestRate > 15 ? 'error' : debt.interestRate > 10 ? 'warning' : 'success'"
-                    size="x-small"
-                  >
-                    {{ debt.interestRate }}%
-                  </v-chip>
-                </td>
-                <td class="text-right">{{ formatINR(debt.minPayment) }}</td>
-                <td class="text-center">
-                  <v-chip
-                    v-if="index === 0"
-                    color="primary"
-                    size="x-small"
-                  >
-                    Pay First
-                  </v-chip>
-                  <span v-else class="text-medium-emphasis">{{ index + 1 }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </v-card-text>
       </v-card>
 
       <!-- Strategy Comparison -->
@@ -311,6 +235,20 @@ const isLoading = computed(() => loansLoading.value || cardsLoading.value || str
               </v-alert>
             </v-col>
           </v-row>
+        </v-card-text>
+      </v-card>
+
+      <!-- View Details Link -->
+      <v-card variant="outlined" class="mt-6">
+        <v-card-text class="text-center">
+          <v-btn
+            variant="text"
+            color="primary"
+            @click="emit('go-to-details')"
+          >
+            View Detailed Payoff Order
+            <v-icon icon="mdi-arrow-right" class="ml-2" />
+          </v-btn>
         </v-card-text>
       </v-card>
     </template>

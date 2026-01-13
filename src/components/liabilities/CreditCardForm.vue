@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { useForm } from 'vee-validate'
+import { useForm, useField } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
 import { type CreditCard, formatINR, calculateCreditUtilization } from '@/composables/useLiabilities'
@@ -64,6 +64,19 @@ const { handleSubmit, resetForm, values, setValues } = useForm({
   }
 })
 
+// Define individual fields for proper two-way binding
+const { value: cardName } = useField<string>('cardName')
+const { value: bankName } = useField<string>('bankName')
+const { value: cardNumber } = useField<string>('cardNumber')
+const { value: cardType } = useField<CardType>('cardType')
+const { value: creditLimit } = useField<number>('creditLimit')
+const { value: currentOutstanding } = useField<number>('currentOutstanding')
+const { value: billingCycleDate } = useField<number>('billingCycleDate')
+const { value: paymentDueDate } = useField<number>('paymentDueDate')
+const { value: interestRateAPR } = useField<number>('interestRateAPR')
+const { value: annualFee } = useField<number>('annualFee')
+const { value: cardExpiryDate } = useField<string>('cardExpiryDate')
+
 // Watch for card prop changes
 watch(
   () => props.card,
@@ -98,12 +111,12 @@ watch(
 
 // Calculate utilization
 const utilization = computed(() => {
-  return calculateCreditUtilization(values.currentOutstanding || 0, values.creditLimit || 1)
+  return calculateCreditUtilization(currentOutstanding.value || 0, creditLimit.value || 1)
 })
 
 // Available limit
 const availableLimit = computed(() => {
-  return Math.max(0, (values.creditLimit || 0) - (values.currentOutstanding || 0))
+  return Math.max(0, (creditLimit.value || 0) - (currentOutstanding.value || 0))
 })
 
 const onSubmit = handleSubmit((formValues) => {
@@ -154,7 +167,7 @@ const handleClose = () => {
             <!-- Card Name -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="values.cardName"
+                v-model="cardName"
                 label="Card Name"
                 variant="outlined"
                 density="comfortable"
@@ -166,7 +179,7 @@ const handleClose = () => {
             <!-- Bank Name -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="values.bankName"
+                v-model="bankName"
                 label="Bank Name"
                 variant="outlined"
                 density="comfortable"
@@ -178,7 +191,7 @@ const handleClose = () => {
             <!-- Card Type -->
             <v-col cols="12" md="6">
               <v-select
-                v-model="values.cardType"
+                v-model="cardType"
                 :items="cardTypes"
                 label="Card Network"
                 variant="outlined"
@@ -190,7 +203,7 @@ const handleClose = () => {
             <!-- Card Number (Last 4) -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="values.cardNumber"
+                v-model="cardNumber"
                 label="Last 4 Digits"
                 variant="outlined"
                 density="comfortable"
@@ -203,7 +216,7 @@ const handleClose = () => {
             <!-- Credit Limit -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.creditLimit"
+                v-model.number="creditLimit"
                 label="Credit Limit"
                 type="number"
                 prefix="₹"
@@ -216,7 +229,7 @@ const handleClose = () => {
             <!-- Current Outstanding -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.currentOutstanding"
+                v-model.number="currentOutstanding"
                 label="Current Outstanding"
                 type="number"
                 prefix="₹"
@@ -229,7 +242,7 @@ const handleClose = () => {
             <!-- Billing Cycle Date -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.billingCycleDate"
+                v-model.number="billingCycleDate"
                 label="Statement Date (Day)"
                 type="number"
                 min="1"
@@ -245,7 +258,7 @@ const handleClose = () => {
             <!-- Payment Due Date -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.paymentDueDate"
+                v-model.number="paymentDueDate"
                 label="Payment Due Date (Day)"
                 type="number"
                 min="1"
@@ -261,7 +274,7 @@ const handleClose = () => {
             <!-- Interest Rate APR -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.interestRateAPR"
+                v-model.number="interestRateAPR"
                 label="Interest Rate (APR %)"
                 type="number"
                 suffix="%"
@@ -274,7 +287,7 @@ const handleClose = () => {
             <!-- Annual Fee -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="values.annualFee"
+                v-model.number="annualFee"
                 label="Annual Fee"
                 type="number"
                 prefix="₹"
@@ -287,7 +300,7 @@ const handleClose = () => {
             <!-- Card Expiry -->
             <v-col cols="12">
               <v-text-field
-                v-model="values.cardExpiryDate"
+                v-model="cardExpiryDate"
                 label="Card Expiry Date (Optional)"
                 type="month"
                 variant="outlined"
@@ -312,7 +325,7 @@ const handleClose = () => {
               />
               <div class="d-flex justify-space-between text-caption mt-2">
                 <span>Available: {{ formatINR(availableLimit) }}</span>
-                <span>Limit: {{ formatINR(values.creditLimit || 0) }}</span>
+                <span>Limit: {{ formatINR(creditLimit || 0) }}</span>
               </div>
             </v-card-text>
           </v-card>

@@ -6,7 +6,7 @@ import { BasePage } from "../base.page";
  * Handles home, car, personal, and other loans
  */
 export class LoansPage extends BasePage {
-  readonly url = "/dashboard/liabilities/loans";
+  readonly url = "/liabilities/loans";
 
   constructor(page: Page) {
     super(page);
@@ -17,11 +17,21 @@ export class LoansPage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Liabilities/i });
+    return this.page.getByRole("heading", { name: /Loans/i });
+  }
+
+  // Internal tabs (Overview / Loan Details)
+  get overviewTab(): Locator {
+    return this.page.getByRole("tab", { name: "Overview" });
+  }
+
+  get detailsTab(): Locator {
+    return this.page.getByRole("tab", { name: "Loan Details" });
   }
 
   get addLoanButton(): Locator {
-    return this.page.getByRole("button", { name: /Add Loan|Add New/i });
+    // Use first() to get the toolbar button (not the empty state button)
+    return this.page.getByRole("button", { name: /Add Loan/i }).first();
   }
 
   // Summary cards
@@ -68,7 +78,8 @@ export class LoansPage extends BasePage {
   }
 
   get tenureField(): Locator {
-    return this.page.getByRole("spinbutton", { name: /Tenure|Months/i });
+    // Use "Total Tenure" specifically to avoid matching "Remaining Tenure" as well
+    return this.page.getByRole("spinbutton", { name: /Total Tenure/i });
   }
 
   get emiAmountField(): Locator {
@@ -106,11 +117,29 @@ export class LoansPage extends BasePage {
     await this.waitForPageLoad();
   }
 
+  /**
+   * Navigate to the Overview tab (shows summary metrics, distribution, upcoming EMIs)
+   */
+  async goToOverviewTab() {
+    await this.overviewTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  /**
+   * Navigate to the Loan Details tab (shows loan cards, CRUD operations)
+   */
+  async goToDetailsTab() {
+    await this.detailsTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
   // ============================================
   // Form Actions
   // ============================================
 
   async openAddForm() {
+    // Navigate to Details tab first (Add button is only on Details tab)
+    await this.goToDetailsTab();
     await this.addLoanButton.click();
     await this.loanFormDialog.waitFor({ state: "visible" });
   }
@@ -230,8 +259,18 @@ export class LoansPage extends BasePage {
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.page.getByRole("heading", { name: /Liabilities/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Loans/i })).toHaveAttribute("aria-selected", "true");
+    await expect(this.pageTitle).toBeVisible();
+    // Internal tabs should be visible
+    await expect(this.overviewTab).toBeVisible();
+    await expect(this.detailsTab).toBeVisible();
+  }
+
+  async expectOverviewTabActive() {
+    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  async expectDetailsTabActive() {
+    await expect(this.detailsTab).toHaveAttribute("aria-selected", "true");
   }
 
   async expectFormDialogVisible() {
