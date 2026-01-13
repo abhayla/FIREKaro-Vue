@@ -32,30 +32,82 @@ async function globalSetup(config: FullConfig) {
   await page.goto(`${baseURL}/auth/signin`);
   await page.waitForLoadState("networkidle");
 
-  console.log("On signin page, using Quick Dev Login...");
-
-  // Click the "Quick Dev Login" button (only visible in dev mode)
+  // Try Quick Dev Login button first (only visible in dev mode)
   const quickLoginBtn = page.getByRole("button", { name: /Quick Dev Login/i });
+  const isQuickLoginVisible = await quickLoginBtn.isVisible().catch(() => false);
 
-  // Wait for button to be visible
-  await quickLoginBtn.waitFor({ state: "visible", timeout: 10000 });
+  if (isQuickLoginVisible) {
+    console.log("Using Quick Dev Login button...");
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/auth/sign-in") ||
+          response.url().includes("/api/auth/sign-up"),
+        { timeout: 15000 }
+      ).catch(() => console.log("No auth API response captured")),
+      quickLoginBtn.click(),
+    ]);
+    await page.waitForTimeout(2000);
+  } else {
+    console.log("Quick Dev Login not available, using regular sign-in...");
+    console.log(`Current page URL: ${page.url()}`);
 
-  // Click and wait for navigation or error
-  console.log("Clicking Quick Dev Login button...");
-  await Promise.all([
-    page.waitForResponse(
-      (response) =>
-        response.url().includes("/api/auth/sign-in") ||
-        response.url().includes("/api/auth/sign-up"),
-      { timeout: 15000 }
-    ).catch(() => console.log("No auth API response captured")),
-    quickLoginBtn.click(),
-  ]);
+    // Take debug screenshot
+    await page.screenshot({ path: "e2e/test-results/signin-page-debug.png" });
+    console.log("Screenshot saved to e2e/test-results/signin-page-debug.png");
 
-  // Give time for the login process to complete
-  await page.waitForTimeout(2000);
+    // Log page content for debugging
+    const pageContent = await page.content();
+    console.log(`Page has ${pageContent.length} characters`);
+    console.log(`Page title: ${await page.title()}`);
 
-  // Check if we're redirected to dashboard or still on signin
+    // Test credentials
+    const testEmail = "test@firekaro.com";
+    const testPassword = "testpassword123";
+    const testName = "Test User";
+
+    // Wait for the sign-in form to be visible
+    console.log("Waiting for sign-in form...");
+    await page.waitForSelector('input[type="email"]', { timeout: 15000 });
+
+    // Fill in email and password using input selectors
+    await page.locator('input[type="email"]').fill(testEmail);
+    await page.locator('input[type="password"]').fill(testPassword);
+
+    // Try sign in first
+    console.log("Attempting sign in...");
+    const signInBtn = page.locator('button:has-text("Sign In")').first();
+    await signInBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Check if sign in succeeded or if we need to sign up
+    if (page.url().includes("/auth/signin")) {
+      const errorAlert = page.locator(".v-alert");
+      if (await errorAlert.isVisible()) {
+        console.log("Sign in failed, trying sign up...");
+
+        // Switch to sign up mode - click the text button not the main Sign In button
+        await page.locator('button.v-btn--variant-text:has-text("Sign Up")').click();
+        await page.waitForTimeout(1000);
+
+        // Wait for name field to appear (indicates sign up form)
+        await page.waitForSelector('input[type="text"]', { timeout: 5000 }).catch(() => {});
+
+        // Fill sign up form - name field should be first text input
+        const nameInput = page.locator('input').first();
+        await nameInput.fill(testName);
+        await page.locator('input[type="email"]').fill(testEmail);
+        await page.locator('input[type="password"]').fill(testPassword);
+
+        // Click create account
+        const createBtn = page.locator('button:has-text("Create Account")');
+        await createBtn.click();
+        await page.waitForTimeout(2000);
+      }
+    }
+  }
+
+  // Check current URL
   const currentUrl = page.url();
   console.log(`Current URL after login attempt: ${currentUrl}`);
 

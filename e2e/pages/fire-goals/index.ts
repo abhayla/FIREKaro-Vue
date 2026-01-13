@@ -70,11 +70,12 @@ export class FIREDashboardPage extends BasePage {
   }
 
   get progressBar(): Locator {
-    return this.page.locator(".v-progress-linear, .v-progress-circular").first();
+    // Progress is shown as percentage text with fire-progress class or as a progress component
+    return this.page.locator(".v-progress-linear, .v-progress-circular, [class*='fire-progress'], .v-card:has-text('Progress') .text-h6").first();
   }
 
   get progressValue(): Locator {
-    return this.progressCard.locator(".text-h3, .text-h4, .text-h6, .percentage");
+    return this.progressCard.locator(".text-h3, .text-h4, .text-h6, .percentage, [class*='fire-progress']");
   }
 
   // Years to FIRE Card
@@ -93,7 +94,7 @@ export class FIREDashboardPage extends BasePage {
 
   // Freedom Score
   get freedomScoreCard(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Freedom Score/i });
+    return this.page.locator(".v-card").filter({ hasText: /FIRE Freedom Score|Freedom Score/i }).first();
   }
 
   // Charts
@@ -103,22 +104,28 @@ export class FIREDashboardPage extends BasePage {
 
   // Milestone Bar
   get milestoneBar(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Milestone/i });
+    return this.page.locator(".v-card").filter({ hasText: /FIRE Milestones/i }).first();
   }
 
   async navigateTo(): Promise<void> {
     await this.page.goto(this.baseUrl);
     await this.page.waitForLoadState("domcontentloaded");
+    // Wait for page content to be visible
+    await this.page.locator(".v-card").first().waitFor({ state: "visible", timeout: 15000 });
   }
 
   async navigateToOverview(): Promise<void> {
     await this.page.goto(this.baseUrl);
     await this.page.waitForLoadState("domcontentloaded");
+    // Wait for FIRE metrics cards to be visible
+    await this.page.locator(".v-card").first().waitFor({ state: "visible", timeout: 15000 });
   }
 
   async navigateToPlanning(): Promise<void> {
     await this.page.goto(`${this.baseUrl}?tab=planning`);
     await this.page.waitForLoadState("domcontentloaded");
+    // Wait for planning tab content
+    await this.page.locator(".v-expansion-panels").first().waitFor({ state: "visible", timeout: 15000 });
   }
 
   async switchToOverviewTab(): Promise<void> {
@@ -187,11 +194,12 @@ export class FIREPlanningPage extends BasePage {
   }
 
   get projectionsAccordion(): Locator {
-    return this.page.locator(".v-expansion-panel").filter({ hasText: /Projections/i });
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Projections/i }).first();
   }
 
   get withdrawalAccordion(): Locator {
-    return this.page.locator(".v-expansion-panel").filter({ hasText: /Withdrawal/i });
+    // Use more specific selector to avoid matching "Withdrawal" in other sections
+    return this.page.locator(".v-expansion-panel").filter({ hasText: /Withdrawal Planning/i }).first();
   }
 
   // Goals Section Elements
@@ -217,19 +225,31 @@ export class FIREPlanningPage extends BasePage {
 
   // Goal Form Dialog
   get goalFormDialog(): Locator {
-    return this.page.locator(".v-dialog").filter({ hasText: /Goal/i });
+    return this.page.locator(".v-dialog").filter({ hasText: /Create New Goal|Edit Goal/i });
   }
 
   get goalNameInput(): Locator {
-    return this.page.getByLabel(/Goal Name|Name/i);
+    return this.goalFormDialog.getByLabel(/Goal Name/i);
   }
 
   get targetAmountInput(): Locator {
-    return this.page.getByLabel(/Target Amount|Target/i);
+    return this.goalFormDialog.getByLabel(/Target Amount/i);
+  }
+
+  get targetDateInput(): Locator {
+    return this.goalFormDialog.getByLabel(/Target Date/i);
+  }
+
+  get categorySelect(): Locator {
+    return this.goalFormDialog.locator(".v-select").filter({ hasText: /Category/i });
   }
 
   get saveButton(): Locator {
-    return this.page.getByRole("button", { name: /Save/i });
+    return this.goalFormDialog.getByRole("button", { name: /Create Goal|Update Goal/i });
+  }
+
+  get cancelButton(): Locator {
+    return this.goalFormDialog.getByRole("button", { name: /Cancel/i });
   }
 
   // Calculator Tabs (inside Calculators accordion)
@@ -254,6 +274,11 @@ export class FIREPlanningPage extends BasePage {
     return this.page.getByRole("tab", { name: /100-Year Projection/i });
   }
 
+  // Projection chart (canvas element)
+  get projectionChart(): Locator {
+    return this.page.locator("canvas").first();
+  }
+
   get sensitivityTab(): Locator {
     return this.page.getByRole("tab", { name: /Sensitivity/i });
   }
@@ -264,12 +289,15 @@ export class FIREPlanningPage extends BasePage {
   }
 
   get strategyCards(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /4% Rule|Bucket|VPW|Guyton/i });
+    // Target the strategy comparison section specifically
+    return this.page.locator(".v-card").filter({ hasText: /Which Strategy is Right/i });
   }
 
   async navigateTo(): Promise<void> {
     await this.page.goto(this.baseUrl);
     await this.page.waitForLoadState("domcontentloaded");
+    // Wait for page content to be visible
+    await this.page.locator(".v-expansion-panels").first().waitFor({ state: "visible", timeout: 15000 });
   }
 
   async expectPageLoaded(): Promise<void> {
@@ -279,32 +307,52 @@ export class FIREPlanningPage extends BasePage {
 
   async expandAllSections(): Promise<void> {
     await this.expandAllButton.click();
+    // Wait for accordions to expand
+    await this.page.waitForTimeout(500);
   }
 
   async collapseAllSections(): Promise<void> {
     await this.collapseAllButton.click();
+    // Wait for accordions to collapse
+    await this.page.waitForTimeout(500);
   }
 
   async expandGoalsSection(): Promise<void> {
-    const isExpanded = await this.goalsAccordion.getAttribute("aria-expanded");
-    if (isExpanded !== "true") {
+    // Check if already expanded by looking for visible content
+    const contentVisible = await this.goalsAccordion.locator(".v-expansion-panel-text").isVisible().catch(() => false);
+    if (!contentVisible) {
       await this.goalsAccordion.locator(".v-expansion-panel-title").click();
+      // Wait for content to be visible
+      await this.goalsAccordion.locator(".v-expansion-panel-text").waitFor({ state: "visible", timeout: 5000 });
     }
   }
 
   async expandCalculatorsSection(): Promise<void> {
-    const accordionTitle = this.calculatorsAccordion.locator(".v-expansion-panel-title");
-    await accordionTitle.click();
+    const contentVisible = await this.calculatorsAccordion.locator(".v-expansion-panel-text").isVisible().catch(() => false);
+    if (!contentVisible) {
+      // Wait for the accordion to be clickable
+      await this.calculatorsAccordion.locator(".v-expansion-panel-title").waitFor({ state: "visible", timeout: 10000 });
+      await this.calculatorsAccordion.locator(".v-expansion-panel-title").click();
+      await this.calculatorsAccordion.locator(".v-expansion-panel-text").waitFor({ state: "visible", timeout: 10000 });
+    }
   }
 
   async expandProjectionsSection(): Promise<void> {
-    const accordionTitle = this.projectionsAccordion.locator(".v-expansion-panel-title");
-    await accordionTitle.click();
+    const contentVisible = await this.projectionsAccordion.locator(".v-expansion-panel-text").isVisible().catch(() => false);
+    if (!contentVisible) {
+      await this.projectionsAccordion.locator(".v-expansion-panel-title").waitFor({ state: "visible", timeout: 10000 });
+      await this.projectionsAccordion.locator(".v-expansion-panel-title").click();
+      await this.projectionsAccordion.locator(".v-expansion-panel-text").waitFor({ state: "visible", timeout: 10000 });
+    }
   }
 
   async expandWithdrawalSection(): Promise<void> {
-    const accordionTitle = this.withdrawalAccordion.locator(".v-expansion-panel-title");
-    await accordionTitle.click();
+    const contentVisible = await this.withdrawalAccordion.locator(".v-expansion-panel-text").isVisible().catch(() => false);
+    if (!contentVisible) {
+      await this.withdrawalAccordion.locator(".v-expansion-panel-title").waitFor({ state: "visible", timeout: 10000 });
+      await this.withdrawalAccordion.locator(".v-expansion-panel-title").click();
+      await this.withdrawalAccordion.locator(".v-expansion-panel-text").waitFor({ state: "visible", timeout: 10000 });
+    }
   }
 
   async openAddGoalForm(): Promise<void> {
