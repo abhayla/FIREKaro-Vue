@@ -31,6 +31,7 @@ import expensesRoutes from './routes/expenses'
 import budgetsRoutes from './routes/budgets'
 import expensesAiRoutes from './routes/expenses-ai'
 import expenseRulesRoutes from './routes/expense-rules'
+import recurringExpensesRoutes from './routes/recurring-expenses'
 
 // Alert routes
 import alertsRoutes from './routes/alerts'
@@ -48,6 +49,10 @@ import liabilitiesReportsRoutes from './routes/liabilities-reports'
 
 // Protection/Insurance routes
 import insuranceRoutes from './routes/insurance'
+
+// Financial Health routes
+import bankingRoutes from './routes/banking'
+import financialHealthRoutes from './routes/financial-health'
 
 // FIRE routes
 import fireMetricsRoutes from './routes/fire-metrics'
@@ -67,7 +72,7 @@ app.use('*', logger())
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5193', 'http://localhost:5194'],
     credentials: true,
   })
 )
@@ -109,6 +114,7 @@ app.route('/api/expenses', expensesRoutes)
 app.route('/api/expenses/ai', expensesAiRoutes)
 app.route('/api/budgets', budgetsRoutes)
 app.route('/api/expense-rules', expenseRulesRoutes)
+app.route('/api/recurring-expenses', recurringExpensesRoutes)
 
 // API routes - Alerts
 app.route('/api/alerts', alertsRoutes)
@@ -126,6 +132,10 @@ app.route('/api/liabilities/reports', liabilitiesReportsRoutes)
 
 // API routes - Protection/Insurance
 app.route('/api/insurance', insuranceRoutes)
+
+// API routes - Financial Health
+app.route('/api/banking', bankingRoutes)
+app.route('/api/financial-health', financialHealthRoutes)
 
 // API routes - FIRE
 app.route('/api/fire/metrics', fireMetricsRoutes)

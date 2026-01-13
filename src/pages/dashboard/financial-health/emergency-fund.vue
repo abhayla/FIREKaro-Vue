@@ -6,12 +6,12 @@ import EmergencyFundCalculator from '@/components/financial-health/EmergencyFund
 import { useEmergencyFund, useCashFlow, formatINR } from '@/composables/useFinancialHealth'
 
 const tabs = [
-  { title: 'Health Score', route: '/dashboard/financial-health' },
-  { title: 'Net Worth', route: '/dashboard/financial-health/net-worth' },
-  { title: 'Cash Flow', route: '/dashboard/financial-health/cash-flow' },
-  { title: 'Banking', route: '/dashboard/financial-health/banking' },
-  { title: 'Emergency Fund', route: '/dashboard/financial-health/emergency-fund' },
-  { title: 'Reports', route: '/dashboard/financial-health/reports' },
+  { title: 'Health Score', route: '/financial-health' },
+  { title: 'Net Worth', route: '/financial-health/net-worth' },
+  { title: 'Cash Flow', route: '/financial-health/cash-flow' },
+  { title: 'Banking', route: '/financial-health/banking' },
+  { title: 'Emergency Fund', route: '/financial-health/emergency-fund' },
+  { title: 'Reports', route: '/financial-health/reports' },
 ]
 
 const { data: emergencyFund, isLoading, isError } = useEmergencyFund()
@@ -20,8 +20,8 @@ const { data: cashFlow } = useCashFlow()
 const activeTab = ref(0)
 
 const tabs2 = [
-  { title: 'Current Status', icon: 'mdi-chart-donut' },
-  { title: 'Calculator', icon: 'mdi-calculator' },
+  { title: 'Overview', icon: 'mdi-chart-box' },
+  { title: 'Details', icon: 'mdi-calculator' },
 ]
 </script>
 
@@ -42,7 +42,7 @@ const tabs2 = [
             {{ emergencyFund ? formatINR(emergencyFund.currentAmount, true) : '---' }}
           </div>
           <div class="text-caption text-medium-emphasis">
-            {{ emergencyFund ? `${Math.floor(emergencyFund.currentAmount / emergencyFund.monthlyExpenses)} months covered` : '' }}
+            {{ emergencyFund ? (emergencyFund.monthlyExpenses > 0 ? `${Math.floor(emergencyFund.currentAmount / emergencyFund.monthlyExpenses)} months covered` : 'Set monthly expenses to calculate') : '' }}
           </div>
         </v-card>
       </v-col>
@@ -130,7 +130,7 @@ const tabs2 = [
               </v-alert>
 
               <v-alert
-                v-if="emergencyFund.targetAmount > emergencyFund.currentAmount"
+                v-if="emergencyFund.targetAmount > emergencyFund.currentAmount && cashFlow.netCashFlow > 0"
                 type="success"
                 variant="tonal"
                 density="compact"
@@ -164,7 +164,7 @@ const tabs2 = [
                   {{ formatINR(emergencyFund.breakdown.filter(b => ['instant', 't+0', 't+1'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0), true) }}
                 </div>
                 <div class="text-caption">
-                  Covers {{ Math.floor(emergencyFund.breakdown.filter(b => ['instant', 't+0', 't+1'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) }} months
+                  Covers {{ emergencyFund.monthlyExpenses > 0 ? Math.floor(emergencyFund.breakdown.filter(b => ['instant', 't+0', 't+1'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) : 0 }} months
                 </div>
               </v-card>
             </v-col>
@@ -182,7 +182,7 @@ const tabs2 = [
                   {{ formatINR(emergencyFund.breakdown.filter(b => ['t+2', 'breakable'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0), true) }}
                 </div>
                 <div class="text-caption">
-                  Covers {{ Math.floor(emergencyFund.breakdown.filter(b => ['t+2', 'breakable'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) }} months
+                  Covers {{ emergencyFund.monthlyExpenses > 0 ? Math.floor(emergencyFund.breakdown.filter(b => ['t+2', 'breakable'].includes(b.liquidity)).reduce((s, b) => s + b.amount, 0) / emergencyFund.monthlyExpenses) : 0 }} months
                 </div>
               </v-card>
             </v-col>

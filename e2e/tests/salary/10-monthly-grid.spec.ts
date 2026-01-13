@@ -252,20 +252,22 @@ test.describe("Salary Details Grid - Copy Features", () => {
     await detailsPage.copyToRemainingMonths("Apr");
 
     // Dialog should show source month info
-    await expect(page.getByText(/Copy.*Apr/i)).toBeVisible();
+    const dialog = detailsPage.copyDataDialog;
+    await expect(dialog.getByText(/Copy.*Apr/i)).toBeVisible();
 
-    // Should show remaining months count
-    await expect(page.getByText(/\d+.*months/i)).toBeVisible();
+    // Should show remaining months count - look for the specific text with months count
+    await expect(dialog.getByText(/\(\d+\s+months\)/i)).toBeVisible();
   });
 
   test("should show checkboxes in Copy dialog", async ({ page }) => {
     await detailsPage.copyToRemainingMonths("Apr");
 
-    // Should show checkboxes for what to copy
-    await expect(page.getByText(/Employer/i)).toBeVisible();
-    await expect(page.getByText(/Paid Days/i)).toBeVisible();
-    await expect(page.getByText(/Earnings/i)).toBeVisible();
-    await expect(page.getByText(/Deductions/i)).toBeVisible();
+    // Should show checkboxes for what to copy - scope to dialog with exact text
+    const dialog = detailsPage.copyDataDialog;
+    await expect(dialog.getByLabel('Employer', { exact: true })).toBeVisible();
+    await expect(dialog.getByText(/Paid Days/i).first()).toBeVisible();
+    await expect(dialog.getByText(/All Earnings/i)).toBeVisible();
+    await expect(dialog.getByText(/All Deductions/i)).toBeVisible();
   });
 
   test("should show warning in Copy dialog about overwriting data", async ({ page }) => {
@@ -278,8 +280,12 @@ test.describe("Salary Details Grid - Copy Features", () => {
   test("should show Clear Month dialog with warning", async ({ page }) => {
     await detailsPage.clearMonth("May");
 
-    // Dialog should show warning
-    await expect(page.getByText(/Clear.*May/i)).toBeVisible();
-    await expect(page.getByText(/reset.*0|cannot.*undone/i)).toBeVisible();
+    // Dialog should show warning - scope to dialog
+    const dialog = detailsPage.copyDataDialog;
+    // Look for the dialog title
+    await expect(dialog.getByText('Clear Month Data')).toBeVisible();
+    // Look for the warning alert
+    await expect(dialog.locator('.v-alert').filter({ hasText: /Clear/i })).toBeVisible();
+    await expect(dialog.getByText(/reset all values to 0/i)).toBeVisible();
   });
 });

@@ -14,7 +14,7 @@ import { financialHealthSummary } from "../../fixtures/financial-health-data";
 
 test.describe("Financial Health Integration", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/financial-health");
+    await page.goto("/financial-health");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   });

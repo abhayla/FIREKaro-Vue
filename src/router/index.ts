@@ -13,6 +13,59 @@ const router = createRouter({
       name: "signin",
       component: () => import("@/pages/auth/signin.vue"),
     },
+    // Income Section (moved to top-level /income)
+    {
+      path: "/income",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "income",
+          component: () => import("@/pages/dashboard/income/index.vue"),
+        },
+        {
+          path: "salary",
+          name: "income-salary",
+          component: () => import("@/pages/dashboard/salary/index.vue"),
+        },
+        {
+          path: "business",
+          name: "income-business",
+          component: () => import("@/pages/dashboard/income/business.vue"),
+        },
+        {
+          path: "rental",
+          name: "income-rental",
+          component: () => import("@/pages/dashboard/income/rental.vue"),
+        },
+        {
+          path: "capital-gains",
+          name: "income-capital-gains",
+          component: () => import("@/pages/dashboard/income/capital-gains.vue"),
+        },
+        {
+          path: "interest",
+          name: "income-interest",
+          component: () => import("@/pages/dashboard/income/interest.vue"),
+        },
+        {
+          path: "dividends",
+          name: "income-dividends",
+          component: () => import("@/pages/dashboard/income/dividends.vue"),
+        },
+        {
+          path: "other",
+          name: "income-other",
+          component: () => import("@/pages/dashboard/income/other.vue"),
+        },
+        {
+          path: "reports",
+          name: "income-reports",
+          component: () => import("@/pages/dashboard/income/reports.vue"),
+        },
+      ],
+    },
     {
       path: "/dashboard",
       component: () => import("@/layouts/DashboardLayout.vue"),
@@ -23,72 +76,7 @@ const router = createRouter({
           name: "dashboard",
           component: () => import("@/pages/dashboard/index.vue"),
         },
-        // Section 1: Salary (Single page with 2 tabs: Overview + Salary Details)
-        {
-          path: "salary",
-          name: "salary",
-          component: () => import("@/pages/dashboard/salary/index.vue"),
-        },
-        // Section 2: Non-Salary Income
-        {
-          path: "non-salary-income",
-          name: "non-salary-income",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/index.vue"),
-        },
-        {
-          path: "non-salary-income/business",
-          name: "non-salary-income-business",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/business.vue"),
-        },
-        {
-          path: "non-salary-income/rental",
-          name: "non-salary-income-rental",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/rental.vue"),
-        },
-        {
-          path: "non-salary-income/capital-gains",
-          name: "non-salary-income-capital-gains",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/capital-gains.vue"),
-        },
-        {
-          path: "non-salary-income/other",
-          name: "non-salary-income-other",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/other.vue"),
-        },
-        {
-          path: "non-salary-income/reports",
-          name: "non-salary-income-reports",
-          component: () =>
-            import("@/pages/dashboard/non-salary-income/reports.vue"),
-        },
-        // Section 3: Tax Planning
-        {
-          path: "tax-planning",
-          name: "tax-planning",
-          component: () => import("@/pages/dashboard/tax-planning/index.vue"),
-        },
-        {
-          path: "tax-planning/calculator",
-          name: "tax-planning-calculator",
-          component: () =>
-            import("@/pages/dashboard/tax-planning/calculator.vue"),
-        },
-        {
-          path: "tax-planning/deductions",
-          name: "tax-planning-deductions",
-          component: () =>
-            import("@/pages/dashboard/tax-planning/deductions.vue"),
-        },
-        {
-          path: "tax-planning/reports",
-          name: "tax-planning-reports",
-          component: () => import("@/pages/dashboard/tax-planning/reports.vue"),
-        },
+// Income is at top-level /income, Tax Planning is at top-level /tax-planning, Investments is at top-level /investments
         // Section 4: Expenses
         {
           path: "expenses",
@@ -114,48 +102,6 @@ const router = createRouter({
           path: "expenses/categories",
           name: "expenses-categories",
           component: () => import("@/pages/dashboard/expenses/categories.vue"),
-        },
-        // Section 5: Investments
-        {
-          path: "investments",
-          name: "investments",
-          component: () => import("@/pages/dashboard/investments/index.vue"),
-        },
-        {
-          path: "investments/stocks",
-          name: "investments-stocks",
-          component: () => import("@/pages/dashboard/investments/stocks.vue"),
-        },
-        {
-          path: "investments/mutual-funds",
-          name: "investments-mutual-funds",
-          component: () =>
-            import("@/pages/dashboard/investments/mutual-funds.vue"),
-        },
-        {
-          path: "investments/epf-ppf",
-          name: "investments-epf-ppf",
-          component: () => import("@/pages/dashboard/investments/epf-ppf.vue"),
-        },
-        {
-          path: "investments/nps",
-          name: "investments-nps",
-          component: () => import("@/pages/dashboard/investments/nps.vue"),
-        },
-        {
-          path: "investments/esop",
-          name: "investments-esop",
-          component: () => import("@/pages/dashboard/investments/esop.vue"),
-        },
-        {
-          path: "investments/property",
-          name: "investments-property",
-          component: () => import("@/pages/dashboard/investments/property.vue"),
-        },
-        {
-          path: "investments/reports",
-          name: "investments-reports",
-          component: () => import("@/pages/dashboard/investments/reports.vue"),
         },
         // Section 6: Liabilities
         {
@@ -269,19 +215,182 @@ const router = createRouter({
         },
       ],
     },
+    // Tax Planning - Top-level route (uses DashboardLayout for consistency)
+    {
+      path: "/tax-planning",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "tax-planning",
+          component: () => import("@/pages/dashboard/tax-planning/index.vue"),
+        },
+      ],
+    },
+    // Section: Investments (top-level route)
+    {
+      path: "/investments",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "investments",
+          component: () => import("@/pages/dashboard/investments/index.vue"),
+        },
+        {
+          path: "stocks",
+          name: "investments-stocks",
+          component: () => import("@/pages/dashboard/investments/stocks.vue"),
+        },
+        {
+          path: "mutual-funds",
+          name: "investments-mutual-funds",
+          component: () =>
+            import("@/pages/dashboard/investments/mutual-funds.vue"),
+        },
+        {
+          path: "epf",
+          name: "investments-epf",
+          component: () => import("@/pages/dashboard/investments/epf.vue"),
+        },
+        {
+          path: "ppf",
+          name: "investments-ppf",
+          component: () => import("@/pages/dashboard/investments/ppf.vue"),
+        },
+        {
+          path: "nps",
+          name: "investments-nps",
+          component: () => import("@/pages/dashboard/investments/nps.vue"),
+        },
+        {
+          path: "esop",
+          name: "investments-esop",
+          component: () => import("@/pages/dashboard/investments/esop.vue"),
+        },
+        {
+          path: "property",
+          name: "investments-property",
+          component: () => import("@/pages/dashboard/investments/property.vue"),
+        },
+        {
+          path: "reports",
+          name: "investments-reports",
+          component: () => import("@/pages/dashboard/investments/reports.vue"),
+        },
+      ],
+    },
+    // Section 7: Insurance (Single page with 4 tabs: Overview, Item Details, Calculator, Reports)
+    {
+      path: "/insurance",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "insurance",
+          component: () => import("@/pages/dashboard/insurance/index.vue"),
+        },
+      ],
+    },
+    // Section 8: Financial Health (top-level route)
+    {
+      path: "/financial-health",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "financial-health",
+          component: () =>
+            import("@/pages/dashboard/financial-health/index.vue"),
+        },
+        {
+          path: "net-worth",
+          name: "financial-health-net-worth",
+          component: () =>
+            import("@/pages/dashboard/financial-health/net-worth.vue"),
+        },
+        {
+          path: "cash-flow",
+          name: "financial-health-cash-flow",
+          component: () =>
+            import("@/pages/dashboard/financial-health/cash-flow.vue"),
+        },
+        {
+          path: "banking",
+          name: "financial-health-banking",
+          component: () =>
+            import("@/pages/dashboard/financial-health/banking.vue"),
+        },
+        {
+          path: "emergency-fund",
+          name: "financial-health-emergency-fund",
+          component: () =>
+            import("@/pages/dashboard/financial-health/emergency-fund.vue"),
+        },
+        {
+          path: "reports",
+          name: "financial-health-reports",
+          component: () =>
+            import("@/pages/dashboard/financial-health/reports.vue"),
+        },
+      ],
+    },
     // Legacy URL Redirects
-    // Salary section - old sub-pages redirect to main salary page
+    // Tax Planning section - old sub-pages redirect to main tax-planning page
+    {
+      path: "/tax-planning/calculator",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/deductions",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/scenarios",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/advance-tax",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/reports",
+      redirect: "/tax-planning",
+    },
+    // Income section - /dashboard/income/* redirects to /income/*
+    {
+      path: "/dashboard/income",
+      redirect: "/income",
+    },
+    {
+      path: "/dashboard/income/:path(.*)",
+      redirect: (to) => `/income/${to.params.path}`,
+    },
+    // Salary section - /dashboard/salary redirects to /income/salary
+    {
+      path: "/dashboard/salary",
+      redirect: "/income/salary",
+    },
     {
       path: "/dashboard/salary/current",
-      redirect: "/dashboard/salary",
+      redirect: "/income/salary",
     },
     {
       path: "/dashboard/salary/history",
-      redirect: "/dashboard/salary",
+      redirect: "/income/salary",
     },
     {
       path: "/dashboard/salary/reports",
-      redirect: "/dashboard/salary",
+      redirect: "/income/salary",
+    },
+    // Legacy non-salary-income redirects (now to /income)
+    {
+      path: "/dashboard/non-salary-income",
+      redirect: "/income",
     },
     // FIRE Goals section - redirect /dashboard/fire-goals to new /fire-goals URL
     {
@@ -330,40 +439,100 @@ const router = createRouter({
       redirect: "/fire-goals",
     },
     {
+      path: "/dashboard/non-salary-income/:path(.*)",
+      redirect: (to) => `/income/${to.params.path}`,
+    },
+    // Insurance section - old routes redirect to new /insurance
+    {
+      path: "/dashboard/insurance",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/life",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/health",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/other",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/calculator",
+      redirect: "/insurance",
+    },
+    {
+      path: "/dashboard/insurance/reports",
+      redirect: "/insurance",
+    },
+    // Financial Health section - old routes redirect to new /financial-health
+    {
+      path: "/dashboard/financial-health",
+      redirect: "/financial-health",
+    },
+    {
+      path: "/dashboard/financial-health/net-worth",
+      redirect: "/financial-health/net-worth",
+    },
+    {
+      path: "/dashboard/financial-health/cash-flow",
+      redirect: "/financial-health/cash-flow",
+    },
+    {
+      path: "/dashboard/financial-health/banking",
+      redirect: "/financial-health/banking",
+    },
+    {
+      path: "/dashboard/financial-health/emergency-fund",
+      redirect: "/financial-health/emergency-fund",
+    },
+    {
+      path: "/dashboard/financial-health/reports",
+      redirect: "/financial-health/reports",
+    },
+    // Investment shortcut redirects
+    {
       path: "/portfolio",
-      redirect: "/dashboard/investments",
+      redirect: "/investments",
     },
     {
       path: "/esop",
-      redirect: "/dashboard/investments/esop",
+      redirect: "/investments/esop",
     },
     {
       path: "/property",
-      redirect: "/dashboard/investments/property",
+      redirect: "/investments/property",
     },
     {
       path: "/retirement",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/investments/epf",
     },
     {
       path: "/epf",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/investments/epf",
     },
     {
       path: "/ppf",
-      redirect: "/dashboard/investments/epf-ppf",
+      redirect: "/investments/ppf",
+    },
+    // Legacy combined EPF-PPF page redirect
+    {
+      path: "/investments/epf-ppf",
+      redirect: "/investments/epf",
     },
     {
       path: "/nps",
-      redirect: "/dashboard/investments/nps",
+      redirect: "/investments/nps",
     },
     {
       path: "/stocks",
-      redirect: "/dashboard/investments/stocks",
+      redirect: "/investments/stocks",
     },
     {
       path: "/mutual-funds",
-      redirect: "/dashboard/investments/mutual-funds",
+      redirect: "/investments/mutual-funds",
     },
   ],
 });

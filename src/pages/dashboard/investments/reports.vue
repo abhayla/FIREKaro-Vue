@@ -22,16 +22,6 @@ import { usePortfolio, formatINR, formatINRCompact, formatPercentage } from '@/c
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler)
 
-const tabs = [
-  { title: 'Portfolio', route: '/dashboard/investments' },
-  { title: 'Stocks', route: '/dashboard/investments/stocks' },
-  { title: 'Mutual Funds', route: '/dashboard/investments/mutual-funds' },
-  { title: 'EPF & PPF', route: '/dashboard/investments/epf-ppf' },
-  { title: 'NPS', route: '/dashboard/investments/nps' },
-  { title: 'Property', route: '/dashboard/investments/property' },
-  { title: 'Reports', route: '/dashboard/investments/reports' },
-]
-
 // Data fetching
 const { data: portfolio, isLoading } = usePortfolio()
 
@@ -231,7 +221,6 @@ const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
       title="Investments"
       subtitle="Investment Reports"
       icon="mdi-chart-line"
-      :tabs="tabs"
     />
 
     <!-- Report Type Selector -->

@@ -2,10 +2,11 @@ import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "../base.page";
 
 /**
- * Expenses Reports Page Object
+ * Expense Reports Page Object
+ * Standalone page at /expenses/reports with period selectors, charts, and exports
  */
-export class ExpensesReportsPage extends BasePage {
-  readonly url = "/dashboard/expenses/reports";
+export class ExpenseReportsPage extends BasePage {
+  readonly url = "/expenses/reports";
 
   constructor(page: Page) {
     super(page);
@@ -16,42 +17,93 @@ export class ExpensesReportsPage extends BasePage {
   // ============================================
 
   get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Expenses/i });
+    return this.page.getByRole("heading", { name: /Expense Reports|Reports/i });
   }
 
-  // Charts
-  get categoryBreakdownChart(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Category/i }).locator("canvas, svg");
+  // Period Selectors
+  get monthlyButton(): Locator {
+    return this.page.getByRole("button", { name: /Monthly/i });
   }
 
-  get trendChart(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Trend|Monthly/i }).locator("canvas, svg");
+  get quarterlyButton(): Locator {
+    return this.page.getByRole("button", { name: /Quarterly/i });
   }
 
-  // Period filter
-  get periodSelect(): Locator {
-    return this.page.locator(".v-select").filter({ hasText: /Period/i });
+  get yearlyButton(): Locator {
+    return this.page.getByRole("button", { name: /Yearly/i });
+  }
+
+  get customButton(): Locator {
+    return this.page.getByRole("button", { name: /Custom/i });
+  }
+
+  // Month Navigation
+  get previousMonthButton(): Locator {
+    return this.page.getByRole("button", { name: /Previous/i });
+  }
+
+  get nextMonthButton(): Locator {
+    return this.page.getByRole("button", { name: /Next/i });
+  }
+
+  get monthDisplay(): Locator {
+    return this.page.locator("[class*='month'], .text-h6").filter({ hasText: /January|February|March|April|May|June|July|August|September|October|November|December/i });
   }
 
   // Export
   get exportButton(): Locator {
-    return this.page.getByRole("button", { name: /Export|Download/i });
-  }
-
-  get exportMenu(): Locator {
-    return this.page.locator(".v-menu, .v-list").filter({ hasText: /PDF|Excel|CSV/i });
+    return this.page.getByRole("button", { name: /Export/i });
   }
 
   get exportPDFOption(): Locator {
-    return this.page.getByRole("listitem").filter({ hasText: /PDF/i });
+    return this.page.getByRole("menuitem", { name: /PDF/i });
   }
 
   get exportExcelOption(): Locator {
-    return this.page.getByRole("listitem").filter({ hasText: /Excel/i });
+    return this.page.getByRole("menuitem", { name: /Excel/i });
   }
 
   get exportCSVOption(): Locator {
-    return this.page.getByRole("listitem").filter({ hasText: /CSV/i });
+    return this.page.getByRole("menuitem", { name: /CSV/i });
+  }
+
+  get exportJSONOption(): Locator {
+    return this.page.getByRole("menuitem", { name: /JSON/i });
+  }
+
+  // Summary Cards
+  get totalExpensesCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Total Expenses/i });
+  }
+
+  get transactionsCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Transactions/i });
+  }
+
+  get avgTransactionCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Avg.*Transaction/i });
+  }
+
+  get budgetUsageCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Budget Usage/i });
+  }
+
+  // Charts
+  get categoryPieChart(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Spending by Category/i });
+  }
+
+  get trendChart(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Trend|Monthly/i });
+  }
+
+  // Lists
+  get topExpensesList(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Top Expenses/i });
+  }
+
+  get paymentMethodsList(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Payment Methods/i });
   }
 
   // ============================================
@@ -63,13 +115,34 @@ export class ExpensesReportsPage extends BasePage {
     await this.waitForPageLoad();
   }
 
+  async selectPeriod(period: "monthly" | "quarterly" | "yearly" | "custom") {
+    const buttonMap = {
+      monthly: this.monthlyButton,
+      quarterly: this.quarterlyButton,
+      yearly: this.yearlyButton,
+      custom: this.customButton,
+    };
+    await buttonMap[period].click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async goToPreviousMonth() {
+    await this.previousMonthButton.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  async goToNextMonth() {
+    await this.nextMonthButton.click();
+    await this.page.waitForTimeout(300);
+  }
+
   // ============================================
   // Export Actions
   // ============================================
 
   async openExportMenu() {
     await this.exportButton.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(200);
   }
 
   async exportToPDF() {
@@ -90,30 +163,38 @@ export class ExpensesReportsPage extends BasePage {
     await this.page.waitForTimeout(500);
   }
 
+  async exportToJSON() {
+    await this.openExportMenu();
+    await this.exportJSONOption.click();
+    await this.page.waitForTimeout(500);
+  }
+
   // ============================================
   // Assertions
   // ============================================
 
   async expectPageLoaded() {
-    await expect(this.page.getByRole("heading", { name: /Expenses/i })).toBeVisible();
+    await expect(this.pageTitle).toBeVisible();
   }
 
-  async expectCategoryChartVisible() {
-    await expect(this.categoryBreakdownChart).toBeVisible();
+  async expectSummaryCardsVisible() {
+    await expect(this.totalExpensesCard).toBeVisible();
+    await expect(this.transactionsCard).toBeVisible();
+  }
+
+  async expectChartsVisible() {
+    await expect(this.categoryPieChart).toBeVisible();
+    await expect(this.trendChart).toBeVisible();
   }
 
   async expectExportButtonVisible() {
     await expect(this.exportButton).toBeVisible();
   }
 
-  async expectExportMenuVisible() {
-    await expect(this.exportMenu).toBeVisible();
-  }
-
-  async expectExportOptionsAvailable() {
-    await this.openExportMenu();
-    await expect(this.exportPDFOption).toBeVisible();
-    await expect(this.exportExcelOption).toBeVisible();
-    await expect(this.exportCSVOption).toBeVisible();
+  async expectPeriodSelectorsVisible() {
+    await expect(this.monthlyButton).toBeVisible();
+    await expect(this.quarterlyButton).toBeVisible();
+    await expect(this.yearlyButton).toBeVisible();
+    await expect(this.customButton).toBeVisible();
   }
 }

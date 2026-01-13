@@ -124,6 +124,57 @@ export interface AICategorization {
   suggestions?: string[]
 }
 
+// Recurring Expense Types
+export type RecurringFrequency = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+export type RecurringEndType = 'NEVER' | 'AFTER_OCCURRENCES' | 'ON_DATE'
+
+export interface RecurringExpense {
+  id: string
+  amount: number
+  description: string
+  category: string
+  subcategory?: string
+  merchant?: string
+  paymentMethod?: string
+  tags?: string[]
+  notes?: string
+  frequency: RecurringFrequency
+  startDate: string
+  endType: RecurringEndType
+  endAfterCount?: number
+  endDate?: string
+  nextOccurrence: string
+  lastGenerated?: string
+  generatedCount: number
+  isPaused: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateRecurringExpenseInput {
+  amount: number
+  description: string
+  category: string
+  subcategory?: string
+  merchant?: string
+  paymentMethod?: string
+  tags?: string[]
+  notes?: string
+  frequency: RecurringFrequency
+  startDate: string
+  endType?: RecurringEndType
+  endAfterCount?: number
+  endDate?: string
+  familyMemberId?: string
+}
+
+export interface RecurringExpenseStats {
+  totalActive: number
+  totalPaused: number
+  totalMonthlyAmount: number
+  upcomingCount: number
+}
+
 // Helper for INR formatting
 export const formatINR = (amount: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -454,4 +505,202 @@ export function useAICategorization() {
       return res.json() as Promise<AICategorization>
     },
   })
+}
+
+// Composable for recurring expenses
+export function useRecurringExpenses() {
+  const queryClient = useQueryClient()
+
+  // Fetch all recurring expenses
+  const recurringQuery = useQuery({
+    queryKey: ['recurring-expenses'],
+    queryFn: async () => {
+      const res = await fetch('/api/recurring-expenses')
+      if (!res.ok) throw new Error('Failed to fetch recurring expenses')
+      return res.json() as Promise<RecurringExpense[]>
+    },
+  })
+
+  // Fetch recurring expense stats
+  const statsQuery = useQuery({
+    queryKey: ['recurring-expenses', 'stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/recurring-expenses/stats')
+      if (!res.ok) throw new Error('Failed to fetch stats')
+      return res.json() as Promise<RecurringExpenseStats>
+    },
+  })
+
+  // Fetch upcoming recurring expenses
+  const upcomingQuery = useQuery({
+    queryKey: ['recurring-expenses', 'upcoming'],
+    queryFn: async () => {
+      const res = await fetch('/api/recurring-expenses/upcoming?days=30')
+      if (!res.ok) throw new Error('Failed to fetch upcoming')
+      return res.json() as Promise<
+        Array<{
+          id: string
+          description: string
+          amount: number
+          category: string
+          nextOccurrence: string
+          frequency: string
+        }>
+      >
+    },
+  })
+
+  // Create recurring expense
+  const createRecurring = useMutation({
+    mutationFn: async (data: CreateRecurringExpenseInput) => {
+      const res = await fetch('/api/recurring-expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to create recurring expense')
+      return res.json() as Promise<RecurringExpense>
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+    },
+  })
+
+  // Update recurring expense
+  const updateRecurring = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<CreateRecurringExpenseInput>) => {
+      const res = await fetch(`/api/recurring-expenses/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to update recurring expense')
+      return res.json() as Promise<RecurringExpense>
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+    },
+  })
+
+  // Delete recurring expense
+  const deleteRecurring = useMutation({
+    mutationFn: async ({ id, deleteGenerated = false }: { id: string; deleteGenerated?: boolean }) => {
+      const res = await fetch(`/api/recurring-expenses/${id}?deleteGenerated=${deleteGenerated}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete recurring expense')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+    },
+  })
+
+  // Pause recurring expense
+  const pauseRecurring = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/recurring-expenses/${id}/pause`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Failed to pause recurring expense')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+    },
+  })
+
+  // Resume recurring expense
+  const resumeRecurring = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/recurring-expenses/${id}/resume`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Failed to resume recurring expense')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+    },
+  })
+
+  // Skip next occurrence
+  const skipNext = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/recurring-expenses/${id}/skip`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Failed to skip occurrence')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+    },
+  })
+
+  // Generate expense manually
+  const generateNow = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/recurring-expenses/${id}/generate`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Failed to generate expense')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+    },
+  })
+
+  // Process all due recurring expenses
+  const processAll = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/recurring-expenses/process', {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Failed to process recurring expenses')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+    },
+  })
+
+  // Computed: Active recurring expenses
+  const activeRecurring = computed(() =>
+    recurringQuery.data.value?.filter((r) => !r.isPaused) ?? []
+  )
+
+  // Computed: Paused recurring expenses
+  const pausedRecurring = computed(() =>
+    recurringQuery.data.value?.filter((r) => r.isPaused) ?? []
+  )
+
+  return {
+    // Queries
+    recurring: recurringQuery.data,
+    stats: statsQuery.data,
+    upcoming: upcomingQuery.data,
+    isLoading: recurringQuery.isLoading,
+    isStatsLoading: statsQuery.isLoading,
+    isUpcomingLoading: upcomingQuery.isLoading,
+    refetch: recurringQuery.refetch,
+
+    // Mutations
+    createRecurring,
+    updateRecurring,
+    deleteRecurring,
+    pauseRecurring,
+    resumeRecurring,
+    skipNext,
+    generateNow,
+    processAll,
+
+    // Computed
+    activeRecurring,
+    pausedRecurring,
+  }
 }

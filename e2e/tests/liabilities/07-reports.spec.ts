@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { LiabilitiesReportsPage } from "../../pages/liabilities";
-import { loansData } from "../../fixtures/liabilities-data";
 
 test.describe("Liabilities Reports", () => {
   let reportsPage: LiabilitiesReportsPage;
@@ -10,21 +9,35 @@ test.describe("Liabilities Reports", () => {
     await reportsPage.navigateTo();
   });
 
-  test("should display reports page correctly", async ({ page }) => {
+  test("should display reports page correctly", async () => {
     await reportsPage.expectPageLoaded();
   });
 
-  test("should show amortization schedule", async ({ page }) => {
-    await reportsPage.selectAmortizationReport();
-
-    // Select a loan
-    const homeLoan = loansData.find((l) => l.loanType === "home")!;
-    await reportsPage.selectLoanForAmortization(homeLoan.lenderName);
-
-    await reportsPage.expectAmortizationTableVisible();
+  test("should display all report tabs", async () => {
+    await reportsPage.expectTabsVisible();
   });
 
-  test("should have export button visible", async ({ page }) => {
+  test("should navigate to Debt Summary tab", async () => {
+    await reportsPage.goToDebtSummary();
+    await expect(reportsPage.debtSummaryTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("should navigate to Payment History tab", async () => {
+    await reportsPage.goToPaymentHistory();
+    await expect(reportsPage.paymentHistoryTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("should navigate to Interest Analysis tab", async () => {
+    await reportsPage.goToInterestAnalysis();
+    await expect(reportsPage.interestAnalysisTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("should navigate to Tax Benefits tab", async () => {
+    await reportsPage.goToTaxBenefits();
+    await expect(reportsPage.taxBenefitsTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("should have export button visible", async () => {
     await reportsPage.expectExportButtonVisible();
   });
 });

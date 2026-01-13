@@ -12,12 +12,20 @@ test.describe("Loans CRUD Operations", () => {
 
   test("should display loans page correctly", async ({ page }) => {
     await loansPage.expectPageLoaded();
-    await expect(loansPage.addLoanButton).toBeVisible();
+    // Page loads with Overview tab active by default
+    await loansPage.expectOverviewTabActive();
   });
 
-  test("should show summary cards", async ({ page }) => {
+  test("should show summary cards on Overview tab", async ({ page }) => {
+    // Summary cards are on the Overview tab (default)
     await expect(loansPage.totalOutstandingCard).toBeVisible();
     await expect(loansPage.totalEMICard).toBeVisible();
+  });
+
+  test("should show add button on Details tab", async ({ page }) => {
+    await loansPage.goToDetailsTab();
+    await loansPage.expectDetailsTabActive();
+    await expect(loansPage.addLoanButton).toBeVisible();
   });
 
   test("should open add loan form dialog", async ({ page }) => {

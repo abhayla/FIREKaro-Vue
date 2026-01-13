@@ -6,12 +6,12 @@ import HealthFactorCard from '@/components/financial-health/HealthFactorCard.vue
 import { useFinancialHealthScore, useNetWorth, useCashFlow, useEmergencyFund, formatINR } from '@/composables/useFinancialHealth'
 
 const tabs = [
-  { title: 'Health Score', route: '/dashboard/financial-health' },
-  { title: 'Net Worth', route: '/dashboard/financial-health/net-worth' },
-  { title: 'Cash Flow', route: '/dashboard/financial-health/cash-flow' },
-  { title: 'Banking', route: '/dashboard/financial-health/banking' },
-  { title: 'Emergency Fund', route: '/dashboard/financial-health/emergency-fund' },
-  { title: 'Reports', route: '/dashboard/financial-health/reports' },
+  { title: 'Health Score', route: '/financial-health' },
+  { title: 'Net Worth', route: '/financial-health/net-worth' },
+  { title: 'Cash Flow', route: '/financial-health/cash-flow' },
+  { title: 'Banking', route: '/financial-health/banking' },
+  { title: 'Emergency Fund', route: '/financial-health/emergency-fund' },
+  { title: 'Reports', route: '/financial-health/reports' },
 ]
 
 const { data: healthScore, isLoading: healthLoading, isError: healthError } = useFinancialHealthScore()
@@ -22,11 +22,11 @@ const { data: emergencyFund, isLoading: efLoading } = useEmergencyFund()
 const isLoading = computed(() => healthLoading.value || netWorthLoading.value || cashFlowLoading.value || efLoading.value)
 
 const quickLinks = [
-  { title: 'Net Worth', route: '/dashboard/financial-health/net-worth', icon: 'mdi-chart-line', color: 'primary' },
-  { title: 'Cash Flow', route: '/dashboard/financial-health/cash-flow', icon: 'mdi-swap-vertical', color: 'success' },
-  { title: 'Banking', route: '/dashboard/financial-health/banking', icon: 'mdi-bank', color: 'info' },
-  { title: 'Emergency Fund', route: '/dashboard/financial-health/emergency-fund', icon: 'mdi-lifebuoy', color: 'warning' },
-  { title: 'Reports', route: '/dashboard/financial-health/reports', icon: 'mdi-file-chart', color: 'secondary' },
+  { title: 'Net Worth', route: '/financial-health/net-worth', icon: 'mdi-chart-line', color: 'primary' },
+  { title: 'Cash Flow', route: '/financial-health/cash-flow', icon: 'mdi-swap-vertical', color: 'success' },
+  { title: 'Banking', route: '/financial-health/banking', icon: 'mdi-bank', color: 'info' },
+  { title: 'Emergency Fund', route: '/financial-health/emergency-fund', icon: 'mdi-lifebuoy', color: 'warning' },
+  { title: 'Reports', route: '/financial-health/reports', icon: 'mdi-file-chart', color: 'secondary' },
 ]
 </script>
 

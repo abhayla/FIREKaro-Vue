@@ -11,7 +11,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// System Salary Components based on Salary-Section-Plan.md
+// System Salary Components based on Income-Section-Plan.md
 const SYSTEM_COMPONENTS = [
   // ============================================
   // EARNINGS (12 components)

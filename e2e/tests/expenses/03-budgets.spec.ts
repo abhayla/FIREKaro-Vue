@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { BudgetsPage } from "../../pages/expenses";
-import { budgetData, expenseCategories } from "../../fixtures/expenses-data";
 
 test.describe("Budgets", () => {
   let budgetsPage: BudgetsPage;
@@ -10,45 +9,97 @@ test.describe("Budgets", () => {
     await budgetsPage.navigateTo();
   });
 
-  test("should display budgets page correctly", async ({ page }) => {
-    await budgetsPage.expectPageLoaded();
-    await expect(budgetsPage.setBudgetButton).toBeVisible();
+  test.describe("Overview Tab", () => {
+    test("should display budgets page correctly", async ({ page }) => {
+      await budgetsPage.expectPageLoaded();
+      await budgetsPage.expectOverviewTabActive();
+    });
+
+    test("should show 50/30/20 category cards", async ({ page }) => {
+      await budgetsPage.switchToOverviewTab();
+      await budgetsPage.expect503020CardsVisible();
+    });
+
+    test("should display needs card (50%)", async ({ page }) => {
+      await budgetsPage.switchToOverviewTab();
+      await expect(budgetsPage.needsCard).toBeVisible();
+    });
+
+    test("should display wants card (30%)", async ({ page }) => {
+      await budgetsPage.switchToOverviewTab();
+      await expect(budgetsPage.wantsCard).toBeVisible();
+    });
+
+    test("should display savings card (20%)", async ({ page }) => {
+      await budgetsPage.switchToOverviewTab();
+      await expect(budgetsPage.savingsCard).toBeVisible();
+    });
   });
 
-  test("should show summary cards", async ({ page }) => {
-    await expect(budgetsPage.totalBudgetCard).toBeVisible();
-    await expect(budgetsPage.totalSpentCard).toBeVisible();
-    await expect(budgetsPage.remainingCard).toBeVisible();
+  test.describe("Budget Details Tab", () => {
+    test("should display set budget button", async ({ page }) => {
+      await budgetsPage.switchToBudgetDetailsTab();
+      await expect(budgetsPage.setBudgetButton).toBeVisible();
+    });
+
+    test("should open set budget form dialog", async ({ page }) => {
+      await budgetsPage.openSetBudgetForm();
+      await budgetsPage.expectFormDialogVisible();
+    });
+
+    test("should set budget with income", async ({ page }) => {
+      await budgetsPage.setBudget(100000);
+      await budgetsPage.expectFormDialogClosed();
+    });
+
+    test("should cancel form without saving", async ({ page }) => {
+      await budgetsPage.openSetBudgetForm();
+      await budgetsPage.cancelForm();
+      await budgetsPage.expectFormDialogClosed();
+    });
   });
 
-  test("should open set budget form dialog", async ({ page }) => {
-    await budgetsPage.openSetBudgetForm();
-    await budgetsPage.expectFormDialogVisible();
-    await expect(budgetsPage.categorySelect).toBeVisible();
-    await expect(budgetsPage.monthlyLimitField).toBeVisible();
+  test.describe("Tab Navigation", () => {
+    test("should switch between tabs", async ({ page }) => {
+      // Start on Overview tab
+      await budgetsPage.expectOverviewTabActive();
+
+      // Switch to Budget Details tab
+      await budgetsPage.switchToBudgetDetailsTab();
+      await budgetsPage.expectBudgetDetailsTabActive();
+
+      // Switch back to Overview tab
+      await budgetsPage.switchToOverviewTab();
+      await budgetsPage.expectOverviewTabActive();
+    });
+
+    test("URL should not change when switching tabs", async ({ page }) => {
+      const initialUrl = page.url();
+
+      await budgetsPage.switchToBudgetDetailsTab();
+      expect(page.url()).toBe(initialUrl);
+
+      await budgetsPage.switchToOverviewTab();
+      expect(page.url()).toBe(initialUrl);
+    });
   });
 
-  test("should set budget for category", async ({ page }) => {
-    const testBudget = budgetData[0];
+  test.describe("Month Navigation", () => {
+    test("should have month selector", async ({ page }) => {
+      await expect(budgetsPage.monthInput).toBeVisible();
+    });
 
-    await budgetsPage.setBudget(testBudget.category, testBudget.monthlyLimit);
-    await budgetsPage.expectFormDialogClosed();
-  });
+    test("should change month", async ({ page }) => {
+      const previousMonth = new Date();
+      previousMonth.setMonth(previousMonth.getMonth() - 1);
+      const monthString = previousMonth.toISOString().substring(0, 7); // YYYY-MM format
 
-  test("should display budget progress for categories", async ({ page }) => {
-    // Check that progress bars are shown for categories
-    const groceriesProgress = budgetsPage.getBudgetProgressForCategory("Groceries");
-    // May or may not be visible depending on if budget is set
-  });
+      await budgetsPage.setMonth(monthString);
+      await page.waitForTimeout(500);
 
-  test("should show total budget amount", async ({ page }) => {
-    const totalBudget = await budgetsPage.getTotalBudget();
-    expect(totalBudget).toContain("₹");
-  });
-
-  test("should cancel form without saving", async ({ page }) => {
-    await budgetsPage.openSetBudgetForm();
-    await budgetsPage.cancelForm();
-    await budgetsPage.expectFormDialogClosed();
+      // Verify the month input has the new value
+      const inputValue = await budgetsPage.monthInput.inputValue();
+      expect(inputValue).toBe(monthString);
+    });
   });
 });

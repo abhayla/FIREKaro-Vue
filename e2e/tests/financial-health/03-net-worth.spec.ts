@@ -14,6 +14,28 @@ test.describe("Net Worth", () => {
     await netWorthPage.expectPageLoaded();
   });
 
+  // ============================================
+  // Internal Tab Tests
+  // ============================================
+
+  test("should display Overview and Details tabs", async ({ page }) => {
+    await expect(netWorthPage.overviewTab).toBeVisible();
+    await expect(netWorthPage.detailsTab).toBeVisible();
+  });
+
+  test("should default to Overview tab", async ({ page }) => {
+    await netWorthPage.expectOverviewTabActive();
+  });
+
+  test("should switch to Details tab", async ({ page }) => {
+    await netWorthPage.navigateToDetailsTab();
+    await netWorthPage.expectDetailsTabActive();
+  });
+
+  // ============================================
+  // Overview Tab Tests (Summary Cards, Charts)
+  // ============================================
+
   test("should show total net worth card", async ({ page }) => {
     await expect(netWorthPage.totalNetWorthCard).toBeVisible();
     const netWorth = await netWorthPage.getTotalNetWorth();

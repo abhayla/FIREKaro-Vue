@@ -20,7 +20,7 @@ const dividendIncomeSchema = z.object({
   dividendType: z.enum(['INTERIM', 'FINAL', 'SPECIAL']).optional(),
   recordDate: z.string().optional(),
   exDividendDate: z.string().optional(),
-  paymentDate: z.string(),
+  paymentDate: z.string().optional(),
   dividendPerShare: z.number().optional(),
   numberOfShares: z.number().optional(),
   dividendAmount: z.number().min(0),
