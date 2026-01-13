@@ -16,8 +16,9 @@ test.describe("ESOP/RSU Grants", () => {
       await expect(esopPage.addGrantButton).toBeVisible();
     });
 
-    test("should show ESOPs tab as active", async ({ page }) => {
-      await expect(page.getByRole("tab", { name: /ESOPs/i })).toHaveAttribute("aria-selected", "true");
+    test("should be on ESOPs page URL", async ({ page }) => {
+      // Navigation tabs removed - verify via URL instead
+      await expect(page).toHaveURL(/\/investments\/esop$/);
     });
 
     test("should display two-tab pattern (Overview and Item Details)", async ({ page }) => {

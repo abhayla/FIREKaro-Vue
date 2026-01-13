@@ -27,13 +27,17 @@ test.describe("EPF-PPF Legacy Redirect", () => {
     await epfPage.expectPageLoaded();
   });
 
-  test("should show separate EPF and PPF tabs after redirect", async ({ page }) => {
+  test("should show EPF second-level tabs after redirect", async ({ page }) => {
     await page.goto("/investments/epf-ppf");
     await page.waitForLoadState("domcontentloaded");
     await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
-    // Should now show separate EPF and PPF tabs (not combined)
-    await expect(page.getByRole("tab", { name: "EPF" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "PPF" })).toBeVisible();
+    // Should show second-level tabs (Overview and Item Details)
+    await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Item Details" })).toBeVisible();
+
+    // EPF and PPF are now separate pages accessed via sidebar (no horizontal tabs)
+    // Verify we're on EPF page
+    await expect(page).toHaveURL(/\/investments\/epf$/);
   });
 });

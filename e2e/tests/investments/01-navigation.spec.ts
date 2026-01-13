@@ -25,17 +25,30 @@ test.describe("Investments Navigation", () => {
     await expect(page).toHaveURL(/\/investments$/);
   });
 
-  test("should display all investment type tabs", async ({ page }) => {
-    // Note: The index page is called "Portfolio", not "Overview"
-    await expect(page.getByRole("tab", { name: "Portfolio" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Stocks" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Mutual Funds" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "EPF" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "PPF" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "NPS" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "ESOPs" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Property" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Reports" })).toBeVisible();
+  test("should display all investment types in sidebar navigation", async ({ page }) => {
+    // Investments section should be expandable in sidebar
+    // First expand the Investments section in sidebar
+    const sidebar = page.locator(".v-navigation-drawer");
+    await expect(sidebar).toBeVisible();
+
+    // Look for Investments group in sidebar and expand it
+    const investmentsGroup = sidebar.getByText("Investments").first();
+    await expect(investmentsGroup).toBeVisible();
+
+    // Click to expand if not already expanded
+    await investmentsGroup.click();
+    await page.waitForTimeout(300);
+
+    // Check all investment sub-items are visible in sidebar
+    await expect(sidebar.getByText("Portfolio")).toBeVisible();
+    await expect(sidebar.getByText("Stocks")).toBeVisible();
+    await expect(sidebar.getByText("Mutual Funds")).toBeVisible();
+    await expect(sidebar.getByText("EPF")).toBeVisible();
+    await expect(sidebar.getByText("PPF")).toBeVisible();
+    await expect(sidebar.getByText("NPS")).toBeVisible();
+    await expect(sidebar.getByText("ESOPs")).toBeVisible();
+    await expect(sidebar.getByText("Property")).toBeVisible();
+    await expect(sidebar.getByText("Reports")).toBeVisible();
   });
 
   test("should navigate to Stocks page", async ({ page }) => {
@@ -109,18 +122,18 @@ test.describe("Investments Navigation", () => {
     await reports.expectPageLoaded();
   });
 
-  test("should show correct active tab indicator", async ({ page }) => {
-    // Portfolio tab is active by default (it's the index page)
-    const portfolioTab = page.getByRole("tab", { name: "Portfolio" });
-    await expect(portfolioTab).toHaveAttribute("aria-selected", "true");
+  test("should highlight correct sidebar item when navigating", async ({ page }) => {
+    // On investments page, the Investments section should be highlighted in sidebar
+    const sidebar = page.locator(".v-navigation-drawer");
 
-    // Navigate to Stocks and verify active state
+    // Navigate to Stocks page
     await page.goto("/investments/stocks");
     await page.waitForLoadState("domcontentloaded");
+    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
-    const stocksTab = page.getByRole("tab", { name: "Stocks" });
-    await expect(stocksTab).toHaveAttribute("aria-selected", "true");
-    await expect(portfolioTab).toHaveAttribute("aria-selected", "false");
+    // Stocks sidebar item should have active class
+    const stocksItem = sidebar.locator(".v-list-item").filter({ hasText: "Stocks" });
+    await expect(stocksItem).toHaveClass(/v-list-item--active/);
   });
 
   test("should show two-tab pattern on EPF page", async ({ page }) => {

@@ -121,8 +121,8 @@ test.describe("Family View - Investments", () => {
     test("should maintain family view when navigating to sub-pages", async ({ page }) => {
       await investmentsPage.enableFamilyView();
 
-      // Navigate to a specific investment type
-      await page.getByRole("tab", { name: /Stocks|Equity/i }).click();
+      // Navigate to a specific investment type via URL (tabs removed)
+      await page.goto("/investments/stocks");
       await page.waitForTimeout(500);
 
       // Family view should still be active
@@ -132,12 +132,12 @@ test.describe("Family View - Investments", () => {
     test("should maintain family view when returning to overview", async ({ page }) => {
       await investmentsPage.enableFamilyView();
 
-      // Navigate away
-      await page.getByRole("tab", { name: /Mutual Funds/i }).click();
+      // Navigate away via URL (tabs removed)
+      await page.goto("/investments/mutual-funds");
       await page.waitForTimeout(300);
 
-      // Navigate back
-      await page.getByRole("tab", { name: /Portfolio/i }).click();
+      // Navigate back via URL
+      await page.goto("/investments");
       await page.waitForTimeout(300);
 
       // Family view should still be active
@@ -166,8 +166,8 @@ test.describe("Family View - Investments", () => {
     test("should navigate to reports in family view", async ({ page }) => {
       await investmentsPage.enableFamilyView();
 
-      // Navigate to reports
-      await page.getByRole("tab", { name: /Reports/i }).click();
+      // Navigate to reports via URL (tabs removed)
+      await page.goto("/investments/reports");
       await page.waitForTimeout(500);
 
       // Family view should persist
@@ -181,8 +181,8 @@ test.describe("Family View - Investments", () => {
       await investmentsPage.enableFamilyView();
       await page.keyboard.press("Escape");
 
-      // Navigate to reports
-      await page.getByRole("tab", { name: /Reports/i }).click();
+      // Navigate to reports via URL (tabs removed)
+      await page.goto("/investments/reports");
       await page.waitForTimeout(500);
 
       // Check for performance metrics
