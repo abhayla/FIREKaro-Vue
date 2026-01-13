@@ -49,6 +49,10 @@ import liabilitiesReportsRoutes from './routes/liabilities-reports'
 // Protection/Insurance routes
 import insuranceRoutes from './routes/insurance'
 
+// Financial Health routes
+import bankingRoutes from './routes/banking'
+import financialHealthRoutes from './routes/financial-health'
+
 const app = new Hono()
 
 // Middleware
@@ -115,6 +119,10 @@ app.route('/api/liabilities/reports', liabilitiesReportsRoutes)
 
 // API routes - Protection/Insurance
 app.route('/api/insurance', insuranceRoutes)
+
+// API routes - Financial Health
+app.route('/api/banking', bankingRoutes)
+app.route('/api/financial-health', financialHealthRoutes)
 
 // 404 handler
 app.notFound((c) => {
