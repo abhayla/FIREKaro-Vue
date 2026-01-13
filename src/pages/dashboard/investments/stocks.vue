@@ -8,18 +8,6 @@ import AssetForm from "@/components/investments/AssetForm.vue";
 import { useFinancialYear } from "@/composables/useSalary";
 import { useCreateInvestment, type StockHolding, type Investment } from "@/composables/useInvestments";
 
-const tabs = [
-  { title: "Portfolio", route: "/investments" },
-  { title: "Stocks", route: "/investments/stocks" },
-  { title: "Mutual Funds", route: "/investments/mutual-funds" },
-  { title: "EPF", route: "/investments/epf" },
-  { title: "PPF", route: "/investments/ppf" },
-  { title: "NPS", route: "/investments/nps" },
-  { title: "ESOPs", route: "/investments/esop" },
-  { title: "Property", route: "/investments/property" },
-  { title: "Reports", route: "/investments/reports" },
-];
-
 // Active tab state
 const activeTab = ref("overview");
 
@@ -59,7 +47,6 @@ const handleSaveStock = async (data: Partial<Investment>) => {
       title="Investments"
       subtitle="Stock Holdings"
       icon="mdi-chart-line"
-      :tabs="tabs"
     />
 
     <!-- Tab Navigation and FY Selector -->

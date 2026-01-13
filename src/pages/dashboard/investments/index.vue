@@ -17,18 +17,6 @@ import {
 
 const router = useRouter()
 
-const tabs = [
-  { title: 'Portfolio', route: '/investments' },
-  { title: 'Stocks', route: '/investments/stocks' },
-  { title: 'Mutual Funds', route: '/investments/mutual-funds' },
-  { title: 'EPF', route: '/investments/epf' },
-  { title: 'PPF', route: '/investments/ppf' },
-  { title: 'NPS', route: '/investments/nps' },
-  { title: 'ESOPs', route: '/investments/esop' },
-  { title: 'Property', route: '/investments/property' },
-  { title: 'Reports', route: '/investments/reports' },
-]
-
 // Data fetching
 const { data: portfolio, isLoading: portfolioLoading, error: portfolioError } = usePortfolio()
 const { data: investments, isLoading: investmentsLoading } = useInvestments()
@@ -133,7 +121,6 @@ const isLoading = computed(() => portfolioLoading.value || investmentsLoading.va
       title="Investments"
       subtitle="Track your investment portfolio"
       icon="mdi-chart-line"
-      :tabs="tabs"
     />
 
     <!-- Loading State -->

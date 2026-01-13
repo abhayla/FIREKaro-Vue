@@ -75,6 +75,7 @@ const sections = [
       { title: "EPF", route: "/investments/epf" },
       { title: "PPF", route: "/investments/ppf" },
       { title: "NPS", route: "/investments/nps" },
+      { title: "ESOPs", route: "/investments/esop" },
       { title: "Property", route: "/investments/property" },
       { title: "Reports", route: "/investments/reports" },
     ],

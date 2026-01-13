@@ -7,19 +7,6 @@ import PPFDetailsTab from "@/components/investments/tabs/PPFDetailsTab.vue";
 import { useFinancialYear } from "@/composables/useSalary";
 import { formatINR } from "@/composables/useInvestments";
 
-// Navigation tabs for investments section
-const tabs = [
-  { title: "Portfolio", route: "/investments" },
-  { title: "Stocks", route: "/investments/stocks" },
-  { title: "Mutual Funds", route: "/investments/mutual-funds" },
-  { title: "EPF", route: "/investments/epf" },
-  { title: "PPF", route: "/investments/ppf" },
-  { title: "NPS", route: "/investments/nps" },
-  { title: "ESOPs", route: "/investments/esop" },
-  { title: "Property", route: "/investments/property" },
-  { title: "Reports", route: "/investments/reports" },
-];
-
 // Tab state (client-side switching)
 const activeTab = ref("overview");
 
@@ -84,7 +71,6 @@ const confirmDeposit = () => {
       title="Investments"
       subtitle="PPF (Public Provident Fund)"
       icon="mdi-bank"
-      :tabs="tabs"
     />
 
     <!-- Tab Navigation + FY Selector -->
