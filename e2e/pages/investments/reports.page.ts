@@ -331,7 +331,8 @@ export class InvestmentReportsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Investments/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Reports/i })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the Reports page via URL
+    await expect(this.page).toHaveURL(/\/investments\/reports$/);
   }
 
   async expectSummaryVisible() {

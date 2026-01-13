@@ -228,7 +228,8 @@ export class MutualFundsPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Investments/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Mutual Funds|MF/i })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the Mutual Funds page via URL
+    await expect(this.page).toHaveURL(/\/investments\/mutual-funds$/);
   }
 
   async expectFormDialogVisible() {

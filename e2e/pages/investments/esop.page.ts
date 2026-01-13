@@ -236,7 +236,11 @@ export class ESOPPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.pageTitle).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /ESOPs/i })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the ESOPs page via URL
+    await expect(this.page).toHaveURL(/\/investments\/esop$/);
+    // Verify second-level tabs are visible
+    await expect(this.overviewTab).toBeVisible();
+    await expect(this.detailsTab).toBeVisible();
   }
 
   async expectOverviewTabActive() {

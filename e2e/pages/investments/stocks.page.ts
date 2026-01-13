@@ -191,7 +191,8 @@ export class StocksPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Investments/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: /Stocks|Equity/i })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the Stocks page via URL
+    await expect(this.page).toHaveURL(/\/investments\/stocks$/);
   }
 
   async expectFormDialogVisible() {

@@ -279,7 +279,9 @@ export class PpfPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Investments/i })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: "PPF" })).toHaveAttribute("aria-selected", "true");
+    // Verify we're on the PPF page via URL
+    await expect(this.page).toHaveURL(/\/investments\/ppf$/);
+    // Verify second-level tabs are visible
     await expect(this.overviewTab).toBeVisible();
     await expect(this.detailsTab).toBeVisible();
   }
