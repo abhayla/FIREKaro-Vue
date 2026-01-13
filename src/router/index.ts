@@ -76,29 +76,7 @@ const router = createRouter({
           name: "dashboard",
           component: () => import("@/pages/dashboard/index.vue"),
         },
-// Section 2: Tax Planning (Income is at top-level /income)
-        {
-          path: "tax-planning",
-          name: "tax-planning",
-          component: () => import("@/pages/dashboard/tax-planning/index.vue"),
-        },
-        {
-          path: "tax-planning/calculator",
-          name: "tax-planning-calculator",
-          component: () =>
-            import("@/pages/dashboard/tax-planning/calculator.vue"),
-        },
-        {
-          path: "tax-planning/deductions",
-          name: "tax-planning-deductions",
-          component: () =>
-            import("@/pages/dashboard/tax-planning/deductions.vue"),
-        },
-        {
-          path: "tax-planning/reports",
-          name: "tax-planning-reports",
-          component: () => import("@/pages/dashboard/tax-planning/reports.vue"),
-        },
+// Income is at top-level /income, Tax Planning is at top-level /tax-planning
         // Section 4: Expenses
         {
           path: "expenses",
@@ -300,7 +278,41 @@ const router = createRouter({
         },
       ],
     },
+    // Tax Planning - Top-level route (uses DashboardLayout for consistency)
+    {
+      path: "/tax-planning",
+      component: () => import("@/layouts/DashboardLayout.vue"),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "tax-planning",
+          component: () => import("@/pages/dashboard/tax-planning/index.vue"),
+        },
+      ],
+    },
     // Legacy URL Redirects
+    // Tax Planning section - old sub-pages redirect to main tax-planning page
+    {
+      path: "/tax-planning/calculator",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/deductions",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/scenarios",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/advance-tax",
+      redirect: "/tax-planning",
+    },
+    {
+      path: "/tax-planning/reports",
+      redirect: "/tax-planning",
+    },
     // Income section - /dashboard/income/* redirects to /income/*
     {
       path: "/dashboard/income",

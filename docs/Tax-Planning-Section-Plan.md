@@ -1,55 +1,178 @@
 # Tax Planning Section Plan
 
-> **Status**: ✅ IMPLEMENTED
+> **Status**: ✅ IMPLEMENTED (Redesigned)
 > **Created**: January 7, 2026
-> **Completed**: January 9, 2026
+> **Initial Completion**: January 9, 2026
+> **Redesigned**: January 11, 2026
 > **Based on**: docs/Plans/Feature-Reorganization-Plan.md (Section 3: TAX PLANNING)
 
 ---
 
 ## Implementation Summary
 
-All planned features have been implemented:
+### January 2026 Redesign
+
+The Tax Planning section was redesigned to follow the Salary page's 2-tab pattern:
+
+| Change | Before | After |
+|--------|--------|-------|
+| Navigation | 6 route-based tabs | 2 internal tabs (Overview + Tax Details) |
+| Data Sources | Manual entry only | Auto-pull from all income sources |
+| Smart Suggestions | Basic | 8 scenario types with priority levels |
+| URL Structure | Multiple routes | Single `/tax-planning` route |
+
+### Current Features
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Database Schema | ✅ Complete | 4 Prisma models added |
+| Database Schema | ✅ Complete | 4 Prisma models |
+| 2-Tab Structure | ✅ Complete | Overview + Tax Details |
+| Auto Data Aggregation | ✅ Complete | Pulls from Salary, Investments, Insurance, Liabilities |
+| Smart Suggestions | ✅ Complete | 8 scenario types with priority |
+| Data Completion Tracker | ✅ Complete | 8-item progress indicator |
+| Income Breakdown Chart | ✅ Complete | Doughnut chart by source |
 | Advance Tax Calculator | ✅ Complete | Full feature with 234B/234C interest |
 | What-If Scenarios | ✅ Complete | Baseline, create/compare, smart suggestions |
-| Reports Tab | ✅ Complete | PDF/Excel export, charts, ITR reference |
-| E2E Tests | ✅ Complete | 8 test files, 7 page objects |
-| Unit Tests | ✅ Complete | 43 tests for advance-tax calculations |
+| Reports Section | ✅ Complete | PDF/Excel export, charts, ITR reference |
+| E2E Tests | 🔄 Updated | Adapted for 2-tab accordion structure |
 
 ---
 
-## User Decisions Made
-
-| Decision | Choice |
-|----------|--------|
-| Deductions UI | **Enhance Existing** - Keep entering via Income Sources & Investments pages |
-| Advance Tax | **Full Feature** - Quarterly tracking, payment history, 234B/234C interest |
-| Scenario Planning | **Full What-If Analysis** - Create/save scenarios, compare up to 3, smart suggestions |
-| TDS/Form 26AS | **Deferred** - Not implemented in this phase |
-
----
-
-## Implemented Tab Structure (6 Tabs)
+## Current Tab Structure (2 Tabs)
 
 ```
-TAX PLANNING PAGE
-├── Tab 1: Overview (/dashboard/tax-planning)
-├── Tab 2: Calculator (/dashboard/tax-planning/calculator)
-├── Tab 3: Deductions (/dashboard/tax-planning/deductions)
-├── Tab 4: Advance Tax (/dashboard/tax-planning/advance-tax) [NEW]
-├── Tab 5: Scenarios (/dashboard/tax-planning/scenarios) [NEW]
-└── Tab 6: Reports (/dashboard/tax-planning/reports) [ENHANCED]
+TAX PLANNING PAGE (/tax-planning)
+│
+├── Tab 1: Overview (read-only summary)
+│   ├── TaxSummaryCards (Gross Income, Tax Payable, TDS, Net Due/Refund)
+│   ├── DataCompletionTracker (8 items: Salary, 80C, 80D, NPS, HRA, Home Loan, Capital Gains, Other)
+│   ├── Top 3 Recommendations (prioritized smart suggestions)
+│   ├── Regime Comparison Summary (Old vs New with savings)
+│   ├── Income Breakdown Chart (Doughnut by source)
+│   ├── ITR Form Recommendation
+│   └── Advance Tax Alert (if due > ₹10K)
+│
+└── Tab 2: Tax Details (accordion with actions/editing)
+    ├── Calculator Section (API/Manual mode, regime selector)
+    ├── Deductions Section (80C, 80D, NPS, Section 24, Other)
+    ├── Scenarios Section (Baseline, what-if, comparison)
+    ├── Advance Tax Section (Timeline, payments, interest)
+    └── Reports Section (PDF/Excel export, ITR reference)
 ```
 
 ---
 
-## Phase 1: Database Schema ✅
+## Data Flow Architecture
 
-### Prisma Models Added
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DATA SOURCES (Auto-Pull)                    │
+├─────────────┬─────────────┬─────────────┬─────────────┬────────┤
+│   Salary    │ Non-Salary  │ Investments │  Insurance  │Liabilit│
+│             │   Income    │             │             │  ies   │
+│ useSalary() │ useIncome() │useInvest()  │useInsurance │useLiab │
+└──────┬──────┴──────┬──────┴──────┬──────┴──────┬──────┴───┬────┘
+       │             │             │             │          │
+       └─────────────┴─────────────┴─────────────┴──────────┘
+                               │
+                               ▼
+                 ┌─────────────────────────┐
+                 │  useAggregatedIncome()  │
+                 │  - Gross Total Income   │
+                 │  - Income by Source     │
+                 │  - Deductions by Section│
+                 │  - TDS Summary          │
+                 └───────────┬─────────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+    │useTaxCompar │  │useSmartSugg │  │useDataCompl │
+    │- Old vs New │  │- 8 scenarios│  │- Checklist  │
+    │- Best regime│  │- Priorities │  │- % complete │
+    └─────────────┘  └─────────────┘  └─────────────┘
+              │              │              │
+              └──────────────┼──────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │     Tax Planning UI          │
+              │  ┌────────┐  ┌────────┐     │
+              │  │Overview│  │Details │     │
+              │  └────────┘  └────────┘     │
+              └──────────────────────────────┘
+```
+
+---
+
+## Smart Suggestions - 8 Scenario Types
+
+| # | Type | Trigger | Calculation | Priority |
+|---|------|---------|-------------|----------|
+| 1 | Regime Comparison | Income > ₹5L | Compare old vs new tax | High |
+| 2 | 80C Gap | Utilized < ₹1.5L | Gap × marginal rate | High if gap > ₹50K |
+| 3 | NPS 80CCD(1B) | Contribution < ₹50K | (₹50K - current) × rate | Medium |
+| 4 | 80D Health | No parent OR self < ₹25K | Gap × marginal rate | Medium |
+| 5 | HRA Optimization | Rent paid, HRA not claimed | HRA exemption formula | High |
+| 6 | Home Loan Sec 24 | Loan exists, interest < ₹2L | Gap × rate | Medium |
+| 7 | LTCG Harvesting | Unrealized gains > ₹50K | Min(gains, ₹1.25L) × 12.5% | Low |
+| 8 | Advance Tax Alert | (Tax - TDS) > ₹10K | Interest if not paid | High if due soon |
+
+---
+
+## New Components Created (January 11, 2026)
+
+### Overview Tab Components
+
+| File | Description |
+|------|-------------|
+| `src/components/tax/TaxOverviewTab.vue` | Main Overview tab container |
+| `src/components/tax/TaxSummaryCards.vue` | 4-card summary grid (Gross, Tax, TDS, Due/Refund) |
+| `src/components/tax/DataCompletionTracker.vue` | 8-item progress indicator |
+| `src/components/tax/IncomeBreakdownChart.vue` | Doughnut chart by income source |
+
+### Tax Details Tab Components
+
+| File | Description |
+|------|-------------|
+| `src/components/tax/TaxDetailsTab.vue` | Accordion container with 5 sections |
+| `src/components/tax/TaxCalculatorSection.vue` | Calculator accordion section |
+| `src/components/tax/DeductionsSection.vue` | Deductions accordion section |
+| `src/components/tax/ScenariosSection.vue` | Scenarios accordion section |
+| `src/components/tax/AdvanceTaxSection.vue` | Advance Tax accordion section |
+| `src/components/tax/ReportsSection.vue` | Reports accordion section |
+
+### New Composables
+
+| Function | Description |
+|----------|-------------|
+| `useAggregatedIncome()` | Auto-aggregates income from all sources |
+| `useDataCompletionStatus()` | Tracks 8-item data completion |
+| `useSmartSuggestionsEnhanced()` | 8 scenario types with priorities |
+
+---
+
+## Route Changes
+
+### Removed Routes (now 404)
+
+Old routes have been removed. Legacy URLs will 404:
+- `/tax-planning/calculator`
+- `/tax-planning/deductions`
+- `/tax-planning/scenarios`
+- `/tax-planning/advance-tax`
+- `/tax-planning/reports`
+
+### Current Route
+
+Single route with internal tabs:
+- `/tax-planning` - Main page with Overview + Tax Details tabs
+
+---
+
+## Database Schema (Unchanged)
+
+### Prisma Models
 
 ```prisma
 // 1. Advance Tax Payment Tracking
@@ -144,21 +267,11 @@ model TaxWhatIfScenario {
 }
 ```
 
-### User Model Relations Added
-```prisma
-// Added to User model
-advanceTaxEstimates    AdvanceTaxEstimate[]
-advanceTaxPayments     AdvanceTaxPayment[]
-taxWhatIfScenarios     TaxWhatIfScenario[]
-```
-
 ---
 
-## Phase 2: Advance Tax Calculator ✅
+## Backend Routes (Unchanged)
 
-### Backend Routes Implemented
-
-**File: `server/routes/advance-tax.ts`**
+### Advance Tax Routes
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -174,52 +287,7 @@ taxWhatIfScenarios     TaxWhatIfScenario[]
 | DELETE | `/api/advance-tax/:id/payments/:paymentId` | Delete payment |
 | GET | `/api/advance-tax/:id/interest` | Calculate 234B/234C interest |
 
-### Calculation Logic Implemented
-
-**File: `server/lib/calculations/advance-tax.ts`**
-
-```typescript
-export const ADVANCE_TAX_CONFIG = {
-  THRESHOLD: 10000,  // Advance tax required if > ₹10K
-  QUARTERLY_PERCENTAGES: { Q1: 15, Q2: 45, Q3: 75, Q4: 100 },
-  DUE_DATES: {
-    Q1: { month: 6, day: 15 },   // June 15
-    Q2: { month: 9, day: 15 },   // September 15
-    Q3: { month: 12, day: 15 },  // December 15
-    Q4: { month: 3, day: 15 },   // March 15
-  },
-  INTEREST_RATE: 0.01,  // 1% per month
-  THRESHOLD_234B: 90,   // Interest if paid < 90%
-  DEFERMENT_MONTHS: { Q1: 3, Q2: 3, Q3: 3, Q4: 1 },
-}
-
-// Exported functions:
-export function getAdvanceTaxDueDates(financialYear: string): AdvanceTaxDueDate[]
-export function isAdvanceTaxApplicable(netTaxLiability: number): boolean
-export function calculateQuarterlySchedule(netTax: number, fy: string, payments: []): QuarterlySchedule[]
-export function calculateInterest234B(totalTax: number, totalPaid: number, assessmentDate: Date): Interest234BResult
-export function calculateInterest234C(schedules: QuarterlySchedule[]): Interest234CResult
-export function detectQuarterFromPaymentDate(paymentDate: Date, fy: string): 1 | 2 | 3 | 4
-export function calculateAdvanceTaxAnalysis(netTax: number, fy: string, payments: [], assessmentDate?: Date): AdvanceTaxCalculationResult
-export function formatINR(amount: number): string
-```
-
-### Frontend Components Implemented
-
-| File | Description |
-|------|-------------|
-| `src/pages/dashboard/tax-planning/advance-tax.vue` | Main Advance Tax page |
-| `src/components/tax/AdvanceTaxTimeline.vue` | Quarterly timeline visualization |
-| `src/components/tax/AdvanceTaxPaymentForm.vue` | Payment entry dialog |
-| `src/components/tax/InterestCalculator.vue` | 234B/234C interest display |
-
----
-
-## Phase 3: What-If Scenario Analysis ✅
-
-### Backend Routes Implemented
-
-**File: `server/routes/tax-scenarios.ts`**
+### Scenario Routes
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -232,101 +300,45 @@ export function formatINR(amount: number): string
 | POST | `/api/tax-planning/scenarios/compare` | Compare up to 3 scenarios |
 | GET | `/api/tax-planning/scenarios/smart-suggestions` | Generate auto suggestions |
 
-### Smart Suggestion Categories
-
-```typescript
-export const SUGGESTION_CATEGORIES = {
-  MAX_80C: {
-    name: 'Maximize 80C',
-    description: 'Utilize full ₹1.5L limit under Section 80C',
-  },
-  MAX_NPS: {
-    name: 'Add NPS',
-    description: 'Add ₹50K NPS under 80CCD(1B)',
-  },
-  MAX_80D: {
-    name: 'Health Insurance',
-    description: 'Add health insurance under 80D',
-  },
-  REGIME_SWITCH: {
-    name: 'Switch Regime',
-    description: 'Compare with opposite tax regime',
-  },
-  COMBINED_OPTIMAL: {
-    name: 'Optimal Strategy',
-    description: 'Best combination of all deductions',
-  },
-}
-```
-
-### Frontend Components Implemented
-
-| File | Description |
-|------|-------------|
-| `src/pages/dashboard/tax-planning/scenarios.vue` | Main Scenarios page |
-| `src/components/tax/ScenarioCard.vue` | Scenario display card |
-| `src/components/tax/ScenarioEditor.vue` | Create/edit scenario dialog |
-| `src/components/tax/ScenarioComparison.vue` | Side-by-side comparison |
-| `src/components/tax/SmartSuggestions.vue` | AI-powered suggestions |
-
----
-
-## Phase 4: Reports Tab ✅
-
-### Backend Routes Implemented
-
-**File: `server/routes/tax-reports.ts`**
+### Report Routes
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/tax-planning/reports` | Get report data for FY |
 | GET | `/api/tax-planning/reports/yoy` | Get multi-year comparison |
 | POST | `/api/tax-planning/reports/export` | Generate PDF or Excel |
-
-### Frontend Components Implemented
-
-**File: `src/pages/dashboard/tax-planning/reports.vue`**
-
-Features:
-- Financial Year selector
-- Export buttons (PDF, Excel)
-- 4 report tabs:
-  - Tax Summary (summary cards, tax distribution chart, tax summary table)
-  - Regime Comparison (bar chart, detailed comparison table, savings alert)
-  - Deduction Utilization (stacked bar chart, section-wise summary)
-  - Advance Tax (schedule summary, quarterly table)
-- ITR Form Reference section
+| GET | `/api/tax-planning/comparison` | Get regime comparison |
 
 ---
 
-## Phase 5: Testing ✅
+## Testing
 
-### E2E Page Objects Created
+### E2E Tests
 
 | File | Description |
 |------|-------------|
-| `e2e/pages/tax-planning/overview.page.ts` | Overview page interactions |
-| `e2e/pages/tax-planning/calculator.page.ts` | Calculator page interactions |
-| `e2e/pages/tax-planning/deductions.page.ts` | Deductions page interactions |
-| `e2e/pages/tax-planning/regime-comparison.page.ts` | Regime comparison interactions |
-| `e2e/pages/tax-planning/advance-tax.page.ts` | Advance Tax page interactions |
-| `e2e/pages/tax-planning/scenarios.page.ts` | Scenarios page interactions |
-| `e2e/pages/tax-planning/reports.page.ts` | Reports page interactions |
+| `01-navigation.spec.ts` | 2-tab navigation, accordion sections |
+| `02-regime-comparison.spec.ts` | Old vs New regime comparison |
+| `03-calculator.spec.ts` | Tax calculation in accordion |
+| `04-deductions.spec.ts` | Deduction categories |
+| `05-itr-recommendation.spec.ts` | ITR form suggestions |
+| `06-reports.spec.ts` | Reports accordion section |
+| `07-advance-tax.spec.ts` | Advance tax accordion section |
+| `08-scenarios.spec.ts` | Scenarios accordion section |
 
-### E2E Tests Created
+### E2E Page Objects
 
-| File | Tests | Description |
-|------|-------|-------------|
-| `01-navigation.spec.ts` | 9 | Tab navigation, URL routing |
-| `02-regime-comparison.spec.ts` | 8 | Old vs New regime comparison |
-| `03-calculator.spec.ts` | 12 | Tax calculation inputs |
-| `04-deductions.spec.ts` | 10 | Deduction categories |
-| `05-itr-recommendation.spec.ts` | 6 | ITR form suggestions |
-| `06-reports.spec.ts` | 34 | Reports tabs, export buttons, charts |
-| `07-advance-tax.spec.ts` | 21 | Timeline, payments, interest |
-| `08-scenarios.spec.ts` | 32 | Baseline, scenarios, comparison |
+| File | Description |
+|------|-------------|
+| `overview.page.ts` | Overview tab interactions |
+| `tax-details.page.ts` | Tax Details tab accordion interactions |
+| `calculator.page.ts` | Calculator section interactions |
+| `deductions.page.ts` | Deductions section interactions |
+| `scenarios.page.ts` | Scenarios section interactions |
+| `advance-tax.page.ts` | Advance Tax section interactions |
+| `reports.page.ts` | Reports section interactions |
 
-### Unit Tests Created
+### Unit Tests
 
 **File: `server/lib/calculations/advance-tax.spec.ts`** - 43 tests
 
@@ -344,33 +356,50 @@ Features:
 
 ---
 
+## Verification Commands
+
+```bash
+# Run unit tests
+npm run test:unit -- server/lib/calculations/advance-tax.spec.ts
+
+# Run E2E tests for tax planning
+npm run test:e2e -- e2e/tests/tax-planning/
+
+# Type check
+npm run type-check
+
+# Start dev server and verify
+npm run dev
+# Navigate to http://localhost:5173/tax-planning
+```
+
+---
+
 ## Files Summary
 
-### Created Files
+### Created (January 11, 2026 Redesign)
+
+| Category | Files |
+|----------|-------|
+| **Overview Components** | `TaxOverviewTab.vue`, `TaxSummaryCards.vue`, `DataCompletionTracker.vue`, `IncomeBreakdownChart.vue` |
+| **Details Components** | `TaxDetailsTab.vue`, `TaxCalculatorSection.vue`, `DeductionsSection.vue`, `ScenariosSection.vue`, `AdvanceTaxSection.vue`, `ReportsSection.vue` |
+
+### Modified (January 11, 2026 Redesign)
+
+| File | Changes |
+|------|---------|
+| `src/pages/tax-planning/index.vue` | Restructured to 2-tab with FY navigation |
+| `src/composables/useTax.ts` | Added `useAggregatedIncome`, `useDataCompletionStatus`, `useSmartSuggestionsEnhanced` |
+| `src/router/index.ts` | Removed child routes, no redirects |
+| `src/layouts/DashboardLayout.vue` | Removed Tax Planning children from sidebar |
+
+### Existing (from January 9, 2026)
 
 | Category | Files |
 |----------|-------|
 | **Backend Routes** | `server/routes/advance-tax.ts`, `server/routes/tax-scenarios.ts`, `server/routes/tax-reports.ts` |
 | **Calculation Logic** | `server/lib/calculations/advance-tax.ts` |
-| **Vue Pages** | `src/pages/dashboard/tax-planning/advance-tax.vue`, `src/pages/dashboard/tax-planning/scenarios.vue` |
-| **Vue Components** | `src/components/tax/AdvanceTaxTimeline.vue`, `src/components/tax/AdvanceTaxPaymentForm.vue`, `src/components/tax/InterestCalculator.vue`, `src/components/tax/ScenarioCard.vue`, `src/components/tax/ScenarioEditor.vue`, `src/components/tax/ScenarioComparison.vue`, `src/components/tax/SmartSuggestions.vue` |
-| **E2E Page Objects** | `e2e/pages/tax-planning/advance-tax.page.ts`, `e2e/pages/tax-planning/scenarios.page.ts`, `e2e/pages/tax-planning/reports.page.ts` |
-| **E2E Tests** | `e2e/tests/tax-planning/07-advance-tax.spec.ts`, `e2e/tests/tax-planning/08-scenarios.spec.ts` |
-| **Unit Tests** | `server/lib/calculations/advance-tax.spec.ts` |
-
-### Modified Files
-
-| File | Changes |
-|------|---------|
-| `prisma/schema.prisma` | Added 4 models + User relations |
-| `server/index.ts` | Registered 3 new route files |
-| `src/pages/dashboard/tax-planning/index.vue` | Updated tabs array (4→6) |
-| `src/pages/dashboard/tax-planning/reports.vue` | Added export functionality |
-| `src/composables/useTax.ts` | Added hooks for scenarios, advance tax |
-| `e2e/pages/tax-planning/overview.page.ts` | Added new tab locators |
-| `e2e/pages/tax-planning/index.ts` | Exported new page objects |
-| `e2e/tests/tax-planning/01-navigation.spec.ts` | Updated for 6 tabs |
-| `e2e/tests/tax-planning/06-reports.spec.ts` | Comprehensive reports tests |
+| **Existing Components** | `AdvanceTaxTimeline.vue`, `AdvanceTaxPaymentForm.vue`, `InterestCalculator.vue`, `ScenarioCard.vue`, `ScenarioEditor.vue`, `ScenarioComparison.vue`, `SmartSuggestions.vue` |
 
 ---
 
@@ -387,31 +416,13 @@ These can be added in a future phase when demand is validated.
 
 ---
 
-## Verification Commands
-
-```bash
-# Run unit tests
-npm run test:unit -- server/lib/calculations/advance-tax.spec.ts
-
-# Run E2E tests for tax planning
-npm run test:e2e -- e2e/tests/tax-planning/
-
-# Open Prisma Studio to verify models
-npm run db:studio
-
-# Start dev server and verify tabs
-npm run dev
-# Navigate to http://localhost:5173/dashboard/tax-planning
-```
-
----
-
 ## Related Plan Documents
 
 1. `docs/Plans/Feature-Reorganization-Plan.md` - Master navigation
-2. `docs/Income-Section-Plan.md` - Income section (Salary + Non-Salary)
-3. **`docs/Tax-Planning-Section-Plan.md`** - This plan (COMPLETE)
+2. `docs/Salary-Section-Plan.md` - Salary component tracking (2-tab pattern reference)
+3. `docs/Non-Salary-Income-Plan.md` - Income section plan
+4. **`docs/Tax-Planning-Section-Plan.md`** - This plan
 
 ---
 
-**Status: ✅ IMPLEMENTATION COMPLETE**
+**Status: ✅ IMPLEMENTATION COMPLETE (Redesigned January 11, 2026)**

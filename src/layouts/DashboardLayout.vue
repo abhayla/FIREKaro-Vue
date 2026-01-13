@@ -35,13 +35,8 @@ const sections = [
   {
     title: "Tax Planning",
     icon: "mdi-calculator-variant",
-    route: "/dashboard/tax-planning",
-    children: [
-      { title: "Overview", route: "/dashboard/tax-planning" },
-      { title: "Tax Calculator", route: "/dashboard/tax-planning/calculator" },
-      { title: "Deductions", route: "/dashboard/tax-planning/deductions" },
-      { title: "Reports", route: "/dashboard/tax-planning/reports" },
-    ],
+    route: "/tax-planning",
+    // Single page with 2 tabs (Overview + Tax Details) - no sub-pages needed
   },
   {
     title: "Expenses",

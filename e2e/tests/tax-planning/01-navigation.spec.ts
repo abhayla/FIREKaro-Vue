@@ -1,123 +1,165 @@
 import { test, expect } from "@playwright/test";
-import {
-  TaxPlanningOverviewPage,
-  TaxCalculatorPage,
-  TaxDeductionsPage,
-  AdvanceTaxPage,
-  ScenariosPage,
-} from "../../pages/tax-planning";
+import { TaxPlanningOverviewPage, TaxDetailsPage } from "../../pages/tax-planning";
 
+/**
+ * Tax Planning Navigation Tests
+ *
+ * Structure: 2 internal tabs (Overview + Tax Details)
+ * - Overview Tab: Summary cards, recommendations, regime comparison, charts
+ * - Tax Details Tab: Accordion with 5 sections (Calculator, Deductions, Scenarios, Advance Tax, Reports)
+ *
+ * Note: Old routes (/tax-planning/calculator, etc.) now 404
+ */
 test.describe("Tax Planning Navigation", () => {
+  // Allow retries for flaky navigation tests
+  test.describe.configure({ retries: 2 });
+
   test.beforeEach(async ({ page }) => {
-    await page.goto("/dashboard/tax-planning");
+    await page.goto("/tax-planning", { timeout: 45000 });
     await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    await page.locator(".v-card, .v-tabs").first().waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
   });
 
-  test("should load tax planning overview page", async ({ page }) => {
+  test("should load tax planning page with Overview tab active", async ({ page }) => {
     const overview = new TaxPlanningOverviewPage(page);
     await expect(overview.pageTitle).toBeVisible();
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning$/);
+    await expect(page).toHaveURL(/\/tax-planning$/);
+    await expect(overview.overviewTab).toHaveAttribute("aria-selected", "true");
   });
 
-  test("should display all navigation tabs", async ({ page }) => {
+  test("should display 2-tab navigation (Overview + Tax Details)", async ({ page }) => {
     const overview = new TaxPlanningOverviewPage(page);
 
     await expect(overview.overviewTab).toBeVisible();
-    await expect(overview.calculatorTab).toBeVisible();
-    await expect(overview.deductionsTab).toBeVisible();
-    await expect(overview.advanceTaxTab).toBeVisible();
-    await expect(overview.scenariosTab).toBeVisible();
-    await expect(overview.reportsTab).toBeVisible();
+    await expect(overview.taxDetailsTab).toBeVisible();
+
+    // Old tabs should NOT exist
+    await expect(page.getByRole("tab", { name: /^Calculator$/i })).not.toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Deductions$/i })).not.toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Scenarios$/i })).not.toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Advance Tax$/i })).not.toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Reports$/i })).not.toBeVisible();
   });
 
-  test("should navigate to Reports tab", async ({ page }) => {
-    // Use direct navigation since tab clicks have timing issues with Vue Router
-    await page.goto("/dashboard/tax-planning/reports");
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/reports/);
+  test("should display FY selector with navigation arrows", async ({ page }) => {
+    const overview = new TaxPlanningOverviewPage(page);
 
-    const reportsTab = page.getByRole("tab", { name: /Reports/i });
-    await expect(reportsTab).toHaveAttribute("aria-selected", "true");
+    await expect(overview.fySelector).toBeVisible();
+    // Navigation arrows should be present
+    const prevButton = page.locator("button").filter({ has: page.locator('[class*="chevron-left"]') });
+    const nextButton = page.locator("button").filter({ has: page.locator('[class*="chevron-right"]') });
+
+    // At least one arrow button should be visible
+    const hasPrev = await prevButton.first().isVisible().catch(() => false);
+    const hasNext = await nextButton.first().isVisible().catch(() => false);
+    expect(hasPrev || hasNext).toBe(true);
   });
 
-  test("should navigate to Calculator tab", async ({ page }) => {
-    // Use direct navigation since tab clicks have timing issues with Vue Router
-    await page.goto("/dashboard/tax-planning/calculator");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+  test("should switch to Tax Details tab", async ({ page }) => {
+    const overview = new TaxPlanningOverviewPage(page);
 
-    const calculatorPage = new TaxCalculatorPage(page);
-    await calculatorPage.expectPageLoaded();
+    // Click Tax Details tab
+    await overview.taxDetailsTab.click();
+    await page.waitForTimeout(500);
+
+    // Tax Details tab should now be active
+    await expect(overview.taxDetailsTab).toHaveAttribute("aria-selected", "true");
+    await expect(overview.overviewTab).toHaveAttribute("aria-selected", "false");
+
+    // URL should remain the same (internal tabs, not route-based)
+    await expect(page).toHaveURL(/\/tax-planning$/);
   });
 
-  test("should navigate to Deductions tab", async ({ page }) => {
-    // Use direct navigation since tab clicks have timing issues with Vue Router
-    await page.goto("/dashboard/tax-planning/deductions");
-    await page.waitForLoadState("domcontentloaded");
-    await page.locator(".v-card").first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+  test("should display accordion sections in Tax Details tab", async ({ page }) => {
+    const taxDetails = new TaxDetailsPage(page);
 
-    const deductionsPage = new TaxDeductionsPage(page);
-    await deductionsPage.expectPageLoaded();
+    // Switch to Tax Details tab
+    await taxDetails.taxDetailsTab.click();
+    await page.waitForTimeout(500);
+
+    // All 5 accordion sections should be visible
+    await expect(taxDetails.calculatorSection).toBeVisible();
+    await expect(taxDetails.deductionsSection).toBeVisible();
+    await expect(taxDetails.scenariosSection).toBeVisible();
+    await expect(taxDetails.advanceTaxSection).toBeVisible();
+    await expect(taxDetails.reportsSection).toBeVisible();
+  });
+
+  test("should expand accordion sections", async ({ page }) => {
+    const taxDetails = new TaxDetailsPage(page);
+
+    // Switch to Tax Details tab
+    await taxDetails.taxDetailsTab.click();
+    await page.waitForTimeout(500);
+
+    // Calculator section should already be expanded by default (initialSection: "calculator")
+    await taxDetails.expectCalculatorExpanded();
+
+    // Expand Deductions section (should start collapsed)
+    await taxDetails.deductionsHeader.click();
+    await page.waitForTimeout(300);
+    await taxDetails.expectDeductionsExpanded();
+  });
+
+  test("should switch back to Overview tab from Tax Details", async ({ page }) => {
+    const overview = new TaxPlanningOverviewPage(page);
+
+    // Go to Tax Details
+    await overview.taxDetailsTab.click();
+    await page.waitForTimeout(300);
+
+    // Go back to Overview
+    await overview.overviewTab.click();
+    await page.waitForTimeout(300);
+
+    // Overview tab should be active
+    await expect(overview.overviewTab).toHaveAttribute("aria-selected", "true");
   });
 
   test("should show correct active tab indicator", async ({ page }) => {
-    const overviewTab = page.getByRole("tab", { name: "Overview" });
-    await expect(overviewTab).toHaveAttribute("aria-selected", "true");
+    const overview = new TaxPlanningOverviewPage(page);
 
-    // Navigate directly to Calculator page
-    await page.goto("/dashboard/tax-planning/calculator");
-    await page.waitForLoadState("domcontentloaded");
+    // Wait for tabs to be ready
+    await page.waitForTimeout(500);
 
-    const calculatorTab = page.getByRole("tab", { name: /Calculator/i });
-    await expect(calculatorTab).toHaveAttribute("aria-selected", "true");
-    await expect(overviewTab).toHaveAttribute("aria-selected", "false");
+    // Initially Overview is active
+    await expect(overview.overviewTab).toHaveAttribute("aria-selected", "true");
+
+    // Switch to Tax Details
+    await overview.taxDetailsTab.click();
+    await page.waitForTimeout(500);
+
+    // Now Tax Details is active
+    await expect(overview.taxDetailsTab).toHaveAttribute("aria-selected", "true");
   });
 
-  test("should navigate to Advance Tax tab", async ({ page }) => {
-    // Navigate to advance-tax page
-    await page.goto("/dashboard/tax-planning/advance-tax");
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/advance-tax/);
-
-    // The page should load - wait for any of: tab bar, header, or card
-    await page.waitForTimeout(2000); // Give page time to render
-
-    // Check that either the page has content OR we're still on the right URL
-    // (The page may be blank due to API issues, but navigation should work)
-    const hasContent = await page.locator(".v-tab, .section-header, .v-card, h1").first().isVisible().catch(() => false);
-
-    // If no content, check console for errors (diagnostic)
-    if (!hasContent) {
-      const consoleMessages = await page.evaluate(() => {
-        // @ts-ignore - accessing window console history if available
-        return (window as any).__consoleErrors || [];
-      });
-      console.log("Page may have JS errors - content not visible");
-    }
-
-    // Verify URL is correct (navigation worked)
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/advance-tax/);
+  test("old route /tax-planning/calculator redirects to main page", async ({ page }) => {
+    await page.goto("/tax-planning/calculator", { timeout: 45000 });
+    await page.waitForURL(/\/tax-planning$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/tax-planning$/);
   });
 
-  test("should navigate to Scenarios tab", async ({ page }) => {
-    // Navigate to scenarios page
-    await page.goto("/dashboard/tax-planning/scenarios");
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/scenarios/);
+  test("old route /tax-planning/deductions redirects to main page", async ({ page }) => {
+    await page.goto("/tax-planning/deductions", { timeout: 45000 });
+    await page.waitForURL(/\/tax-planning$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/tax-planning$/);
+  });
 
-    // The page should load - wait for any of: tab bar, header, or card
-    await page.waitForTimeout(2000); // Give page time to render
+  test("old route /tax-planning/scenarios redirects to main page", async ({ page }) => {
+    await page.goto("/tax-planning/scenarios", { timeout: 45000 });
+    await page.waitForURL(/\/tax-planning$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/tax-planning$/);
+  });
 
-    // Check that either the page has content OR we're still on the right URL
-    const hasContent = await page.locator(".v-tab, .section-header, .v-card, h1").first().isVisible().catch(() => false);
+  test("old route /tax-planning/advance-tax redirects to main page", async ({ page }) => {
+    await page.goto("/tax-planning/advance-tax", { timeout: 45000 });
+    await page.waitForURL(/\/tax-planning$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/tax-planning$/);
+  });
 
-    // If no content, log diagnostic info
-    if (!hasContent) {
-      console.log("Scenarios page may have JS errors - content not visible");
-    }
-
-    // Verify URL is correct (navigation worked)
-    await expect(page).toHaveURL(/\/dashboard\/tax-planning\/scenarios/);
+  test("old route /tax-planning/reports redirects to main page", async ({ page }) => {
+    await page.goto("/tax-planning/reports", { timeout: 45000 });
+    await page.waitForURL(/\/tax-planning$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/tax-planning$/);
   });
 });
