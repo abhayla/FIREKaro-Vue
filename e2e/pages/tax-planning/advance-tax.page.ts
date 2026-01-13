@@ -156,16 +156,18 @@ export class AdvanceTaxPage extends BasePage {
     await this.waitForPageLoad();
     // Switch to Tax Details tab
     await this.taxDetailsTab.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(500);
     // Expand Advance Tax accordion section
     await this.expandAdvanceTax();
   }
 
   async expandAdvanceTax() {
-    const isExpanded = await this.advanceTaxSection.getAttribute("class");
-    if (!isExpanded?.includes("v-expansion-panel--active")) {
-      await this.advanceTaxHeader.click();
-      await this.page.waitForTimeout(300);
+    // Click on the Advance Tax accordion header
+    const advanceTaxHeader = this.page.getByRole("button", { name: /Advance Tax.*quarterly/i });
+    const isExpanded = await advanceTaxHeader.getAttribute("aria-expanded");
+    if (isExpanded !== "true") {
+      await advanceTaxHeader.click();
+      await this.page.waitForTimeout(500);
     }
   }
 

@@ -131,16 +131,18 @@ export class ScenariosPage extends BasePage {
     await this.waitForPageLoad();
     // Switch to Tax Details tab
     await this.taxDetailsTab.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(500);
     // Expand Scenarios accordion section
     await this.expandScenarios();
   }
 
   async expandScenarios() {
-    const isExpanded = await this.scenariosSection.getAttribute("class");
-    if (!isExpanded?.includes("v-expansion-panel--active")) {
-      await this.scenariosHeader.click();
-      await this.page.waitForTimeout(300);
+    // Click on the What-If Scenarios accordion header
+    const scenariosHeader = this.page.getByRole("button", { name: /What-If Scenarios.*Create and compare/i });
+    const isExpanded = await scenariosHeader.getAttribute("aria-expanded");
+    if (isExpanded !== "true") {
+      await scenariosHeader.click();
+      await this.page.waitForTimeout(500);
     }
   }
 

@@ -47,14 +47,14 @@ export class ReportsPage extends BasePage {
 
   // Export Buttons
   get exportPDFButton(): Locator {
-    return this.page.getByRole("button", { name: /PDF/i });
+    return this.page.getByRole("button", { name: /Export PDF/i });
   }
 
   get exportExcelButton(): Locator {
-    return this.page.getByRole("button", { name: /Excel/i });
+    return this.page.getByRole("button", { name: /Export Excel/i });
   }
 
-  // Report Tabs
+  // Report Tabs (only 3 tabs - Advance Tax is a separate accordion section)
   get summaryReportTab(): Locator {
     return this.page.getByRole("tab", { name: /Tax Summary/i });
   }
@@ -65,10 +65,6 @@ export class ReportsPage extends BasePage {
 
   get deductionsReportTab(): Locator {
     return this.page.getByRole("tab", { name: /Deduction Utilization/i });
-  }
-
-  get advanceTaxReportTab(): Locator {
-    return this.page.getByRole("tab", { name: /Advance Tax/i });
   }
 
   // Summary Tab Content
@@ -143,11 +139,15 @@ export class ReportsPage extends BasePage {
   }
 
   async expandReports() {
-    const isExpanded = await this.reportsSection.getAttribute("class");
-    if (!isExpanded?.includes("v-expansion-panel--active")) {
-      await this.reportsHeader.click();
-      await this.page.waitForTimeout(300);
+    // Click on the Reports & Export accordion header
+    const reportsHeader = this.page.getByRole("button", { name: /Reports.*Export/i });
+    const isExpanded = await reportsHeader.getAttribute("aria-expanded");
+    if (isExpanded !== "true") {
+      await reportsHeader.click();
+      await this.page.waitForTimeout(500);
     }
+    // Wait for content to be visible
+    await this.page.locator("text=Export PDF").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   }
 
   // ============================================
@@ -250,7 +250,7 @@ export class ReportsPage extends BasePage {
     await expect(this.summaryReportTab).toBeVisible();
     await expect(this.comparisonReportTab).toBeVisible();
     await expect(this.deductionsReportTab).toBeVisible();
-    await expect(this.advanceTaxReportTab).toBeVisible();
+    // Note: Advance Tax is a separate accordion section, not a tab in Reports
   }
 
   async expectSummaryTabContent() {

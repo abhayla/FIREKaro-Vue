@@ -3,10 +3,13 @@ import { BasePage } from "../base.page";
 
 /**
  * Tax Regime Comparison Page Object
- * Handles Old vs New regime comparison
+ * Handles Old vs New regime comparison on Overview tab and Tax Calculator
+ *
+ * Structure:
+ * - Overview Tab: Shows REGIME COMPARISON card with side-by-side Old/New regime boxes
+ * - Tax Details Tab > Calculator: Has regime toggle buttons (Old/New) and detailed inputs
  */
 export class RegimeComparisonPage extends BasePage {
-  // Regime comparison is shown on the Overview page, not a separate page
   readonly url = "/tax-planning";
 
   constructor(page: Page) {
@@ -14,81 +17,113 @@ export class RegimeComparisonPage extends BasePage {
   }
 
   // ============================================
-  // Locators
+  // Tab Locators
   // ============================================
 
-  get pageTitle(): Locator {
-    return this.page.getByRole("heading", { name: /Tax Planning/i });
+  get overviewTab(): Locator {
+    return this.page.getByRole("tab", { name: "Overview" });
   }
 
-  // Old Regime Section
-  get oldRegimeSection(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /Old Regime/i }).first();
+  get taxDetailsTab(): Locator {
+    return this.page.getByRole("tab", { name: /Tax Details/i });
   }
 
-  get oldRegimeGrossIncome(): Locator {
-    return this.oldRegimeSection.locator("text=/Gross Income/i").locator("~ .text-currency, + .text-currency");
+  // ============================================
+  // Overview Tab - Regime Comparison Card
+  // ============================================
+
+  get regimeComparisonCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /REGIME COMPARISON/i });
   }
 
-  get oldRegimeDeductions(): Locator {
-    return this.oldRegimeSection.locator("text=/Total Deductions/i").locator("~ .text-currency, + .text-currency");
+  get regimeComparisonTitle(): Locator {
+    return this.page.locator(".v-card-title").filter({ hasText: /REGIME COMPARISON/i });
   }
 
-  get oldRegimeTaxableIncome(): Locator {
-    return this.oldRegimeSection.locator("text=/Taxable Income/i").locator("~ .text-currency, + .text-currency");
+  get oldRegimeBox(): Locator {
+    return this.page.locator(".regime-box").filter({ hasText: /Old Regime/i });
   }
 
-  get oldRegimeTax(): Locator {
-    return this.oldRegimeSection.locator("text=/Tax Payable|Total Tax/i").locator("~ .text-currency, + .text-currency");
+  get newRegimeBox(): Locator {
+    return this.page.locator(".regime-box").filter({ hasText: /New Regime/i });
   }
 
-  // New Regime Section
-  get newRegimeSection(): Locator {
-    return this.page.locator(".v-card").filter({ hasText: /New Regime/i }).first();
+  get betterRegimeBanner(): Locator {
+    return this.regimeComparisonCard.locator(".v-alert").filter({ hasText: /is better for you/i });
   }
 
-  get newRegimeGrossIncome(): Locator {
-    return this.newRegimeSection.locator("text=/Gross Income/i").locator("~ .text-currency, + .text-currency");
+  get savingsText(): Locator {
+    return this.betterRegimeBanner.locator("text=/Save ₹/i");
   }
 
-  get newRegimeStandardDeduction(): Locator {
-    return this.newRegimeSection.locator("text=/Standard Deduction/i").locator("~ .text-currency, + .text-currency");
+  get viewDetailedBreakdownButton(): Locator {
+    return this.regimeComparisonCard.getByRole("button", { name: /View Detailed Breakdown/i });
   }
 
-  get newRegimeTaxableIncome(): Locator {
-    return this.newRegimeSection.locator("text=/Taxable Income/i").locator("~ .text-currency, + .text-currency");
+  get emptyStateMessage(): Locator {
+    return this.regimeComparisonCard.locator("text=/Add income data to see regime comparison/i");
   }
 
-  get newRegimeTax(): Locator {
-    return this.newRegimeSection.locator("text=/Tax Payable|Total Tax/i").locator("~ .text-currency, + .text-currency");
+  // ============================================
+  // Tax Details Tab - Calculator Regime Selector
+  // ============================================
+
+  get calculatorSection(): Locator {
+    return this.page.locator(".v-expansion-panel").filter({ has: this.page.locator(".text-subtitle-1", { hasText: "Tax Calculator" }) });
   }
 
-  // Comparison summary
-  get savingsDisplay(): Locator {
-    return this.page.locator("text=/You.*Save|Tax Savings|Savings/i").locator("~ .text-currency, + .text-currency");
+  get fromDataButton(): Locator {
+    return this.page.getByRole("button", { name: /From Data/i });
   }
 
-  get recommendedRegimeBadge(): Locator {
-    return this.page.locator(".v-chip, .v-badge").filter({ hasText: /Recommended|Better|Choose/i });
+  get manualButton(): Locator {
+    return this.page.getByRole("button", { name: /Manual/i });
   }
 
-  // Deduction breakdown table
-  get deductionBreakdownTable(): Locator {
-    return this.page.locator(".v-data-table").filter({ hasText: /Deduction|Section/i });
+  get resetButton(): Locator {
+    return this.page.getByRole("button", { name: /Reset/i });
   }
 
-  // Slab breakdown
-  get oldRegimeSlabTable(): Locator {
-    return this.oldRegimeSection.locator(".v-data-table, table");
+  get oldRegimeToggle(): Locator {
+    return this.page.getByRole("button", { name: /^Old$/i });
   }
 
-  get newRegimeSlabTable(): Locator {
-    return this.newRegimeSection.locator(".v-data-table, table");
+  get newRegimeToggle(): Locator {
+    return this.page.getByRole("button", { name: /^New$/i });
   }
 
-  // Toggle switches
-  get showDetailedBreakdownToggle(): Locator {
-    return this.page.getByRole("switch", { name: /Detailed|Breakdown/i });
+  get grossIncomeInput(): Locator {
+    return this.page.getByRole("spinbutton", { name: /Gross Total Income/i });
+  }
+
+  get quickSelectChips(): Locator {
+    return this.page.locator(".v-chip-group .v-chip");
+  }
+
+  // Calculator - Deduction Inputs (visible in Old regime / Manual mode)
+  get section80CInput(): Locator {
+    return this.page.locator("input").filter({ has: this.page.locator("label:has-text('Section 80C')") });
+  }
+
+  get section80DInput(): Locator {
+    return this.page.locator("input").filter({ has: this.page.locator("label:has-text('Section 80D')") });
+  }
+
+  // Calculator Results
+  get taxBreakdownCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Tax Calculation Breakdown/i });
+  }
+
+  get regimeComparisonResultCard(): Locator {
+    return this.page.locator(".v-card").filter({ hasText: /Regime Comparison/i }).last();
+  }
+
+  get noCalculationDataMessage(): Locator {
+    return this.page.locator("text=/No tax calculation data available/i");
+  }
+
+  get noComparisonDataMessage(): Locator {
+    return this.page.locator("text=/No comparison data available/i");
   }
 
   // ============================================
@@ -100,13 +135,46 @@ export class RegimeComparisonPage extends BasePage {
     await this.waitForPageLoad();
   }
 
+  async navigateToCalculator() {
+    await this.goto(this.url);
+    await this.waitForPageLoad();
+    await this.taxDetailsTab.click();
+    await this.page.waitForTimeout(300);
+  }
+
   // ============================================
   // Actions
   // ============================================
 
-  async toggleDetailedBreakdown() {
-    await this.showDetailedBreakdownToggle.click();
-    await this.page.waitForTimeout(300);
+  async selectOldRegime() {
+    await this.oldRegimeToggle.click();
+    await this.page.waitForTimeout(200);
+  }
+
+  async selectNewRegime() {
+    await this.newRegimeToggle.click();
+    await this.page.waitForTimeout(200);
+  }
+
+  async switchToManualMode() {
+    await this.manualButton.click();
+    await this.page.waitForTimeout(200);
+  }
+
+  async switchToFromDataMode() {
+    await this.fromDataButton.click();
+    await this.page.waitForTimeout(200);
+  }
+
+  async selectQuickIncome(amount: string) {
+    const chip = this.quickSelectChips.filter({ hasText: amount });
+    await chip.click();
+    await this.page.waitForTimeout(200);
+  }
+
+  async setGrossIncome(amount: number) {
+    await this.grossIncomeInput.fill(amount.toString());
+    await this.page.waitForTimeout(200);
   }
 
   // ============================================
@@ -114,29 +182,37 @@ export class RegimeComparisonPage extends BasePage {
   // ============================================
 
   async getOldRegimeTaxAmount(): Promise<string> {
-    return (await this.oldRegimeTax.textContent()) || "₹0";
+    const text = await this.oldRegimeBox.locator(".text-currency").textContent();
+    return text || "₹0";
   }
 
   async getNewRegimeTaxAmount(): Promise<string> {
-    return (await this.newRegimeTax.textContent()) || "₹0";
+    const text = await this.newRegimeBox.locator(".text-currency").textContent();
+    return text || "₹0";
   }
 
   async getSavingsAmount(): Promise<string> {
-    return (await this.savingsDisplay.textContent()) || "₹0";
+    const text = await this.savingsText.textContent();
+    return text || "₹0";
   }
 
   async getRecommendedRegime(): Promise<"Old" | "New" | null> {
-    const badgeText = await this.recommendedRegimeBadge.textContent();
-    const oldRegimeSelected = await this.oldRegimeSection.locator(".v-chip").filter({ hasText: /Recommended/i }).count();
-    const newRegimeSelected = await this.newRegimeSection.locator(".v-chip").filter({ hasText: /Recommended/i }).count();
-
-    if (oldRegimeSelected > 0) return "Old";
-    if (newRegimeSelected > 0) return "New";
+    const bannerText = await this.betterRegimeBanner.textContent().catch(() => "");
+    if (bannerText.includes("New Regime")) return "New";
+    if (bannerText.includes("Old Regime")) return "Old";
     return null;
   }
 
   async getOldRegimeDeductionsTotal(): Promise<string> {
-    return (await this.oldRegimeDeductions.textContent()) || "₹0";
+    // Deductions total is in the calculator section when expanded
+    const deductionsChip = this.page.locator(".v-chip").filter({ hasText: /Total:/i });
+    const text = await deductionsChip.textContent().catch(() => "₹0");
+    return text || "₹0";
+  }
+
+  parseINR(text: string): number {
+    const cleaned = text.replace(/[₹,\s]/g, "");
+    return parseFloat(cleaned) || 0;
   }
 
   // ============================================
@@ -145,32 +221,87 @@ export class RegimeComparisonPage extends BasePage {
 
   async expectPageLoaded() {
     await expect(this.page.getByRole("heading", { name: /Tax Planning/i })).toBeVisible();
-    // Regime comparison is on the Overview tab
-    await expect(this.page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    await expect(this.overviewTab).toHaveAttribute("aria-selected", "true");
+  }
+
+  async expectRegimeComparisonCardVisible() {
+    await expect(this.regimeComparisonTitle).toBeVisible();
   }
 
   async expectBothRegimesVisible() {
-    await expect(this.oldRegimeSection).toBeVisible();
-    await expect(this.newRegimeSection).toBeVisible();
+    // Check if comparison data is loaded (regime boxes visible)
+    await expect(this.oldRegimeBox).toBeVisible();
+    await expect(this.newRegimeBox).toBeVisible();
+  }
+
+  async expectEmptyState() {
+    await expect(this.emptyStateMessage).toBeVisible();
   }
 
   async expectSavingsDisplayed() {
-    await expect(this.savingsDisplay).toBeVisible();
+    await expect(this.savingsText).toBeVisible();
   }
 
   async expectRecommendationShown() {
-    await expect(this.recommendedRegimeBadge).toBeVisible();
+    await expect(this.betterRegimeBanner).toBeVisible();
   }
 
-  async expectOldRegimeTax(expectedAmount: string) {
-    await expect(this.oldRegimeTax).toContainText(expectedAmount);
+  async expectCalculatorSectionVisible() {
+    await expect(this.calculatorSection).toBeVisible();
   }
 
-  async expectNewRegimeTax(expectedAmount: string) {
-    await expect(this.newRegimeTax).toContainText(expectedAmount);
+  async expectRegimeToggleVisible() {
+    await expect(this.oldRegimeToggle).toBeVisible();
+    await expect(this.newRegimeToggle).toBeVisible();
+  }
+
+  async expectQuickSelectVisible() {
+    await expect(this.quickSelectChips.first()).toBeVisible();
+  }
+
+  // Legacy support
+  get showDetailedBreakdownToggle(): Locator {
+    return this.page.getByRole("switch", { name: /Detailed|Breakdown/i });
+  }
+
+  async toggleDetailedBreakdown() {
+    if (await this.showDetailedBreakdownToggle.isVisible()) {
+      await this.showDetailedBreakdownToggle.click();
+      await this.page.waitForTimeout(300);
+    }
   }
 
   async expectDeductionBreakdownVisible() {
-    await expect(this.deductionBreakdownTable).toBeVisible();
+    // In new UI, deduction breakdown is in calculator section
+    await expect(this.page.locator("text=/Section 80C|Deductions/i")).toBeVisible();
+  }
+
+  // Aliases for backward compatibility
+  get oldRegimeSection(): Locator {
+    return this.oldRegimeBox;
+  }
+
+  get newRegimeSection(): Locator {
+    return this.newRegimeBox;
+  }
+
+  get oldRegimeTax(): Locator {
+    return this.oldRegimeBox.locator(".text-currency");
+  }
+
+  get newRegimeTax(): Locator {
+    return this.newRegimeBox.locator(".text-currency");
+  }
+
+  get savingsDisplay(): Locator {
+    return this.savingsText;
+  }
+
+  get recommendedRegimeBadge(): Locator {
+    return this.betterRegimeBanner;
+  }
+
+  get deductionBreakdownTable(): Locator {
+    return this.page.locator(".v-data-table").filter({ hasText: /Deduction|Section/i });
   }
 }

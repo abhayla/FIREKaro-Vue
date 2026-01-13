@@ -29,23 +29,28 @@ export class TaxDetailsPage extends BasePage {
   // ============================================
 
   get calculatorSection(): Locator {
-    return this.page.locator(".v-expansion-panel").filter({ hasText: /Calculator/i });
+    // Match exactly "Tax Calculator" as the section title
+    return this.page.locator(".v-expansion-panel").filter({ has: this.page.locator(".text-subtitle-1", { hasText: "Tax Calculator" }) });
   }
 
   get deductionsSection(): Locator {
-    return this.page.locator(".v-expansion-panel").filter({ hasText: /Deductions/i });
+    // Match exactly "Deductions" as the section title (not "Tax Calculator" which has "deductions" in subtitle)
+    return this.page.locator(".v-expansion-panel").filter({ has: this.page.locator(".text-subtitle-1", { hasText: /^Deductions$/ }) });
   }
 
   get scenariosSection(): Locator {
-    return this.page.locator(".v-expansion-panel").filter({ hasText: /Scenarios/i });
+    // Match "What-If Scenarios" section title
+    return this.page.locator(".v-expansion-panel").filter({ has: this.page.locator(".text-subtitle-1", { hasText: "What-If Scenarios" }) });
   }
 
   get advanceTaxSection(): Locator {
-    return this.page.locator(".v-expansion-panel").filter({ hasText: /Advance Tax/i });
+    // Match "Advance Tax" section title
+    return this.page.locator(".v-expansion-panel").filter({ has: this.page.locator(".text-subtitle-1", { hasText: "Advance Tax" }) });
   }
 
   get reportsSection(): Locator {
-    return this.page.locator(".v-expansion-panel").filter({ hasText: /Reports/i });
+    // Match "Reports & Export" section title
+    return this.page.locator(".v-expansion-panel").filter({ has: this.page.locator(".text-subtitle-1", { hasText: "Reports & Export" }) });
   }
 
   // Accordion headers (clickable)
